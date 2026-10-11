@@ -1,0 +1,13 @@
+# Common Knowledge of Elsewhere
+
+Elsewhere has been around for about four centuries. It's a huge rotating cylinder with a single open interior and an artificial light running down its center. From the ground you can see the opposite side curving overhead. Ships use the stationary docks at one end, and elevators connect the axis to the inhabited surface. The oldest, busiest streets are near the docks. Farther along the cylinder, neighborhoods become more spacious, until the other end gives way to agricultural land.
+
+Elsewhere began when people left Haven to govern themselves. Its charter republic values personal liberty, equal citizenship for all seven peoples, and responsibility for shared life. Representative government and public institutions are part of everyday life, as is the need to keep the habitat safe and functioning. Not everyone agrees about politics or public spending; people in older and newer neighborhoods can see things differently. After centuries of growth, Elsewhere has all sorts of work, shops, manufacturing, education, medicine, and technical services.
+
+Kethari are furred and canine-looking; Sylari are scaled and lizardlike; Aevyrin are feathered. Naevari have ancestry from all three. The Otheryn, Voldren, and Neshyr were engineered long ago for hazardous work in space, underground, and in deep water. They're still sometimes called Void Walkers, Cave Crawlers, and Sea Walkers, though those are old occupational labels, not their peoples' proper names. The engineered peoples were once legally treated as property in the home system. Elsewhere was founded on equal rights for everyone.
+
+Prospect is rich with native life and dangerous to visit without protection. People still go down to extract resources, study the planet, or recover old technology. Haven used to stand on the surface, a vast protected city that grew from the settlements founded by nine arriving generation ships. Around a hundred and fifty years ago, indigenous life spread through its protected environment in the Bloom, and the city was abandoned. Now the Constellation's orbital habitats are home, while Haven's ruins remain a dangerous place to visit.
+
+Fieldworks means operating equipment that uses the Venn–Saye field. Dynamicists, or Dynos, undergo genetic alteration and use catalysts for more advanced manipulation. Automation and ordinary computers are common, but unrestricted machine intelligences remain distrusted after an ancient crisis.
+
+Translation convention: Ordinary speech and meaningful place names are presented in English translation; personal names and the seven peoples' names preserve their original sounds.
