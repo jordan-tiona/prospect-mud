@@ -53,10 +53,14 @@ def chat(messages: list[dict], model: str | None = None) -> LLMReply:
     """
     client = _get_client()
     use_model = model or settings.LLM_MODEL
+    extra_body = {}
+    if settings.LLM_REASONING_EFFORT:
+        extra_body["reasoning_effort"] = settings.LLM_REASONING_EFFORT
     try:
         response = client.chat.completions.create(
             model=use_model,
             messages=messages,
+            extra_body=extra_body,
         )
     except (APIConnectionError, APITimeoutError, APIStatusError) as err:
         raise LLMUnavailableError(f"LLM request failed: {err}") from err

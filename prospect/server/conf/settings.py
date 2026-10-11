@@ -49,6 +49,13 @@ LLM_API_KEY = os.environ.get("PROSPECT_LLM_API_KEY", "ollama")
 LLM_MODEL = os.environ.get("PROSPECT_LLM_MODEL", "qwen3:14b")
 LLM_TIMEOUT_SECONDS = float(os.environ.get("PROSPECT_LLM_TIMEOUT_SECONDS", "30"))
 
+# Reasoning/"thinking" effort, passed through as the OpenAI-standard
+# `reasoning_effort` field. Qwen3's extended thinking adds several
+# seconds of latency with no benefit for short in-character replies,
+# so the prototype default turns it off. Set to "" to omit the field
+# entirely (e.g. for a model that errors on unknown params).
+LLM_REASONING_EFFORT = os.environ.get("PROSPECT_LLM_REASONING_EFFORT", "none")
+
 
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
