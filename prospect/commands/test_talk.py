@@ -59,6 +59,13 @@ class TalkCommandTests(TestCase):
         defer_patcher.start()
         self.addCleanup(defer_patcher.stop)
 
+        # Logging is covered by its own tests against the real
+        # function (world/test_conversation_log.py); here we just
+        # need it not to hit the filesystem.
+        log_patcher = patch("commands.talk.log_turn")
+        self.mock_log_turn = log_patcher.start()
+        self.addCleanup(log_patcher.stop)
+
     def _talk(self, target_name, message):
         self.actor.execute_cmd(f"talk {target_name} = {message}")
 
@@ -187,3 +194,80 @@ class TalkCommandTests(TestCase):
         # a real object, but not a TalkativeNPC.
         self._talk("square", "hello")
         mock_chat.assert_not_called()
+
+    # -- conversation logging (step 8) --------------------------------
+
+    @patch("commands.talk.chat")
+    def test_ordinary_turn_is_logged(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._talk("Mara Voss", "hello there")
+
+        self.mock_log_turn.assert_called_once()
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(kwargs["npc_id"], "mara_voss")
+        self.assertEqual(kwargs["player_message"], "hello there")
+        self.assertEqual(kwargs["npc_response"], "Afternoon.")
+        self.assertEqual(kwargs["model"], "test-model")
+        self.assertEqual(kwargs["prompt_version"], "1")
+        self.assertEqual(kwargs["flagged"], False)
+        self.assertEqual(kwargs["tool_calls"], [])
+        self.assertIn("prompt_messages", kwargs)
+        self.assertTrue(kwargs["conversation_id"])
+        self.assertEqual(kwargs["turn_id"], 1)
+
+    @patch("commands.talk.chat")
+    def test_tool_call_outcomes_are_logged(self, mock_chat):
+        mock_chat.return_value = _reply(
+            "Here you go!", tool_calls=[{"name": "serve_drink", "arguments": {"drink_type": "hot"}}]
+        )
+        self._talk("Mara Voss", "hot drink please")
+
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(
+            kwargs["tool_calls"],
+            [{"name": "serve_drink", "arguments": {"drink_type": "hot"}, "applied": True, "reason": ""}],
+        )
+
+    @patch("commands.talk.chat")
+    def test_dropped_tool_call_outcome_is_logged(self, mock_chat):
+        mock_chat.return_value = _reply(
+            "Sure.", tool_calls=[{"name": "serve_drink", "arguments": {"drink_type": "lukewarm"}}]
+        )
+        self._talk("Mara Voss", "surprise me")
+
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(len(kwargs["tool_calls"]), 1)
+        self.assertFalse(kwargs["tool_calls"][0]["applied"])
+        self.assertTrue(kwargs["tool_calls"][0]["reason"])
+
+    @patch("commands.talk.chat")
+    def test_flagged_turn_is_logged_with_reason(self, mock_chat):
+        mock_chat.return_value = _reply("As an AI, I don't have personal opinions.")
+        self._talk("Mara Voss", "what do you think")
+
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertTrue(kwargs["flagged"])
+        self.assertTrue(kwargs["flag_reason"])
+        self.assertEqual(kwargs["npc_response"], "As an AI, I don't have personal opinions.")
+
+    @patch("commands.talk.chat")
+    def test_llm_unavailable_turn_is_logged(self, mock_chat):
+        mock_chat.side_effect = LLMUnavailableError("timed out")
+        self._talk("Mara Voss", "hello?")
+
+        self.mock_log_turn.assert_called_once()
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertIsNone(kwargs["npc_response"])
+        self.assertEqual(kwargs["flag_reason"], "llm_unavailable")
+
+    @patch("commands.talk.chat")
+    def test_turn_id_increments_within_same_conversation(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._talk("Mara Voss", "hi")
+        self._talk("Mara Voss", "hi again")
+
+        first_kwargs = self.mock_log_turn.call_args_list[0].kwargs
+        second_kwargs = self.mock_log_turn.call_args_list[1].kwargs
+        self.assertEqual(first_kwargs["turn_id"], 1)
+        self.assertEqual(second_kwargs["turn_id"], 2)
+        self.assertEqual(first_kwargs["conversation_id"], second_kwargs["conversation_id"])

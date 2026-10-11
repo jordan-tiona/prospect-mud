@@ -2,11 +2,12 @@
 The `talk` command: how players address talk-capable NPCs.
 
 Wires the full pipeline from design-bible 16.5: prompt builder -> LLM
-client -> tool validator -> output check -> narrated reply. Player
-text is always labeled as player speech in the prompt (CLAUDE.md hard
-rule 6) and is never treated as fact. Conversation history is kept in
-memory only (ndb), lost on reload/restart - persistent memory is a
-phase 2 feature (design-bible 13.5), not built here.
+client -> tool validator -> output check -> narrated reply, logging
+every turn per design-bible 14.7. Player text is always labeled as
+player speech in the prompt (CLAUDE.md hard rule 6) and is never
+treated as fact. Conversation history is kept in memory only (ndb),
+lost on reload/restart - persistent memory is a phase 2 feature
+(design-bible 13.5), not built here.
 
 The model call runs in a background thread (deferToThread), not
 inline in func(): Evennia's single-threaded reactor would otherwise
@@ -18,6 +19,8 @@ depends on the model's reply happens in _handle_llm_reply() once the
 deferred fires.
 """
 
+import uuid
+
 from twisted.internet.threads import deferToThread
 
 from evennia.utils import logger
@@ -25,6 +28,7 @@ from evennia.utils.utils import inherits_from
 
 from .command import Command
 from world.actions import get_tool_schemas, validate_and_apply
+from world.conversation_log import log_turn
 from world.emotes import format_emote, split_emotes
 from world.llm_client import LLMUnavailableError, chat
 from world.npc_profile import parse_persona
@@ -51,7 +55,24 @@ def _trim_history(history: list) -> None:
     del history[:-max_messages]
 
 
-def _handle_llm_reply(reply, target, caller, history, player_message):
+def _get_conversation_id(npc, actor) -> str:
+    if npc.ndb.conversation_ids is None:
+        npc.ndb.conversation_ids = {}
+    ids = npc.ndb.conversation_ids
+    if actor.dbref not in ids:
+        ids[actor.dbref] = uuid.uuid4().hex
+    return ids[actor.dbref]
+
+
+def _next_turn_id(npc, actor) -> int:
+    if npc.ndb.turn_counters is None:
+        npc.ndb.turn_counters = {}
+    counters = npc.ndb.turn_counters
+    counters[actor.dbref] = counters.get(actor.dbref, 0) + 1
+    return counters[actor.dbref]
+
+
+def _handle_llm_reply(reply, target, caller, history, player_message, log_context):
     """
     Runs once the model has responded, back on the main thread (a
     Twisted callback always fires on the reactor thread, so this is
@@ -59,15 +80,31 @@ def _handle_llm_reply(reply, target, caller, history, player_message):
     directly unit-testable without any threading involved.
     """
     raw_text = reply.text.strip()
-    flagged, _reason = is_flagged(raw_text)
+    flagged, flag_reason = is_flagged(raw_text)
+
     if flagged:
         caller.msg(f"{target.key} seems momentarily at a loss for words and changes the subject.")
+        log_turn(
+            **log_context,
+            model=reply.model,
+            npc_response=raw_text,
+            tool_calls=[],
+            flagged=True,
+            flag_reason=flag_reason,
+        )
         return
 
     dialogue, emotes = split_emotes(raw_text)
 
     if not dialogue and not emotes and not reply.tool_calls:
         caller.msg(f"{target.key} doesn't seem to have anything to say.")
+        log_turn(
+            **log_context,
+            model=reply.model,
+            npc_response=raw_text,
+            tool_calls=[],
+            flagged=False,
+        )
         return
 
     for emote in emotes:
@@ -83,19 +120,44 @@ def _handle_llm_reply(reply, target, caller, history, player_message):
         history.append({"role": "assistant", "content": raw_text})
         _trim_history(history)
 
+    tool_call_records = []
     for call in reply.tool_calls:
         result = validate_and_apply(target, caller, call["name"], call["arguments"])
+        tool_call_records.append(
+            {
+                "name": call["name"],
+                "arguments": call["arguments"],
+                "applied": result.applied,
+                "reason": result.reason,
+            }
+        )
         if result.applied:
             caller.msg(result.narration)
 
+    log_turn(
+        **log_context,
+        model=reply.model,
+        npc_response=raw_text,
+        tool_calls=tool_call_records,
+        flagged=False,
+    )
 
-def _handle_llm_error(failure, target, caller):
+
+def _handle_llm_error(failure, target, caller, log_context):
     if not failure.check(LLMUnavailableError):
         # Not the expected failure mode - log it so it's not silently
         # lost, but still give the player the same graceful fallback
         # rather than a traceback.
         logger.log_err(f"talk command: unexpected error from {target.key}: {failure}")
     caller.msg(f"{target.key} seems distracted and doesn't answer right away. (try again in a moment)")
+    log_turn(
+        **log_context,
+        model="",
+        npc_response=None,
+        tool_calls=[],
+        flagged=False,
+        flag_reason="llm_unavailable",
+    )
 
 
 class CmdTalk(Command):
@@ -153,6 +215,18 @@ class CmdTalk(Command):
 
         messages = [{"role": "system", "content": system_prompt.text}] + history + [_player_turn(self.message)]
 
+        log_context = {
+            "conversation_id": _get_conversation_id(target, caller),
+            "turn_id": _next_turn_id(target, caller),
+            "npc_id": target.db.npc_id,
+            "location": target.location.key if target.location else "",
+            "actor_key": caller.key,
+            "actor_dbref": caller.dbref,
+            "player_message": self.message,
+            "prompt_messages": messages,
+            "prompt_version": profile.prompt_version,
+        }
+
         deferred = deferToThread(chat, messages, tools=tools)
-        deferred.addCallback(_handle_llm_reply, target, caller, history, self.message)
-        deferred.addErrback(_handle_llm_error, target, caller)
+        deferred.addCallback(_handle_llm_reply, target, caller, history, self.message, log_context)
+        deferred.addErrback(_handle_llm_error, target, caller, log_context)
