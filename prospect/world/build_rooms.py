@@ -71,12 +71,17 @@ ROOMS = [
 HUB = "old_quarter_square"
 
 # (spoke_tag, exit key/aliases from hub -> spoke, exit key/aliases from spoke -> hub)
+#
+# Exit keys and aliases are short words and must never exactly match any
+# room's own key: @tel and other key/alias-based lookups search globally
+# across rooms and exits together, so an exit named (or aliased) exactly
+# "Old Quarter Square" collides with the room of that name.
 SPOKES = [
-    ("lift_concourse", ("lift concourse", ["lift", "concourse"]), ("old quarter square", ["square"])),
-    ("corner_cafe", ("corner cafe", ["cafe"]), ("old quarter square", ["square"])),
-    ("maintenance_workshop", ("maintenance workshop", ["workshop"]), ("old quarter square", ["square"])),
-    ("residential_courtyard", ("residential courtyard", ["courtyard"]), ("old quarter square", ["square"])),
-    ("civic_office", ("civic office", ["office"]), ("old quarter square", ["square"])),
+    ("lift_concourse", ("lift", ["concourse"]), ("square", ["quarter"])),
+    ("corner_cafe", ("cafe", ["corner"]), ("square", ["quarter"])),
+    ("maintenance_workshop", ("workshop", ["maintenance"]), ("square", ["quarter"])),
+    ("residential_courtyard", ("courtyard", ["residential"]), ("square", ["quarter"])),
+    ("civic_office", ("office", ["civic"]), ("square", ["quarter"])),
 ]
 
 
@@ -92,7 +97,12 @@ def _get_or_create_room(tag, name, desc):
 
 def _get_or_create_exit(source, destination, key, aliases):
     for exi in source.exits:
-        if exi.destination == destination and exi.key == key:
+        if exi.destination == destination:
+            if exi.key != key:
+                exi.key = key
+            if sorted(exi.aliases.all()) != sorted(aliases):
+                exi.aliases.clear()
+                exi.aliases.add(aliases)
             return exi
     return create_object(
         "typeclasses.exits.Exit",
