@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+
+prospect/server/evennia.db3
+prospect/server/logs/
+prospect/server/.restart
+prospect/server/*.pid

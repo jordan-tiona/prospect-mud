@@ -4,7 +4,7 @@ A text-based multiplayer sci-fi MUD built on **Evennia** (Python), where some NP
 
 ## Source of truth
 
-- **`docs/design-bible.md`** is the authoritative design document for both setting canon and engineering decisions. Read the relevant sections before starting a task; don't load the whole file into context unless needed.
+- **`docs/prospect-constellation-design-v0.4.1.md`** is the authoritative design document for both setting canon and engineering decisions. Read the relevant sections before starting a task; don't load the whole file into context unless needed.
 - Engineering sections to know: **13.5–13.7** (prototype scope, rooms, travel), **14.2, 14.4, 14.6, 14.7** (NPC knowledge, generation/game-state boundary, prototype cast, logging), **16.4–16.8** (stack, request flow, lore store, safety, roadmap).
 - If code, task instructions and the bible disagree, stop and ask rather than picking one.
 
@@ -49,7 +49,7 @@ Out of scope for phase 1 (don't build unless asked): persistent NPC memory, ques
 NPC personas and the common-knowledge sheet are **authored content**, written by the project owner. Code loads them; code does not generate them. Suggested layout (adjust if Evennia conventions suggest better):
 
 ```
-docs/design-bible.md          # authoritative design doc
+docs/prospect-constellation-design-v0.4.1.md  # authoritative design doc
 content/common-knowledge.md   # what any ordinary Elsewhere resident knows
 content/npc-shared-rules.md   # behavior rules shared by every talk-capable NPC
 content/npcs/<npc_id>.md      # persona, knowledge scope, permitted actions
