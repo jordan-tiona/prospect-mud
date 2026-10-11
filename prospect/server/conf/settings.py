@@ -36,6 +36,21 @@ SERVERNAME = "prospect"
 
 
 ######################################################################
+# LLM-driven NPC settings (phase 1 prototype, design-bible 16.4)
+#
+# Model name, base URL and API key come from environment, never
+# hard-coded, so switching to vLLM or a hosted API later is a config
+# change only. Defaults below match the local Ollama dev setup.
+######################################################################
+import os
+
+LLM_BASE_URL = os.environ.get("PROSPECT_LLM_BASE_URL", "http://localhost:11434/v1")
+LLM_API_KEY = os.environ.get("PROSPECT_LLM_API_KEY", "ollama")
+LLM_MODEL = os.environ.get("PROSPECT_LLM_MODEL", "qwen3:14b")
+LLM_TIMEOUT_SECONDS = float(os.environ.get("PROSPECT_LLM_TIMEOUT_SECONDS", "30"))
+
+
+######################################################################
 # Settings given in secret_settings.py override those in this file.
 ######################################################################
 try:

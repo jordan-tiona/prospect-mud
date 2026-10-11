@@ -1,0 +1,69 @@
+"""
+The one module permitted to speak to a language model (CLAUDE.md hard
+rule 8). Nothing else in this codebase should import `openai` or know
+the model's wire protocol; everything else calls through here.
+
+Model name, base URL and API key come from Evennia settings (which in
+turn read environment variables, see server/conf/settings.py) so that
+swapping Ollama for vLLM or a hosted API later is a config change, not
+a code change.
+"""
+
+from dataclasses import dataclass
+
+from django.conf import settings
+from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
+
+
+class LLMUnavailableError(Exception):
+    """Raised when the model can't be reached or times out."""
+
+
+@dataclass
+class LLMReply:
+    text: str
+    model: str
+    raw: dict
+
+
+def _get_client() -> OpenAI:
+    return OpenAI(
+        base_url=settings.LLM_BASE_URL,
+        api_key=settings.LLM_API_KEY,
+        timeout=settings.LLM_TIMEOUT_SECONDS,
+    )
+
+
+def chat(messages: list[dict], model: str | None = None) -> LLMReply:
+    """
+    Send a chat-style message list to the configured model and return
+    its reply.
+
+    Args:
+        messages: OpenAI-style message dicts, e.g.
+            [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}]
+        model: override the configured default model for this call.
+
+    Raises:
+        LLMUnavailableError: the model is unreachable, slow past the
+            configured timeout, or returned an error status. Callers
+            (e.g. the talk command) are expected to catch this and
+            fall back gracefully rather than let it propagate to the
+            player as a traceback.
+    """
+    client = _get_client()
+    use_model = model or settings.LLM_MODEL
+    try:
+        response = client.chat.completions.create(
+            model=use_model,
+            messages=messages,
+        )
+    except (APIConnectionError, APITimeoutError, APIStatusError) as err:
+        raise LLMUnavailableError(f"LLM request failed: {err}") from err
+
+    choice = response.choices[0]
+    return LLMReply(
+        text=choice.message.content or "",
+        model=response.model,
+        raw=response.model_dump(),
+    )
