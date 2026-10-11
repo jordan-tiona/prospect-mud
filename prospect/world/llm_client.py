@@ -9,7 +9,8 @@ swapping Ollama for vLLM or a hosted API later is a config change, not
 a code change.
 """
 
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, field
 
 from django.conf import settings
 from openai import APIConnectionError, APIStatusError, APITimeoutError, OpenAI
@@ -24,6 +25,8 @@ class LLMReply:
     text: str
     model: str
     raw: dict
+    # Proposed actions only - never applied here. [{"name": ..., "arguments": {...}}]
+    tool_calls: list = field(default_factory=list)
 
 
 def _get_client() -> OpenAI:
@@ -34,14 +37,31 @@ def _get_client() -> OpenAI:
     )
 
 
-def chat(messages: list[dict], model: str | None = None) -> LLMReply:
+def _parse_tool_calls(message) -> list:
+    tool_calls = []
+    for call in getattr(message, "tool_calls", None) or []:
+        try:
+            arguments = json.loads(call.function.arguments) if call.function.arguments else {}
+        except json.JSONDecodeError:
+            # Malformed arguments are not our job to fix up - the tool
+            # validator (world/actions.py) will reject whatever this
+            # ends up being (likely missing required fields).
+            arguments = {}
+        tool_calls.append({"name": call.function.name, "arguments": arguments})
+    return tool_calls
+
+
+def chat(messages: list[dict], tools: list[dict] | None = None, model: str | None = None) -> LLMReply:
     """
     Send a chat-style message list to the configured model and return
-    its reply.
+    its reply, plus any proposed tool calls.
 
     Args:
         messages: OpenAI-style message dicts, e.g.
             [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}]
+        tools: OpenAI-style tool/function definitions the model may
+            call. The model can only *propose* these; nothing here
+            applies them (see world/actions.py).
         model: override the configured default model for this call.
 
     Raises:
@@ -56,12 +76,14 @@ def chat(messages: list[dict], model: str | None = None) -> LLMReply:
     extra_body = {}
     if settings.LLM_REASONING_EFFORT:
         extra_body["reasoning_effort"] = settings.LLM_REASONING_EFFORT
+
+    kwargs = {"model": use_model, "messages": messages, "extra_body": extra_body}
+    if tools:
+        kwargs["tools"] = tools
+        kwargs["tool_choice"] = "auto"
+
     try:
-        response = client.chat.completions.create(
-            model=use_model,
-            messages=messages,
-            extra_body=extra_body,
-        )
+        response = client.chat.completions.create(**kwargs)
     except (APIConnectionError, APITimeoutError, APIStatusError) as err:
         raise LLMUnavailableError(f"LLM request failed: {err}") from err
 
@@ -70,4 +92,5 @@ def chat(messages: list[dict], model: str | None = None) -> LLMReply:
         text=choice.message.content or "",
         model=response.model,
         raw=response.model_dump(),
+        tool_calls=_parse_tool_calls(choice.message),
     )

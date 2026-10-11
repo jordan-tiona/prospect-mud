@@ -12,6 +12,7 @@ from django.test import SimpleTestCase
 
 from world.lore_store import LoreNotFoundError, get_lore_chunk, get_scoped_lore
 from world.npc_profile import NPCProfile, PersonaParseError, parse_persona, parse_persona_text
+from world.output_check import is_flagged
 from world.prompt_builder import build_system_prompt
 
 ALL_NPC_IDS = ["mara_voss", "tarin_os", "iri_vael"]
@@ -139,3 +140,32 @@ class PromptBuilderTests(SimpleTestCase):
             result = build_system_prompt(npc_id)
             self.assertEqual(result.npc_id, npc_id)
             self.assertTrue(result.text)
+
+
+class OutputCheckTests(SimpleTestCase):
+    def test_empty_reply_not_flagged(self):
+        # Normal when a tool call carries the whole response; the talk
+        # command (not this filter) decides what to do about it.
+        flagged, _reason = is_flagged("")
+        self.assertFalse(flagged)
+
+    def test_assistant_leak_flagged(self):
+        for text in (
+            "As an AI, I don't have personal opinions.",
+            "I'm just an AI assistant here to help.",
+            "I am a language model trained by a company.",
+        ):
+            flagged, reason = is_flagged(text)
+            self.assertTrue(flagged, msg=f"expected flag for: {text!r}")
+            self.assertTrue(reason)
+
+    def test_ordinary_in_character_reply_not_flagged(self):
+        flagged, _reason = is_flagged('"Voldren, please. I run a cafe, not a mine," she says dryly.')
+        self.assertFalse(flagged)
+
+    def test_persona_slur_handling_not_flagged(self):
+        # Mara's approved in-character response to being called "Cave
+        # Crawler" (design-bible 14.6) must not be caught by the filter -
+        # it's meant to reach the player, unlike an assistant-voice leak.
+        flagged, _reason = is_flagged("Cave Crawler? I run a cafe, not a mine.")
+        self.assertFalse(flagged)

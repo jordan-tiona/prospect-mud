@@ -156,3 +156,75 @@ _ACTION_VALIDATORS = {
     "hand_over_item": _validate_hand_over_item,
     "give_directions": _validate_give_directions,
 }
+
+
+# OpenAI-style tool/function definitions, offered to the model so it
+# can *propose* an action by name. This is the only part of the tool
+# layer the model ever sees; validate_and_apply() above is what
+# actually decides whether a proposal does anything.
+ACTION_SCHEMAS = {
+    "serve_drink": {
+        "type": "function",
+        "function": {
+            "name": "serve_drink",
+            "description": "Serve the player a drink from the cafe's simple menu.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "drink_type": {
+                        "type": "string",
+                        "enum": ["hot", "cold"],
+                        "description": "Whether to serve a hot drink or a cold drink.",
+                    }
+                },
+                "required": ["drink_type"],
+            },
+        },
+    },
+    "hand_over_item": {
+        "type": "function",
+        "function": {
+            "name": "hand_over_item",
+            "description": "Hand the player an item from the workshop's small stock of spares.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "item_type": {
+                        "type": "string",
+                        "enum": ["spare part", "hand tool"],
+                        "description": "Which kind of item to hand over.",
+                    }
+                },
+                "required": ["item_type"],
+            },
+        },
+    },
+    "give_directions": {
+        "type": "function",
+        "function": {
+            "name": "give_directions",
+            "description": (
+                "Give the player directions to one of the six rooms in this "
+                "neighborhood (Lift Concourse, Old Quarter Square, Corner "
+                "Cafe, Maintenance Workshop, Residential Courtyard, Civic "
+                "Office). Do not use this for places outside the "
+                "neighborhood - say you don't know instead."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "destination": {
+                        "type": "string",
+                        "description": "The exact name of the destination room.",
+                    }
+                },
+                "required": ["destination"],
+            },
+        },
+    },
+}
+
+
+def get_tool_schemas(action_names: list) -> list:
+    """Tool definitions for the action names an NPC's persona grants."""
+    return [ACTION_SCHEMAS[name] for name in action_names if name in ACTION_SCHEMAS]

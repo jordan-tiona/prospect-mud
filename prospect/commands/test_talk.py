@@ -1,0 +1,134 @@
+"""
+Integration tests for the `talk` command's full pipeline (step 7):
+prompt builder -> LLM client -> tool validator -> output check ->
+narrated reply.
+
+The LLM call itself is mocked (world.llm_client.chat) so these run
+fast and deterministically, without a live Ollama server. The manual
+smoke test in world/test_llm_connection.py remains the way to confirm
+actual model connectivity.
+
+Run with:
+    evennia test commands
+"""
+
+from unittest.mock import patch
+
+from django.test import TestCase
+from evennia import create_object
+
+from world.build_npcs import build as build_npcs
+from world.build_rooms import build as build_rooms
+from world.llm_client import LLMReply, LLMUnavailableError
+
+
+def _reply(text, tool_calls=None):
+    return LLMReply(text=text, model="test-model", raw={}, tool_calls=tool_calls or [])
+
+
+class TalkCommandTests(TestCase):
+    def setUp(self):
+        rooms = build_rooms()
+        npcs = build_npcs()
+        self.cafe = rooms["corner_cafe"]
+        self.workshop = rooms["maintenance_workshop"]
+        self.mara = npcs["mara_voss"]
+        self.tarin = npcs["tarin_os"]
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=self.cafe
+        )
+        self.actor.msg = lambda text="", **kw: self.messages.append(text)
+        self.messages = []
+
+    def _talk(self, target_name, message):
+        self.actor.execute_cmd(f"talk {target_name} = {message}")
+
+    @patch("commands.talk.chat")
+    def test_ordinary_reply_shown_and_recorded_in_history(self, mock_chat):
+        mock_chat.return_value = _reply('Afternoon. What can I get you?')
+        self._talk("Mara Voss", "hello there")
+
+        self.assertTrue(any("Mara Voss says" in m for m in self.messages))
+        self.assertTrue(any("Afternoon" in m for m in self.messages))
+
+        history = self.mara.ndb.conversations[self.actor.dbref]
+        self.assertEqual(len(history), 2)
+        self.assertIn("hello there", history[0]["content"])
+        self.assertEqual(history[1]["content"], "Afternoon. What can I get you?")
+
+    @patch("commands.talk.chat")
+    def test_valid_tool_call_is_applied_and_narrated(self, mock_chat):
+        mock_chat.return_value = _reply(
+            "Here you go.", tool_calls=[{"name": "serve_drink", "arguments": {"drink_type": "hot"}}]
+        )
+        self._talk("Mara Voss", "can I get a hot drink")
+
+        self.assertTrue(any("serves" in m and "hot drink" in m for m in self.messages))
+
+    @patch("commands.talk.chat")
+    def test_invalid_tool_call_is_dropped_silently(self, mock_chat):
+        # drink_type outside the enum: validator drops it, no action
+        # narration is shown, but the spoken reply still goes through.
+        mock_chat.return_value = _reply(
+            "Sure thing.", tool_calls=[{"name": "serve_drink", "arguments": {"drink_type": "lukewarm"}}]
+        )
+        self._talk("Mara Voss", "surprise me")
+
+        self.assertTrue(any("Sure thing" in m for m in self.messages))
+        self.assertFalse(any("serves" in m for m in self.messages))
+
+    @patch("commands.talk.chat")
+    def test_action_not_granted_to_this_npc_is_dropped(self, mock_chat):
+        # Mara's persona doesn't grant hand_over_item - even if the
+        # model proposes it, it must never be applied.
+        mock_chat.return_value = _reply(
+            "Here.", tool_calls=[{"name": "hand_over_item", "arguments": {"item_type": "spare part"}}]
+        )
+        self._talk("Mara Voss", "got any spare parts?")
+
+        self.assertFalse(any("hands" in m for m in self.messages))
+
+    @patch("commands.talk.chat")
+    def test_flagged_reply_is_not_shown_to_player(self, mock_chat):
+        mock_chat.return_value = _reply("As an AI, I don't have personal opinions about coffee.")
+        self._talk("Mara Voss", "what do you think of this place")
+
+        self.assertFalse(any("As an AI" in m for m in self.messages))
+        self.assertTrue(any("loss for words" in m for m in self.messages))
+        # history lookup creates the (empty) list but a flagged reply
+        # must never be recorded into it
+        self.assertEqual(self.mara.ndb.conversations.get(self.actor.dbref), [])
+
+    @patch("commands.talk.chat")
+    def test_llm_unavailable_falls_back_gracefully(self, mock_chat):
+        mock_chat.side_effect = LLMUnavailableError("timed out")
+        self._talk("Mara Voss", "hello?")
+
+        self.assertTrue(any("doesn't answer right away" in m for m in self.messages))
+
+    @patch("commands.talk.chat")
+    def test_empty_text_with_valid_tool_call_shows_only_action(self, mock_chat):
+        # The model can propose a tool call with no accompanying text;
+        # the action's own narration should speak for itself with no
+        # separate (and misleadingly empty) "says" line.
+        mock_chat.return_value = _reply(
+            "", tool_calls=[{"name": "serve_drink", "arguments": {"drink_type": "hot"}}]
+        )
+        self._talk("Mara Voss", "hot drink please")
+
+        self.assertFalse(any("says" in m for m in self.messages))
+        self.assertTrue(any("serves" in m and "hot drink" in m for m in self.messages))
+
+    @patch("commands.talk.chat")
+    def test_empty_text_with_no_tool_calls_falls_back(self, mock_chat):
+        mock_chat.return_value = _reply("", tool_calls=[])
+        self._talk("Mara Voss", "...")
+
+        self.assertTrue(any("doesn't seem to have anything to say" in m for m in self.messages))
+
+    @patch("commands.talk.chat")
+    def test_scenery_object_rejected_before_any_llm_call(self, mock_chat):
+        # "square" is the exit back to the hub, present in Corner Cafe -
+        # a real object, but not a TalkativeNPC.
+        self._talk("square", "hello")
+        mock_chat.assert_not_called()
