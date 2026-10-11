@@ -8,6 +8,12 @@ fast and deterministically, without a live Ollama server. The manual
 smoke test in world/test_llm_connection.py remains the way to confirm
 actual model connectivity.
 
+talk.py runs the model call via deferToThread so a slow model never
+blocks the whole server. These tests replace deferToThread with a
+version that runs synchronously (using a real, already-fired Twisted
+Deferred - defer.succeed/defer.fail - so the exact same callback/
+errback chain in talk.py runs, just without needing a live reactor).
+
 Run with:
     evennia test commands
 """
@@ -16,6 +22,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from evennia import create_object
+from twisted.internet import defer
 
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
@@ -24,6 +31,14 @@ from world.llm_client import LLMReply, LLMUnavailableError
 
 def _reply(text, tool_calls=None):
     return LLMReply(text=text, model="test-model", raw={}, tool_calls=tool_calls or [])
+
+
+def _sync_defer_to_thread(fn, *args, **kwargs):
+    try:
+        result = fn(*args, **kwargs)
+    except Exception as err:  # noqa: BLE001 - mirrors deferToThread's own behavior
+        return defer.fail(err)
+    return defer.succeed(result)
 
 
 class TalkCommandTests(TestCase):
@@ -39,6 +54,10 @@ class TalkCommandTests(TestCase):
         )
         self.actor.msg = lambda text="", **kw: self.messages.append(text)
         self.messages = []
+
+        defer_patcher = patch("commands.talk.deferToThread", side_effect=_sync_defer_to_thread)
+        defer_patcher.start()
+        self.addCleanup(defer_patcher.stop)
 
     def _talk(self, target_name, message):
         self.actor.execute_cmd(f"talk {target_name} = {message}")
@@ -125,6 +144,42 @@ class TalkCommandTests(TestCase):
         self._talk("Mara Voss", "...")
 
         self.assertTrue(any("doesn't seem to have anything to say" in m for m in self.messages))
+
+    @patch("commands.talk.chat")
+    def test_emote_shown_as_separate_line_before_dialogue(self, mock_chat):
+        mock_chat.return_value = _reply("*smiles and nods* Welcome in.")
+        self._talk("Mara Voss", "hello")
+
+        emote_index = next(i for i, m in enumerate(self.messages) if m == "Mara Voss smiles and nods.")
+        dialogue_index = next(i for i, m in enumerate(self.messages) if "says" in m)
+        self.assertLess(emote_index, dialogue_index)
+        self.assertNotIn("*", self.messages[dialogue_index])
+
+    @patch("commands.talk.chat")
+    def test_dialogue_and_action_both_shown_together(self, mock_chat):
+        # When the model provides both spoken text and a tool call,
+        # the player should see the NPC say something AND see the
+        # action happen - not just a silent mechanical action.
+        mock_chat.return_value = _reply(
+            "Here you go!", tool_calls=[{"name": "serve_drink", "arguments": {"drink_type": "hot"}}]
+        )
+        self._talk("Mara Voss", "hot drink please")
+
+        self.assertTrue(any("Here you go" in m for m in self.messages))
+        self.assertTrue(any("serves" in m and "hot drink" in m for m in self.messages))
+
+    @patch("commands.talk.chat")
+    def test_player_line_echoes_before_model_call_runs(self, mock_chat):
+        # func() must send the player's own line and return *before*
+        # kicking off the model call, not after it resolves - that's
+        # what keeps a slow model from blocking the whole server and
+        # from hiding the player's own input until the reply arrives.
+        def slow_chat(*args, **kwargs):
+            self.assertIn('You say to Mara Voss, "hi"', self.messages)
+            return _reply("Hello there.")
+
+        mock_chat.side_effect = slow_chat
+        self._talk("Mara Voss", "hi")
 
     @patch("commands.talk.chat")
     def test_scenery_object_rejected_before_any_llm_call(self, mock_chat):

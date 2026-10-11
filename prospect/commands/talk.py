@@ -7,12 +7,25 @@ text is always labeled as player speech in the prompt (CLAUDE.md hard
 rule 6) and is never treated as fact. Conversation history is kept in
 memory only (ndb), lost on reload/restart - persistent memory is a
 phase 2 feature (design-bible 13.5), not built here.
+
+The model call runs in a background thread (deferToThread), not
+inline in func(): Evennia's single-threaded reactor would otherwise
+block on that multi-second network call for the *entire server*, not
+just this player, and the player's own line wouldn't even echo back
+until the reply arrived. func() does the synchronous validation and
+echoes the player's line, then returns immediately; everything that
+depends on the model's reply happens in _handle_llm_reply() once the
+deferred fires.
 """
 
+from twisted.internet.threads import deferToThread
+
+from evennia.utils import logger
 from evennia.utils.utils import inherits_from
 
 from .command import Command
 from world.actions import get_tool_schemas, validate_and_apply
+from world.emotes import format_emote, split_emotes
 from world.llm_client import LLMUnavailableError, chat
 from world.npc_profile import parse_persona
 from world.output_check import is_flagged
@@ -36,6 +49,53 @@ def _get_history(npc, actor) -> list:
 def _trim_history(history: list) -> None:
     max_messages = MAX_HISTORY_EXCHANGES * 2
     del history[:-max_messages]
+
+
+def _handle_llm_reply(reply, target, caller, history, player_message):
+    """
+    Runs once the model has responded, back on the main thread (a
+    Twisted callback always fires on the reactor thread, so this is
+    safe to touch the database from). Separated from func() so it's
+    directly unit-testable without any threading involved.
+    """
+    raw_text = reply.text.strip()
+    flagged, _reason = is_flagged(raw_text)
+    if flagged:
+        caller.msg(f"{target.key} seems momentarily at a loss for words and changes the subject.")
+        return
+
+    dialogue, emotes = split_emotes(raw_text)
+
+    if not dialogue and not emotes and not reply.tool_calls:
+        caller.msg(f"{target.key} doesn't seem to have anything to say.")
+        return
+
+    for emote in emotes:
+        caller.msg(format_emote(target.key, emote))
+
+    if dialogue:
+        caller.msg(f'{target.key} says, "{dialogue}"')
+
+    if dialogue or emotes:
+        # store the model's own words (including its *action* markup)
+        # as context for its next turn, not our reformatted display text
+        history.append(_player_turn(player_message))
+        history.append({"role": "assistant", "content": raw_text})
+        _trim_history(history)
+
+    for call in reply.tool_calls:
+        result = validate_and_apply(target, caller, call["name"], call["arguments"])
+        if result.applied:
+            caller.msg(result.narration)
+
+
+def _handle_llm_error(failure, target, caller):
+    if not failure.check(LLMUnavailableError):
+        # Not the expected failure mode - log it so it's not silently
+        # lost, but still give the player the same graceful fallback
+        # rather than a traceback.
+        logger.log_err(f"talk command: unexpected error from {target.key}: {failure}")
+    caller.msg(f"{target.key} seems distracted and doesn't answer right away. (try again in a moment)")
 
 
 class CmdTalk(Command):
@@ -93,28 +153,6 @@ class CmdTalk(Command):
 
         messages = [{"role": "system", "content": system_prompt.text}] + history + [_player_turn(self.message)]
 
-        try:
-            reply = chat(messages, tools=tools)
-        except LLMUnavailableError:
-            caller.msg(f"{target.key} seems distracted and doesn't answer right away. (try again in a moment)")
-            return
-
-        text = reply.text.strip()
-        flagged, _reason = is_flagged(text)
-        if flagged:
-            caller.msg(f"{target.key} seems momentarily at a loss for words and changes the subject.")
-            return
-
-        if text:
-            caller.msg(f'{target.key} says, "{text}"')
-            history.append(_player_turn(self.message))
-            history.append({"role": "assistant", "content": text})
-            _trim_history(history)
-        elif not reply.tool_calls:
-            caller.msg(f"{target.key} doesn't seem to have anything to say.")
-            return
-
-        for call in reply.tool_calls:
-            result = validate_and_apply(target, caller, call["name"], call["arguments"])
-            if result.applied:
-                caller.msg(result.narration)
+        deferred = deferToThread(chat, messages, tools=tools)
+        deferred.addCallback(_handle_llm_reply, target, caller, history, self.message)
+        deferred.addErrback(_handle_llm_error, target, caller)

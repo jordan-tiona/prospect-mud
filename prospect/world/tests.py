@@ -10,6 +10,7 @@ Run with:
 
 from django.test import SimpleTestCase
 
+from world.emotes import format_emote, split_emotes
 from world.lore_store import LoreNotFoundError, get_lore_chunk, get_scoped_lore
 from world.npc_profile import NPCProfile, PersonaParseError, parse_persona, parse_persona_text
 from world.output_check import is_flagged
@@ -169,3 +170,31 @@ class OutputCheckTests(SimpleTestCase):
         # it's meant to reach the player, unlike an assistant-voice leak.
         flagged, _reason = is_flagged("Cave Crawler? I run a cafe, not a mine.")
         self.assertFalse(flagged)
+
+
+class EmoteSplitTests(SimpleTestCase):
+    def test_splits_single_emote_from_dialogue(self):
+        dialogue, emotes = split_emotes('*smiles and nods* Welcome in.')
+        self.assertEqual(dialogue, "Welcome in.")
+        self.assertEqual(emotes, ["smiles and nods"])
+
+    def test_multiple_emotes_in_order(self):
+        dialogue, emotes = split_emotes("*wipes the counter* Afternoon. *smiles*")
+        self.assertEqual(dialogue, "Afternoon.")
+        self.assertEqual(emotes, ["wipes the counter", "smiles"])
+
+    def test_no_emotes_passes_through(self):
+        dialogue, emotes = split_emotes("Just ordinary speech.")
+        self.assertEqual(dialogue, "Just ordinary speech.")
+        self.assertEqual(emotes, [])
+
+    def test_emote_only_leaves_empty_dialogue(self):
+        dialogue, emotes = split_emotes("*shrugs*")
+        self.assertEqual(dialogue, "")
+        self.assertEqual(emotes, ["shrugs"])
+
+    def test_format_emote_adds_period_and_name(self):
+        self.assertEqual(format_emote("Mara Voss", "smiles and nods"), "Mara Voss smiles and nods.")
+
+    def test_format_emote_keeps_existing_punctuation(self):
+        self.assertEqual(format_emote("Mara Voss", "grins!"), "Mara Voss grins!")
