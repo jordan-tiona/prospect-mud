@@ -8,7 +8,28 @@ with a location in the game world (like Characters, Rooms, Exits).
 
 """
 
+import re
+
 from evennia.objects.objects import DefaultObject
+
+_PARAGRAPH_SPLIT_RE = re.compile(r"\n\s*\n")
+PARAGRAPH_INDENT = "    "  # four spaces - project owner's call
+
+
+def indent_paragraphs(text):
+    """Indent every paragraph (including the first) by four spaces.
+
+    Evennia's own output formatting (format_appearance's
+    compress_whitespace) collapses a blank line between paragraphs
+    down to a single line break, so a multi-paragraph desc/look text
+    would otherwise run together with no visual break at all. The
+    project owner's call: mark every paragraph with a four-space
+    indent instead of a blank line.
+    """
+    if not text:
+        return text
+    paragraphs = _PARAGRAPH_SPLIT_RE.split(text.strip())
+    return "\n".join(PARAGRAPH_INDENT + p for p in paragraphs)
 
 
 class ObjectParent:
@@ -21,6 +42,44 @@ class ObjectParent:
     take precedence.
 
     """
+
+    def format_appearance(self, appearance, looker, **kwargs):
+        # DefaultObject.format_appearance strips its block down to no
+        # leading blank line, so looking at anything (a room, an NPC,
+        # an object) runs right up against whatever the client printed
+        # before it. Project owner's call: a blank line ahead of every
+        # look/examine output so it reads as its own block.
+        return "\n" + super().format_appearance(appearance, looker, **kwargs)
+
+    def get_display_desc(self, looker, **kwargs):
+        # typeclasses.rooms.Room overrides this itself (for the
+        # glance/full-description split) and calls indent_paragraphs
+        # directly - this covers every other entity (objects, NPCs,
+        # characters) uniformly.
+        return indent_paragraphs(super().get_display_desc(looker, **kwargs))
+
+
+class RoomObject(ObjectParent, DefaultObject):
+    """
+    A static, inspectable room fixture - a sign, a corpse, a mark on
+    the wall. Not a background character (see typeclasses.npcs.NPC)
+    and not meant to be picked up.
+
+    `db.room_line` is the one-liner the room itself shows automatically
+    as part of its description (see typeclasses.rooms.Room), e.g. "A
+    symbol is gouged into the wall." `db.desc` is the longer text shown
+    on `look <object>`, same as any object; if `room_line` is left
+    unset, the room falls back to using `desc` for both.
+
+    Scenery that doesn't need its own interactive presence - and
+    nothing a player might reasonably want to inspect, per the
+    project owner's distinction - stays as plain prose in the room's
+    own `desc` instead of becoming one of these.
+    """
+
+    def at_object_creation(self):
+        super().at_object_creation()
+        self.locks.add("get:false()")
 
 
 class Object(ObjectParent, DefaultObject):

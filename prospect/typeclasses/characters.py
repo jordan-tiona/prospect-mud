@@ -21,6 +21,20 @@ class Character(ObjectParent, DefaultCharacter):
     See mygame/typeclasses/objects.py for a list of
     properties and methods available on all Object child classes like this.
 
+    Optional `db.ambient_pose` (e.g. "resting against the wall") is read
+    by typeclasses.rooms.Room to show "<name> is here, <pose>." for
+    other players present in the room, same convention as NPCs.
+
+    Overrides `at_post_move` so walking into a room shows its short
+    "glance" blurb instead of the full `look` description - the
+    project owner's call to avoid bombarding a player with a full
+    description on every step while still giving `look` the complete
+    text (typeclasses.rooms.Room.get_display_desc branches on this).
+
     """
 
-    pass
+    def at_post_move(self, source_location, move_type="move", **kwargs):
+        if self.location.access(self, "view"):
+            self.msg(text=(self.at_look(self.location, glance=True), {"type": "look"}))
+
+    at_after_move = at_post_move

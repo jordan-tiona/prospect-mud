@@ -16,7 +16,9 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 from evennia import default_cmds
 
-from commands.talk import CmdTalk
+from commands.admin import CmdForget, CmdResetCommitment, CmdResetQuest, CmdRestock
+from commands.look import CmdLook
+from commands.say import CmdSay
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
@@ -36,7 +38,12 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
-        self.add(CmdTalk())
+        self.add(CmdSay())
+        self.add(CmdLook())
+        self.add(CmdForget())
+        self.add(CmdRestock())
+        self.add(CmdResetQuest())
+        self.add(CmdResetCommitment())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

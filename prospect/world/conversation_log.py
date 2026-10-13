@@ -81,3 +81,97 @@ def log_turn(
     target_path.parent.mkdir(parents=True, exist_ok=True)
     with target_path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def log_quest_reset(
+    *,
+    quest_key: str,
+    previous_state: str,
+    actor_key: str,
+    actor_dbref: str,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    Append a marker record for a `resetquest` command (see
+    commands/admin.py's CmdResetQuest) - a human resetting a player's
+    quest progress mid-test. Distinguished from `log_reset`'s "forget"
+    event (which clears conversation history, not quest state) by its
+    own `"event": "quest_reset"`.
+    """
+    record = {
+        "event": "quest_reset",
+        "timestamp": _now_iso(),
+        "quest_key": quest_key,
+        "previous_state": previous_state,
+        "actor_key": actor_key,
+        "actor_dbref": actor_dbref,
+    }
+
+    target_path = path or DEFAULT_LOG_PATH
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with target_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def log_commitment_reset(
+    *,
+    commitment_type: str,
+    had_offer: bool,
+    previous_statuses: list,
+    actor_key: str,
+    actor_dbref: str,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    Append a marker record for a `resetcommitment` command (see
+    commands/admin.py's CmdResetCommitment) - a human clearing a
+    player's commitment progress mid-test. Distinguished from
+    `log_quest_reset`'s "quest_reset" event (a different, older
+    per-player state machine) by its own `"event": "commitment_reset"`.
+    """
+    record = {
+        "event": "commitment_reset",
+        "timestamp": _now_iso(),
+        "commitment_type": commitment_type,
+        "had_offer": had_offer,
+        "previous_statuses": previous_statuses,
+        "actor_key": actor_key,
+        "actor_dbref": actor_dbref,
+    }
+
+    target_path = path or DEFAULT_LOG_PATH
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with target_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def log_reset(
+    *,
+    conversation_id: Optional[str],
+    npc_id: str,
+    actor_key: str,
+    actor_dbref: str,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    Append a marker record for a `forget` command (see commands/admin.py's
+    CmdForget) - a human clearing an NPC's conversation history mid-test.
+    Logged in the same file as regular turns, distinguished by
+    `"event": "forget"`, so a reviewer scanning the log can tell exactly
+    where a conversation was deliberately reset rather than mistake a
+    sudden change in tool-call behavior for something the model did on
+    its own.
+    """
+    record = {
+        "event": "forget",
+        "conversation_id": conversation_id,
+        "timestamp": _now_iso(),
+        "npc_id": npc_id,
+        "actor_key": actor_key,
+        "actor_dbref": actor_dbref,
+    }
+
+    target_path = path or DEFAULT_LOG_PATH
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with target_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")

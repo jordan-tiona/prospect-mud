@@ -12,8 +12,11 @@ room *role* (not invented prose) until the project owner authors real
 descriptions.
 
 The hub-and-spoke exit topology is an inference, not settled canon: the
-bible gives each room a role but no map. Flagged in CLAUDE.md-facing
-docs as a to-revise item.
+bible gives each room a role but no map. Exits use standard MUD
+cardinal directions (north/south/east/west) plus up/down (see SPOKES
+below for the compass arrangement and why the Lift Concourse sits on
+up/down instead) - the project owner's preferred movement style over
+this builder's original named-exit scheme (cafe/workshop/square/etc).
 
 Idempotent: safe to re-run. Existing rooms/exits (matched by tag) are
 left alone rather than duplicated.
@@ -72,16 +75,20 @@ HUB = "old_quarter_square"
 
 # (spoke_tag, exit key/aliases from hub -> spoke, exit key/aliases from spoke -> hub)
 #
-# Exit keys and aliases are short words and must never exactly match any
-# room's own key: @tel and other key/alias-based lookups search globally
-# across rooms and exits together, so an exit named (or aliased) exactly
-# "Old Quarter Square" collides with the room of that name.
+# Standard MUD cardinal-direction movement (plus up/down), per the
+# project owner's choice over the hub's own named-exit scheme this
+# replaced. The compass arrangement itself is arbitrary - the bible
+# gives each room a role but no map - except the Lift Concourse, which
+# is placed on up/down rather than a compass point since it's the
+# arrival point from the axial dock-to-rim elevator (design bible
+# 13.6): "up" toward the lift reads naturally next to the other four
+# ground-level spokes.
 SPOKES = [
-    ("lift_concourse", ("lift", ["concourse"]), ("square", ["quarter"])),
-    ("corner_cafe", ("cafe", ["corner"]), ("square", ["quarter"])),
-    ("maintenance_workshop", ("workshop", ["maintenance"]), ("square", ["quarter"])),
-    ("residential_courtyard", ("courtyard", ["residential"]), ("square", ["quarter"])),
-    ("civic_office", ("office", ["civic"]), ("square", ["quarter"])),
+    ("lift_concourse", ("up", ["u"]), ("down", ["d"])),
+    ("corner_cafe", ("north", ["n"]), ("south", ["s"])),
+    ("maintenance_workshop", ("east", ["e"]), ("west", ["w"])),
+    ("residential_courtyard", ("south", ["s"]), ("north", ["n"])),
+    ("civic_office", ("west", ["w"]), ("east", ["e"])),
 ]
 
 

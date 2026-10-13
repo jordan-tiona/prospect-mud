@@ -13,7 +13,7 @@ from pathlib import Path
 
 from django.test import SimpleTestCase
 
-from world.conversation_log import log_turn
+from world.conversation_log import log_quest_reset, log_reset, log_turn
 
 
 class ConversationLogTests(SimpleTestCase):
@@ -85,3 +85,122 @@ class ConversationLogTests(SimpleTestCase):
         record = self._read_records()[0]
         self.assertIsNone(record["npc_response"])
         self.assertEqual(record["flag_reason"], "llm_unavailable")
+
+
+class ConversationResetLogTests(SimpleTestCase):
+    """
+    log_reset() marks a `forget` command in the same file as regular
+    turns (commands/admin.py's CmdForget), so a reviewer scanning the
+    log can tell a sudden change in behavior was a deliberate reset,
+    not something the model did on its own.
+    """
+
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self.log_path = Path(self._tmpdir.name) / "conversations.jsonl"
+
+    def _read_records(self):
+        with self.log_path.open(encoding="utf-8") as f:
+            return [json.loads(line) for line in f]
+
+    def test_writes_a_forget_event_record(self):
+        log_reset(
+            conversation_id="conv-1",
+            npc_id="mara_voss",
+            actor_key="Tester",
+            actor_dbref="#1",
+            path=self.log_path,
+        )
+        records = self._read_records()
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["event"], "forget")
+        self.assertEqual(records[0]["conversation_id"], "conv-1")
+        self.assertEqual(records[0]["npc_id"], "mara_voss")
+        self.assertEqual(records[0]["actor_key"], "Tester")
+        self.assertEqual(records[0]["actor_dbref"], "#1")
+
+    def test_appends_alongside_regular_turns(self):
+        log_turn(
+            conversation_id="conv-1",
+            turn_id=1,
+            npc_id="mara_voss",
+            location="Corner Cafe",
+            actor_key="Tester",
+            actor_dbref="#1",
+            player_message="hello",
+            prompt_messages=[],
+            model="qwen3:14b",
+            prompt_version="1",
+            npc_response="hi",
+            tool_calls=[],
+            flagged=False,
+            path=self.log_path,
+        )
+        log_reset(
+            conversation_id="conv-1",
+            npc_id="mara_voss",
+            actor_key="Tester",
+            actor_dbref="#1",
+            path=self.log_path,
+        )
+        records = self._read_records()
+        self.assertEqual(len(records), 2)
+        self.assertNotIn("event", records[0])
+        self.assertEqual(records[1]["event"], "forget")
+
+
+class QuestResetLogTests(SimpleTestCase):
+    def setUp(self):
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmpdir.cleanup)
+        self.log_path = Path(self._tmpdir.name) / "conversations.jsonl"
+
+    def _read_records(self):
+        with self.log_path.open(encoding="utf-8") as f:
+            return [json.loads(line) for line in f]
+
+    def test_writes_a_quest_reset_event_record(self):
+        log_quest_reset(
+            quest_key="quest_module_exchange",
+            previous_state="has_faulty_module",
+            actor_key="Tester",
+            actor_dbref="#1",
+            path=self.log_path,
+        )
+        records = self._read_records()
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["event"], "quest_reset")
+        self.assertEqual(records[0]["quest_key"], "quest_module_exchange")
+        self.assertEqual(records[0]["previous_state"], "has_faulty_module")
+        self.assertEqual(records[0]["actor_key"], "Tester")
+        self.assertEqual(records[0]["actor_dbref"], "#1")
+
+    def test_appends_alongside_regular_turns(self):
+        log_turn(
+            conversation_id="conv-1",
+            turn_id=1,
+            npc_id="mara_voss",
+            location="Corner Cafe",
+            actor_key="Tester",
+            actor_dbref="#1",
+            player_message="hello",
+            prompt_messages=[],
+            model="qwen3:14b",
+            prompt_version="1",
+            npc_response="hi",
+            tool_calls=[],
+            flagged=False,
+            path=self.log_path,
+        )
+        log_quest_reset(
+            quest_key="quest_module_exchange",
+            previous_state="accepted",
+            actor_key="Tester",
+            actor_dbref="#1",
+            path=self.log_path,
+        )
+        records = self._read_records()
+        self.assertEqual(len(records), 2)
+        self.assertNotIn("event", records[0])
+        self.assertEqual(records[1]["event"], "quest_reset")

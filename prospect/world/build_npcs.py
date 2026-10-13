@@ -20,10 +20,13 @@ from world.build_rooms import BUILD_TAG_CATEGORY as ROOM_TAG_CATEGORY
 NPC_TAG_CATEGORY = "phase1_npcs"
 
 # (npc_id, display name, room tag from world.build_rooms.ROOMS)
+# The first name is added as an alias so players can address the NPC
+# by it alone (e.g. "say to Mara, ...") - see world.npc_addressing.
 NPCS = [
     ("mara_voss", "Mara Voss", "corner_cafe"),
     ("tarin_os", "Tarin Os", "maintenance_workshop"),
     ("iri_vael", "Iri Vael", "civic_office"),
+    ("veska_renn", "Veska Renn", "civic_office"),
 ]
 
 
@@ -42,11 +45,16 @@ def _get_or_create_npc(npc_id, name, room):
         npc = matches[0]
         if npc.location != room:
             npc.move_to(room, quiet=True)
+        first_name = name.split()[0]
+        if first_name not in npc.aliases.all():
+            npc.aliases.add(first_name)
         return npc
 
     npc = create_object("typeclasses.npcs.TalkativeNPC", key=name, location=room)
     npc.db.npc_id = npc_id
     npc.tags.add(npc_id, category=NPC_TAG_CATEGORY)
+    first_name = name.split()[0]
+    npc.aliases.add(first_name)
     return npc
 
 

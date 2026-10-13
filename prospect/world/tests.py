@@ -10,13 +10,13 @@ Run with:
 
 from django.test import SimpleTestCase
 
-from world.emotes import format_emote, split_emotes
+from world.emotes import format_emote, parse_reply
 from world.lore_store import LoreNotFoundError, get_lore_chunk, get_scoped_lore
 from world.npc_profile import NPCProfile, PersonaParseError, parse_persona, parse_persona_text
 from world.output_check import is_flagged
 from world.prompt_builder import build_system_prompt
 
-ALL_NPC_IDS = ["mara_voss", "tarin_os", "iri_vael"]
+ALL_NPC_IDS = ["mara_voss", "tarin_os", "iri_vael", "veska_renn"]
 
 VALID_PERSONA_TEXT = """# Test NPC
 
@@ -24,6 +24,7 @@ VALID_PERSONA_TEXT = """# Test NPC
 npc_id: test_npc
 room: Test Room
 species: Kethari
+pronouns: they/them
 prompt_version: 3
 knowledge_scope (bible sections, Established content only):
   11.2.1, 5.8
@@ -42,6 +43,7 @@ class ParsePersonaTextTests(SimpleTestCase):
         self.assertEqual(profile.prompt_version, "3")
         self.assertEqual(profile.knowledge_scope, ["11.2.1", "5.8"])
         self.assertEqual(profile.actions, ["test_action", "another_action"])
+        self.assertEqual(profile.pronouns, "they/them")
 
     def test_strips_html_comments_from_body(self):
         profile = parse_persona_text("test_npc", VALID_PERSONA_TEXT)
@@ -62,6 +64,31 @@ class ParsePersonaTextTests(SimpleTestCase):
         with self.assertRaises(PersonaParseError):
             parse_persona_text("different_id", VALID_PERSONA_TEXT)
 
+    def test_max_reply_tokens_defaults_to_none(self):
+        profile = parse_persona_text("test_npc", VALID_PERSONA_TEXT)
+        self.assertIsNone(profile.max_reply_tokens)
+
+    def test_max_reply_tokens_parsed_when_present(self):
+        with_cap = VALID_PERSONA_TEXT.replace(
+            "actions: test_action, another_action\n",
+            "actions: test_action, another_action\nmax_reply_tokens: 90\n",
+        )
+        profile = parse_persona_text("test_npc", with_cap)
+        self.assertEqual(profile.max_reply_tokens, 90)
+
+    def test_non_numeric_max_reply_tokens_raises(self):
+        broken = VALID_PERSONA_TEXT.replace(
+            "actions: test_action, another_action\n",
+            "actions: test_action, another_action\nmax_reply_tokens: a lot\n",
+        )
+        with self.assertRaises(PersonaParseError):
+            parse_persona_text("test_npc", broken)
+
+    def test_missing_pronouns_raises(self):
+        broken = VALID_PERSONA_TEXT.replace("pronouns: they/them\n", "")
+        with self.assertRaises(PersonaParseError):
+            parse_persona_text("test_npc", broken)
+
 
 class RealPersonaFileTests(SimpleTestCase):
     """Parses the actual authored persona files in content/npcs/."""
@@ -75,6 +102,8 @@ class RealPersonaFileTests(SimpleTestCase):
             self.assertTrue(profile.knowledge_scope)
             self.assertTrue(profile.actions)
             self.assertNotIn("<!--", profile.body)
+            self.assertIsInstance(profile.max_reply_tokens, int)
+            self.assertTrue(profile.pronouns)
 
 
 class LoreStoreTests(SimpleTestCase):
@@ -117,6 +146,22 @@ class PromptBuilderTests(SimpleTestCase):
         self.assertLess(common_knowledge_pos, shared_rules_pos)
         self.assertLess(shared_rules_pos, persona_pos)
         self.assertLess(persona_pos, lore_pos)
+
+    def test_pronouns_appear_after_persona(self):
+        prompt = build_system_prompt("mara_voss").text
+        persona_pos = prompt.index("You are Mara Voss")
+        pronoun_pos = prompt.index("Your pronouns are she/her")
+        self.assertLess(persona_pos, pronoun_pos)
+
+    def test_pronouns_match_each_npcs_own_profile(self):
+        for npc_id, expected in [
+            ("mara_voss", "she/her"),
+            ("tarin_os", "he/him"),
+            ("iri_vael", "she/her"),
+            ("veska_renn", "she/her"),
+        ]:
+            prompt = build_system_prompt(npc_id).text
+            self.assertIn(f"Your pronouns are {expected}", prompt)
 
     def test_no_html_comments_reach_the_prompt(self):
         for npc_id in ALL_NPC_IDS:
@@ -174,27 +219,64 @@ class OutputCheckTests(SimpleTestCase):
 
 class EmoteSplitTests(SimpleTestCase):
     def test_splits_single_emote_from_dialogue(self):
-        dialogue, emotes = split_emotes('*smiles and nods* Welcome in.')
-        self.assertEqual(dialogue, "Welcome in.")
-        self.assertEqual(emotes, ["smiles and nods"])
+        self.assertEqual(
+            parse_reply('*smiles and nods* Welcome in.'),
+            [("emote", "smiles and nods"), ("dialogue", "Welcome in.")],
+        )
 
     def test_multiple_emotes_in_order(self):
-        dialogue, emotes = split_emotes("*wipes the counter* Afternoon. *smiles*")
-        self.assertEqual(dialogue, "Afternoon.")
-        self.assertEqual(emotes, ["wipes the counter", "smiles"])
+        self.assertEqual(
+            parse_reply("*wipes the counter* Afternoon. *smiles*"),
+            [("emote", "wipes the counter"), ("dialogue", "Afternoon."), ("emote", "smiles")],
+        )
 
     def test_no_emotes_passes_through(self):
-        dialogue, emotes = split_emotes("Just ordinary speech.")
-        self.assertEqual(dialogue, "Just ordinary speech.")
-        self.assertEqual(emotes, [])
+        self.assertEqual(parse_reply("Just ordinary speech."), [("dialogue", "Just ordinary speech.")])
 
-    def test_emote_only_leaves_empty_dialogue(self):
-        dialogue, emotes = split_emotes("*shrugs*")
-        self.assertEqual(dialogue, "")
-        self.assertEqual(emotes, ["shrugs"])
+    def test_emote_only_leaves_no_dialogue_segment(self):
+        self.assertEqual(parse_reply("*shrugs*"), [("emote", "shrugs")])
+
+    def test_action_splits_dialogue_into_two_segments(self):
+        # the project owner's preferred pattern: dialogue - action -
+        # dialogue, rendered as three separate lines rather than every
+        # action collapsing to the front of the reply.
+        text = '"Well, you\'ve come to the right place." *leans against the counter* "I\'ve got a front-row seat."'
+        self.assertEqual(
+            parse_reply(text),
+            [
+                ("dialogue", "Well, you've come to the right place."),
+                ("emote", "leans against the counter"),
+                ("dialogue", "I've got a front-row seat."),
+            ],
+        )
 
     def test_format_emote_adds_period_and_name(self):
-        self.assertEqual(format_emote("Mara Voss", "smiles and nods"), "Mara Voss smiles and nods.")
+        self.assertEqual(
+            format_emote("Mara Voss", "smiles and nods"), "|xMara Voss smiles and nods.|n"
+        )
 
     def test_format_emote_keeps_existing_punctuation(self):
-        self.assertEqual(format_emote("Mara Voss", "grins!"), "Mara Voss grins!")
+        self.assertEqual(format_emote("Mara Voss", "grins!"), "|xMara Voss grins!|n")
+
+    def test_format_emote_fixes_first_person_pronouns(self):
+        self.assertEqual(
+            format_emote("Mara Voss", "wipes my hands on a towel", pronouns="she/her"),
+            "|xMara Voss wipes her hands on a towel.|n",
+        )
+
+    def test_format_emote_fixes_i_me_myself(self):
+        self.assertEqual(
+            format_emote("Tarin Os", "I catch myself and steady me", pronouns="he/him"),
+            "|xTarin Os He catch himself and steady him.|n",
+        )
+
+    def test_format_emote_with_no_pronouns_given_is_unchanged(self):
+        self.assertEqual(
+            format_emote("Mara Voss", "wipes my hands"), "|xMara Voss wipes my hands.|n"
+        )
+
+    def test_format_emote_with_unrecognized_pronouns_is_unchanged(self):
+        self.assertEqual(
+            format_emote("Iri Vael", "adjusts my badge", pronouns="xe/xem"),
+            "|xIri Vael adjusts my badge.|n",
+        )

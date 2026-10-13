@@ -35,7 +35,7 @@ In scope:
 
 - Six rooms on Elsewhere (bible 13.6): Lift Concourse, Old Quarter Square, Corner Café, Maintenance Workshop, Residential Courtyard, Civic Office.
 - Three LLM NPCs (bible 14.6): Mara Voss, Tarin Os, Iri Vael. Ambient characters are static description only, no LLM.
-- A `talk` command (or equivalent) that clearly distinguishes talk-capable NPCs from scenery.
+- NPC addressing via the `say` command (bible 16.4): explicit naming, or implicit when exactly one player and one talk-capable NPC share a room, clearly distinguishes talk-capable NPCs from scenery.
 - Prompt builder: persona + common-knowledge sheet + scoped lore.
 - Tool layer with **one simple validated action per NPC** (e.g. serving an item, handing over a part).
 - Output check for out-of-character/offensive replies (a simple filter is fine at first).
@@ -58,6 +58,8 @@ content/npcs/<npc_id>.md      # persona, knowledge scope, permitted actions
 Each NPC prompt is assembled in this order: common-knowledge sheet → shared rules → persona file → scoped lore → conversation. Persona files begin with an HTML comment holding machine-readable metadata (`npc_id`, `room`, `prompt_version`, `knowledge_scope`, `actions`); parse it, and strip **all** HTML comments from content files before sending them to the model. `TODO(lore)` notes for the project owner live inside HTML comments, so they never reach a prompt.
 
 If a content file doesn't exist yet, use a clearly marked stub and tell me, rather than writing the content.
+
+Personas and lore (personality, voice, knowledge, setting content) are authored by the project owner. The `## Actions` section of a persona file, and the tool-calling rules in `content/npc-shared-rules.md`, are different: they describe engine mechanics in prompt form, which is implementation work. Before writing or editing either, check **`docs/npc-action-prompt-guidelines.md`** for prompt-wording pitfalls found during playtesting — they recur with every new action regardless of model.
 
 ## Working style
 

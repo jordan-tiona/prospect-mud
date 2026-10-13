@@ -1,0 +1,18 @@
+{
+	"nodes":[
+		{"id":"lift_concourse","type":"text","text":"## [[maps/rooms/lift_concourse|Lift Concourse]]\n\n[[content/rooms/lift_concourse|Room file]]\n\n**Ambient NPCs:** [[content/ambient/npcs/concourse_otheryn_courier|An Otheryn courier]]\n\n**Objects:** [[content/ambient/objects/concourse_arrival_directory|Arrival directory]]","x":560,"y":-400,"width":360,"height":220,"color":"5"},
+		{"id":"old_quarter_square","type":"text","text":"## [[maps/rooms/old_quarter_square|Old Quarter Square]]\n\n[[content/rooms/old_quarter_square|Room file]]\n\n**Ambient NPCs:** [[content/ambient/npcs/square_elderly_kethari|An elderly Kethari]]\n\n**Objects:** [[content/ambient/objects/square_noticeboard|Public notice board]]","x":0,"y":0,"width":360,"height":220,"color":"5"},
+		{"id":"corner_cafe","type":"text","text":"## [[maps/rooms/corner_cafe|Corner Cafe]]\n\n[[content/rooms/corner_cafe|Room file]]\n\n**NPCs:** [[content/npcs/mara_voss|Mara Voss]]","x":0,"y":-400,"width":360,"height":220,"color":"5"},
+		{"id":"maintenance_workshop","type":"text","text":"## [[maps/rooms/maintenance_workshop|Maintenance Workshop]]\n\n[[content/rooms/maintenance_workshop|Room file]]\n\n**NPCs:** [[content/npcs/tarin_os|Tarin Os]]\n\n**Objects:** [[content/ambient/objects/workshop_parts_tray|Parts tray]]","x":560,"y":0,"width":360,"height":220,"color":"5"},
+		{"id":"residential_courtyard","type":"text","text":"## [[maps/rooms/residential_courtyard|Residential Courtyard]]\n\n[[content/rooms/residential_courtyard|Room file]]\n\n**Ambient NPCs:** [[content/ambient/npcs/courtyard_neshyr_neighbor|A Neshyr neighbor]]","x":0,"y":460,"width":360,"height":220,"color":"5"},
+		{"id":"civic_office","type":"text","text":"## [[maps/rooms/civic_office|Civic Office]]\n\n[[content/rooms/civic_office|Room file]]\n\n**NPCs:** [[content/npcs/iri_vael|Iri Vael]]\n\n**Objects:** [[content/ambient/objects/civic_services_board|Public services board]]","x":-560,"y":0,"width":360,"height":220,"color":"5"},
+		{"id":"legend","type":"text","x":-560,"y":-400,"width":360,"height":260,"text":"## Elsewhere\n\nRoom titles open generated navigation notes. Room file links open authored content.\n\nExit labels: outward from the hub / return. Placement is schematic.\n\nBuilder data, not live game state.\n\n[[maps/README|Map guide and regeneration]]"}
+	],
+	"edges":[
+		{"id":"exit_lift_concourse","fromNode":"old_quarter_square","toNode":"lift_concourse","fromSide":"right","toSide":"bottom","fromEnd":"arrow","toEnd":"arrow","label":"up / down"},
+		{"id":"exit_corner_cafe","fromNode":"old_quarter_square","toNode":"corner_cafe","fromSide":"top","toSide":"bottom","fromEnd":"arrow","toEnd":"arrow","label":"north / south"},
+		{"id":"exit_maintenance_workshop","fromNode":"old_quarter_square","toNode":"maintenance_workshop","fromSide":"right","toSide":"left","fromEnd":"arrow","toEnd":"arrow","label":"east / west"},
+		{"id":"exit_residential_courtyard","fromNode":"old_quarter_square","toNode":"residential_courtyard","fromSide":"bottom","toSide":"top","fromEnd":"arrow","toEnd":"arrow","label":"south / north"},
+		{"id":"exit_civic_office","fromNode":"old_quarter_square","toNode":"civic_office","fromSide":"left","toSide":"right","fromEnd":"arrow","toEnd":"arrow","label":"west / east"}
+	]
+}

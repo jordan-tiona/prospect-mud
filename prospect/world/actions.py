@@ -18,6 +18,12 @@ from dataclasses import dataclass
 
 from world.build_rooms import BUILD_TAG_CATEGORY as ROOM_TAG_CATEGORY
 from world.build_rooms import ROOMS as NEIGHBORHOOD_ROOMS
+from world.commitments import SCENARIOS
+from world.commitments import accept_commitment as _accept_commitment
+from world.commitments import decline_commitment as _decline_commitment
+from world.commitments import fulfill_commitment as _fulfill_commitment
+from world.commitments import propose_commitment as _propose_commitment
+from world.commitments import record_acknowledgment as _record_acknowledgment
 from world.npc_profile import parse_persona
 
 
@@ -67,6 +73,14 @@ def _validate_serve_drink(npc, actor, arguments: dict) -> ActionResult:
     return ActionResult(True, f"{npc.key} serves {actor.key} a {drink_type} drink.")
 
 
+# Starting stock for a hand_over_item NPC (currently just Tarin). Also
+# used by commands/admin.py's builder-only `restock` testing command,
+# since a finite stock that never refills makes repeated testing run
+# dry - there's no in-fiction restocking action (phase 1 keeps each
+# NPC to one action, per CLAUDE.md), just this manual admin reset.
+DEFAULT_STOCK = {"spare part": 3, "hand tool": 3}
+
+
 def _validate_hand_over_item(npc, actor, arguments: dict) -> ActionResult:
     item_type = arguments.get("item_type")
     if item_type not in ("spare part", "hand tool"):
@@ -74,7 +88,7 @@ def _validate_hand_over_item(npc, actor, arguments: dict) -> ActionResult:
 
     stock = npc.db.stock
     if stock is None:
-        stock = {"spare part": 3, "hand tool": 3}
+        stock = dict(DEFAULT_STOCK)
 
     if stock.get(item_type, 0) <= 0:
         npc.db.stock = stock
@@ -83,6 +97,192 @@ def _validate_hand_over_item(npc, actor, arguments: dict) -> ActionResult:
     stock[item_type] -= 1
     npc.db.stock = stock
     return ActionResult(True, f"{npc.key} hands {actor.key} a {item_type}.")
+
+
+# Phase 2's first quest (design-bible 13.5; docs/phase2-quest-prototype-
+# design.md): Mara's heating unit needs a faulty module taken to Tarin
+# and swapped for a working one. State lives on the *player* (`actor`),
+# not either NPC, since it's the player's errand - and on `db`, not
+# `ndb`, since unlike phase 1's conversation history this is meant to
+# survive a reload (design-bible 13.5's "persistent per-player memory"
+# half of phase 2, not just "a simple quest").
+QUEST_MODULE_EXCHANGE_KEY = "quest_module_exchange"
+QUEST_MODULE_EXCHANGE_STATES = (
+    "not_started",
+    "accepted",
+    "has_faulty_module",
+    "has_replacement_module",
+    "completed",
+)
+
+
+def get_quest_state(actor) -> str:
+    return actor.attributes.get(QUEST_MODULE_EXCHANGE_KEY, default="not_started")
+
+
+def _set_quest_state(actor, state: str) -> None:
+    actor.attributes.add(QUEST_MODULE_EXCHANGE_KEY, state)
+
+
+def _validate_quest_step(actor, required_state: str, next_state: str, narration: str) -> ActionResult:
+    """
+    Shared precondition check for every module-exchange step: each one
+    only fires from its own required prior state, so a repeated or
+    out-of-order call (the player asking twice, or asking Tarin before
+    ever visiting Mara) is dropped rather than silently re-applied or
+    skipped ahead.
+    """
+    state = get_quest_state(actor)
+    if state != required_state:
+        return ActionResult(
+            False, "", reason=f"quest step requires state {required_state!r}, actor is at {state!r}"
+        )
+    _set_quest_state(actor, next_state)
+    return ActionResult(True, narration)
+
+
+def _validate_accept_help(npc, actor, arguments: dict) -> ActionResult:
+    return _validate_quest_step(
+        actor, "not_started", "accepted", f"{npc.key} agrees to let {actor.key} help with the heating unit."
+    )
+
+
+def _validate_give_faulty_module(npc, actor, arguments: dict) -> ActionResult:
+    return _validate_quest_step(
+        actor,
+        "accepted",
+        "has_faulty_module",
+        f"{npc.key} hands {actor.key} the faulty temperature-control module.",
+    )
+
+
+def _validate_exchange_module(npc, actor, arguments: dict) -> ActionResult:
+    return _validate_quest_step(
+        actor,
+        "has_faulty_module",
+        "has_replacement_module",
+        f"{npc.key} inspects the module and hands {actor.key} a working replacement.",
+    )
+
+
+def _validate_accept_replacement(npc, actor, arguments: dict) -> ActionResult:
+    return _validate_quest_step(
+        actor,
+        "has_replacement_module",
+        "completed",
+        f"{npc.key} takes the replacement module from {actor.key} and thanks them.",
+    )
+
+
+# Which actions touch the module-exchange quest, so the prompt-builder
+# step (commands/say.py's engage_npc) knows which NPCs need the
+# player's current quest state injected as fresh, per-turn context -
+# engine truth the NPC reacts to, not something it has to remember
+# correctly from its own conversation history.
+QUEST_MODULE_EXCHANGE_ACTIONS = {
+    "accept_help",
+    "give_faulty_module",
+    "exchange_module",
+    "accept_replacement",
+}
+
+
+# Which quest states each action's own NPC actually has a reason to
+# know, per CLAUDE.md hard rule 5 (each NPC sees only its own
+# knowledge scope). Mara's actions span the whole errand (she's the
+# one who proposes it and takes the replacement back); Tarin only
+# becomes a party to it once the module physically reaches him -
+# his persona already claims no knowledge of the earlier stages, so
+# the engine state fed to him shouldn't contradict that.
+QUEST_STATE_VISIBILITY = {
+    "accept_help": {"not_started", "accepted"},
+    "give_faulty_module": {"accepted", "has_faulty_module"},
+    "accept_replacement": {"has_replacement_module", "completed"},
+    "exchange_module": {"has_faulty_module", "has_replacement_module"},
+}
+
+
+def quest_context_for(npc_actions: list, actor) -> str | None:
+    """
+    A one-line system message giving an NPC the player's actual
+    module-exchange quest state, or None if this NPC has no quest
+    action at all (most NPCs, and all of phase 1's cast before this
+    quest existed). The persona file's own wording is responsible for
+    explaining what each state means and when its action is valid -
+    this just supplies the raw fact every turn, fresh, so a stale or
+    mistaken belief from earlier in the conversation can never override
+    what the engine actually recorded. Scoped per-NPC via
+    QUEST_STATE_VISIBILITY above, so an NPC whose own actions don't
+    cover the current state learns only that it isn't their concern
+    yet, not the actual value.
+    """
+    relevant_actions = QUEST_MODULE_EXCHANGE_ACTIONS & set(npc_actions)
+    if not relevant_actions:
+        return None
+
+    state = get_quest_state(actor)
+    visible_states = set()
+    for action in relevant_actions:
+        visible_states |= QUEST_STATE_VISIBILITY.get(action, set())
+
+    if state in visible_states:
+        return f"Engine state for the heating-unit module errand with this player: {state!r}."
+    return (
+        "Engine state for the heating-unit module errand with this player: "
+        "not yet at a stage that involves you."
+    )
+
+
+# Phase 2B's generalized commitment prototype (docs/phase2b-records-
+# discrepancy-proposal.md): unlike the module-exchange quest above,
+# these four actions are generic - any NPC granted one of them plays
+# whichever role (holder or clerk) world.commitments.SCENARIOS says
+# its npc_id has for the given commitment_type. The model names the
+# commitment_type; it never gets to choose its own role.
+
+
+def _validate_propose_commitment(npc, actor, arguments: dict) -> ActionResult:
+    commitment_type = arguments.get("commitment_type")
+    result = _propose_commitment(actor, commitment_type)
+    if not result.ok:
+        return ActionResult(False, "", reason=result.reason)
+    return ActionResult(True, f"{npc.key} brings the matter up and offers it to {actor.key}.")
+
+
+def _validate_accept_commitment(npc, actor, arguments: dict) -> ActionResult:
+    commitment_type = arguments.get("commitment_type")
+    result = _accept_commitment(actor, commitment_type)
+    if not result.ok:
+        return ActionResult(False, "", reason=result.reason)
+    return ActionResult(True, f"{npc.key} takes {actor.key} up on the offer to help.")
+
+
+def _validate_decline_commitment(npc, actor, arguments: dict) -> ActionResult:
+    commitment_type = arguments.get("commitment_type")
+    result = _decline_commitment(actor, commitment_type)
+    if not result.ok:
+        return ActionResult(False, "", reason=result.reason)
+    return ActionResult(True, f"{npc.key} accepts that {actor.key} isn't able to help with this.")
+
+
+def _validate_report_commitment_outcome(npc, actor, arguments: dict) -> ActionResult:
+    commitment_type = arguments.get("commitment_type")
+    scenario = SCENARIOS.get(commitment_type)
+    if scenario is None:
+        return ActionResult(False, "", reason=f"unknown commitment_type: {commitment_type!r}")
+
+    npc_id = npc.db.npc_id
+    if npc_id == scenario.clerk_npc_id:
+        result = _record_acknowledgment(actor, commitment_type, npc_id)
+        if not result.ok:
+            return ActionResult(False, "", reason=result.reason)
+        return ActionResult(True, f"{npc.key} records {actor.key}'s report.")
+    if npc_id == scenario.holder_npc_id:
+        result = _fulfill_commitment(actor, commitment_type, npc_id)
+        if not result.ok:
+            return ActionResult(False, "", reason=result.reason)
+        return ActionResult(True, f"{npc.key} confirms the report is on record and considers it settled.")
+    return ActionResult(False, "", reason=f"{npc_id!r} has no role in commitment_type {commitment_type!r}")
 
 
 def _find_neighborhood_room(destination_name: str):
@@ -155,6 +355,14 @@ _ACTION_VALIDATORS = {
     "serve_drink": _validate_serve_drink,
     "hand_over_item": _validate_hand_over_item,
     "give_directions": _validate_give_directions,
+    "accept_help": _validate_accept_help,
+    "give_faulty_module": _validate_give_faulty_module,
+    "exchange_module": _validate_exchange_module,
+    "accept_replacement": _validate_accept_replacement,
+    "propose_commitment": _validate_propose_commitment,
+    "accept_commitment": _validate_accept_commitment,
+    "decline_commitment": _validate_decline_commitment,
+    "report_commitment_outcome": _validate_report_commitment_outcome,
 }
 
 
@@ -219,6 +427,180 @@ ACTION_SCHEMAS = {
                     }
                 },
                 "required": ["destination"],
+            },
+        },
+    },
+    "accept_help": {
+        "type": "function",
+        "function": {
+            "name": "accept_help",
+            "description": (
+                "Agree to let the player help with the broken heating unit. Call "
+                "this with confirmed=true the moment you agree, before handing "
+                "over anything - it records the commitment itself, separately "
+                "from physically giving them the module."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Set to true to confirm you're agreeing to accept their help, not just discussing it.",
+                    }
+                },
+                "required": ["confirmed"],
+            },
+        },
+    },
+    "give_faulty_module": {
+        "type": "function",
+        "function": {
+            "name": "give_faulty_module",
+            "description": (
+                "Hand the player the faulty temperature-control module, once "
+                "they've agreed to help. Call with confirmed=true."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Set to true to confirm you're handing over the module, not just talking about it.",
+                    }
+                },
+                "required": ["confirmed"],
+            },
+        },
+    },
+    "exchange_module": {
+        "type": "function",
+        "function": {
+            "name": "exchange_module",
+            "description": (
+                "Take the faulty temperature-control module the player brought, and hand "
+                "them back a working replacement. Call with confirmed=true."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Set to true to confirm you're doing the swap, not just talking about it.",
+                    }
+                },
+                "required": ["confirmed"],
+            },
+        },
+    },
+    "accept_replacement": {
+        "type": "function",
+        "function": {
+            "name": "accept_replacement",
+            "description": (
+                "Take the working replacement module back from the player, completing "
+                "the errand. Call with confirmed=true."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Set to true to confirm you're accepting the replacement, not just talking about it.",
+                    }
+                },
+                "required": ["confirmed"],
+            },
+        },
+    },
+    "propose_commitment": {
+        "type": "function",
+        "function": {
+            "name": "propose_commitment",
+            "description": (
+                "Offer the player this specific errand. Call it when you decide to raise it, "
+                "or when the player asks what's wrong and you choose to explain. This only "
+                "records that you've offered it - it does not require the player to have "
+                "agreed yet. Wait for their answer, then call accept_commitment or "
+                "decline_commitment to record it."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "commitment_type": {
+                        "type": "string",
+                        "enum": list(SCENARIOS.keys()),
+                        "description": "Which errand you're offering.",
+                    }
+                },
+                "required": ["commitment_type"],
+            },
+        },
+    },
+    "accept_commitment": {
+        "type": "function",
+        "function": {
+            "name": "accept_commitment",
+            "description": (
+                "Record that the player has actually, personally committed to do this - not "
+                "just that they seem willing or interested. Only valid after you've offered "
+                "it with propose_commitment and they've answered."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "commitment_type": {
+                        "type": "string",
+                        "enum": list(SCENARIOS.keys()),
+                        "description": "Which errand they've agreed to.",
+                    }
+                },
+                "required": ["commitment_type"],
+            },
+        },
+    },
+    "decline_commitment": {
+        "type": "function",
+        "function": {
+            "name": "decline_commitment",
+            "description": (
+                "Record that the player has turned down this errand. Only valid after you've "
+                "offered it with propose_commitment. Declining isn't breaking a promise - "
+                "nothing is owed afterward, and you can offer it again later."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "commitment_type": {
+                        "type": "string",
+                        "enum": list(SCENARIOS.keys()),
+                        "description": "Which errand they've declined.",
+                    }
+                },
+                "required": ["commitment_type"],
+            },
+        },
+    },
+    "report_commitment_outcome": {
+        "type": "function",
+        "function": {
+            "name": "report_commitment_outcome",
+            "description": (
+                "Record what you've been told about this commitment, in your own role in it. "
+                "The engine decides what that means for you specifically and will tell you "
+                "the result - it is not something you can choose or guess. Call it the moment "
+                "the player reports or claims the outcome to you, so the engine's answer, not "
+                "your own assumption, decides whether anything actually happened."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "commitment_type": {
+                        "type": "string",
+                        "enum": list(SCENARIOS.keys()),
+                        "description": "Which errand this report concerns.",
+                    }
+                },
+                "required": ["commitment_type"],
             },
         },
     },

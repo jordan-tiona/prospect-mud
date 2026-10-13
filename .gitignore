@@ -1,6 +1,8 @@
 __pycache__/
 *.pyc
 
+.obsidian/
+
 prospect/server/evennia.db3
 prospect/server/logs/
 prospect/server/.restart

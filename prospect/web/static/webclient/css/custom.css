@@ -1,0 +1,30 @@
+/*
+ * Overrides Evennia's default 16-color ANSI palette (defined in
+ * evennia/web/static/webclient/css/webclient.css's .color-NNN /
+ * .bgcolor-NNN rules, loaded before this file so these win) to match
+ * Achaea's Nexus client - the project owner's preferred color scheme,
+ * sampled directly from a screenshot of Nexus's color settings panel.
+ *
+ * Only the four slots that actually differ from Evennia's stock
+ * values are listed; the rest (black, bright red/green/yellow/blue/
+ * magenta/cyan, white, dark red/yellow/magenta/cyan) already matched
+ * Nexus's defaults by coincidence.
+ *
+ * Evennia markup -> xterm slot -> Nexus's name:
+ *   |G / |[G -> 002 -> Dark Green  (was #008000)
+ *   |B / |[B -> 004 -> Dark Blue   (was #000080)
+ *   |W / |[W -> 007 -> Gray        (was #c0c0c0)
+ *   |x / |[x -> 008 -> Dark Gray   (was #808080)
+ */
+
+.color-002 { color: #00B300; }
+.bgcolor-002 { background-color: #00B300; }
+
+.color-004 { color: #0000A0; }
+.bgcolor-004 { background-color: #0000A0; }
+
+.color-007 { color: #AAAAAA; }
+.bgcolor-007 { background-color: #AAAAAA; }
+
+.color-008 { color: #464646; }
+.bgcolor-008 { background-color: #464646; }

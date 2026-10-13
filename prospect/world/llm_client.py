@@ -25,7 +25,10 @@ class LLMReply:
     text: str
     model: str
     raw: dict
-    # Proposed actions only - never applied here. [{"name": ..., "arguments": {...}}]
+    # Proposed actions only - never applied here.
+    # [{"id": ..., "name": ..., "arguments": {...}}] - `id` is needed
+    # to report the outcome back in a follow-up call (see
+    # commands/say.py's _get_action_reaction).
     tool_calls: list = field(default_factory=list)
 
 
@@ -47,11 +50,16 @@ def _parse_tool_calls(message) -> list:
             # validator (world/actions.py) will reject whatever this
             # ends up being (likely missing required fields).
             arguments = {}
-        tool_calls.append({"name": call.function.name, "arguments": arguments})
+        tool_calls.append({"id": call.id, "name": call.function.name, "arguments": arguments})
     return tool_calls
 
 
-def chat(messages: list[dict], tools: list[dict] | None = None, model: str | None = None) -> LLMReply:
+def chat(
+    messages: list[dict],
+    tools: list[dict] | None = None,
+    model: str | None = None,
+    max_tokens: int | None = None,
+) -> LLMReply:
     """
     Send a chat-style message list to the configured model and return
     its reply, plus any proposed tool calls.
@@ -63,11 +71,14 @@ def chat(messages: list[dict], tools: list[dict] | None = None, model: str | Non
             call. The model can only *propose* these; nothing here
             applies them (see world/actions.py).
         model: override the configured default model for this call.
+        max_tokens: caps the reply length; defaults to
+            settings.LLM_MAX_TOKENS when not given (e.g. by an NPC's
+            own `max_reply_tokens` persona metadata).
 
     Raises:
         LLMUnavailableError: the model is unreachable, slow past the
             configured timeout, or returned an error status. Callers
-            (e.g. the talk command) are expected to catch this and
+            (e.g. the say command) are expected to catch this and
             fall back gracefully rather than let it propagate to the
             player as a traceback.
     """
@@ -75,9 +86,29 @@ def chat(messages: list[dict], tools: list[dict] | None = None, model: str | Non
     use_model = model or settings.LLM_MODEL
     extra_body = {}
     if settings.LLM_REASONING_EFFORT:
+        # Sent two ways because OpenAI-compatible backends disagree on
+        # the wire shape for this: some (e.g. Ollama, matching OpenAI's
+        # own o-series/gpt-5 field) read a flat `reasoning_effort`.
+        # Others (e.g. OpenRouter, proxying many providers with
+        # different native reasoning controls) read a nested
+        # `reasoning` object instead and otherwise default reasoning
+        # *on* regardless of `reasoning_effort`, which silently burns
+        # the whole max_tokens budget on hidden thinking tokens and
+        # leaves the NPC's actual reply empty (confirmed empirically
+        # against qwen/qwen3.6-35b-a3b on OpenRouter). A backend that
+        # recognizes neither field ignores both harmlessly.
         extra_body["reasoning_effort"] = settings.LLM_REASONING_EFFORT
+        if settings.LLM_REASONING_EFFORT == "none":
+            extra_body["reasoning"] = {"exclude": True, "enabled": False}
+        else:
+            extra_body["reasoning"] = {"effort": settings.LLM_REASONING_EFFORT}
 
-    kwargs = {"model": use_model, "messages": messages, "extra_body": extra_body}
+    kwargs = {
+        "model": use_model,
+        "messages": messages,
+        "extra_body": extra_body,
+        "max_tokens": max_tokens if max_tokens is not None else settings.LLM_MAX_TOKENS,
+    }
     if tools:
         kwargs["tools"] = tools
         kwargs["tool_choice"] = "auto"

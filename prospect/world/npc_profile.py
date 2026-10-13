@@ -28,7 +28,12 @@ class NPCProfile:
     prompt_version: str
     knowledge_scope: list
     actions: list
+    pronouns: str  # e.g. "she/her" - injected into the prompt by build_system_prompt
     body: str  # persona text with all HTML comments stripped
+    # Per-NPC reply-length cap (world/llm_client.py's `max_tokens`).
+    # Optional - falls back to settings.LLM_MAX_TOKENS when unset, so
+    # existing persona files without this field keep working.
+    max_reply_tokens: int | None = None
 
 
 def _parse_metadata(comment_text: str) -> dict:
@@ -68,7 +73,7 @@ def parse_persona_text(npc_id: str, raw: str) -> NPCProfile:
 
     fields = _parse_metadata(comment_match.group(1))
 
-    required = ("npc_id", "room", "prompt_version", "knowledge_scope", "actions")
+    required = ("npc_id", "room", "prompt_version", "knowledge_scope", "actions", "pronouns")
     missing = [key for key in required if key not in fields or not fields[key]]
     if missing:
         raise PersonaParseError(f"{npc_id}.md metadata is missing: {', '.join(missing)}")
@@ -81,11 +86,23 @@ def parse_persona_text(npc_id: str, raw: str) -> NPCProfile:
     knowledge_scope = [s.strip() for s in fields["knowledge_scope"].split(",") if s.strip()]
     actions = [s.strip() for s in fields["actions"].split(",") if s.strip()]
 
+    max_reply_tokens = None
+    raw_max_reply_tokens = fields.get("max_reply_tokens")
+    if raw_max_reply_tokens:
+        try:
+            max_reply_tokens = int(raw_max_reply_tokens)
+        except ValueError:
+            raise PersonaParseError(
+                f"{npc_id}.md has a non-numeric max_reply_tokens: '{raw_max_reply_tokens}'"
+            )
+
     return NPCProfile(
         npc_id=fields["npc_id"],
         room=fields["room"],
         prompt_version=fields["prompt_version"],
         knowledge_scope=knowledge_scope,
         actions=actions,
+        pronouns=fields["pronouns"],
         body=strip_html_comments(raw),
+        max_reply_tokens=max_reply_tokens,
     )

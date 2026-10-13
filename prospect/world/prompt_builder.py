@@ -28,7 +28,12 @@ def build_system_prompt(npc_id: str) -> SystemPrompt:
     shared_rules = strip_html_comments(read_content_file("npc-shared-rules.md"))
     scoped_lore = get_scoped_lore(profile.knowledge_scope)
 
-    sections = [common_knowledge, shared_rules, profile.body]
+    sections = [
+        common_knowledge,
+        shared_rules,
+        profile.body,
+        f"Your pronouns are {profile.pronouns}. Use them for yourself - never first person - in any action you write.",
+    ]
     if scoped_lore:
         sections.append(
             "## What you specifically know (not for the player to see verbatim)\n\n"

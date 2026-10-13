@@ -1111,6 +1111,13 @@ The LLM is the NPC's voice; the engine is the source of truth. For each player m
 
 **Cost and latency:** Only call the model when a player actually addresses a talk-capable NPC, never for ambient behavior. A one-to-three-second response delay is acceptable in a text game.
 
+**Addressing rule (Established design direction, adopted 2026-10-11):** there is no separate `talk` command; addressing a talk-capable NPC goes through ordinary `say`. A `say` counts as addressing a present talk-capable NPC when either:
+
+- the player names the NPC explicitly, either with `say to <name>, <message>` (the engine matches the longest run of words after "to" against a present NPC's key or alias, present NPCs only, and strips that match plus any trailing comma before the message reaches the model) or by using the NPC's name as a whole word anywhere in the message (left untouched in that case, since it's part of what the player is actually saying); or
+- exactly one player and exactly one talk-capable NPC are both present in the room, with no name needed.
+
+Any other `say` — multiple players present, no name given, and no lone NPC to default to — is ambient speech only: no model call, no reply. A room with more than one talk-capable NPC always needs an explicit name, even for a lone player.
+
 ### 16.6 Lore store, knowledge scopes and memory
 
 **Status:** Established design direction (adopted 2026-10-10); exact schemas unresolved.
