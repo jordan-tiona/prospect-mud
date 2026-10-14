@@ -18,8 +18,8 @@ from world.llm_client import LLMReply
 from world.npc_eval import EvalScenario, run_scenario
 
 
-def _reply(tool_calls=None):
-    return LLMReply(text="", model="test-model", raw={}, tool_calls=tool_calls or [])
+def _reply(tool_calls=None, text=""):
+    return LLMReply(text=text, model="test-model", raw={}, tool_calls=tool_calls or [])
 
 
 class RunScenarioTests(TestCase):
@@ -116,6 +116,43 @@ class RunScenarioTests(TestCase):
         self.assertTrue(
             any("open, not yet acknowledged" in m.get("content", "") for m in messages)
         )
+
+    @patch("world.npc_eval.chat")
+    def test_expect_text_contains_checks_the_reply_text_case_insensitively(self, mock_chat):
+        mock_chat.return_value = _reply(text="I already confirmed the Approval Mark myself.")
+        scenario = EvalScenario(
+            name="t", npc_id="veska_renn", player_message="x", expect_text_contains=["approval mark"]
+        )
+
+        result = run_scenario(scenario, trials=2)
+
+        self.assertEqual(result.hits, 2)
+
+    @patch("world.npc_eval.chat")
+    def test_expect_text_contains_missing_is_not_a_hit(self, mock_chat):
+        mock_chat.return_value = _reply(text="It's been taken care of.")
+        scenario = EvalScenario(
+            name="t", npc_id="veska_renn", player_message="x", expect_text_contains=["approval mark"]
+        )
+
+        result = run_scenario(scenario, trials=2)
+
+        self.assertEqual(result.hits, 0)
+        # The failure is about wording, not a tool call - the actual
+        # text should be kept alongside the called-action set so it's
+        # visible in the report, not just a useless empty set.
+        self.assertEqual(result.unexpected, [(set(), "It's been taken care of.")] * 2)
+
+    @patch("world.npc_eval.chat")
+    def test_expect_text_absent_present_is_not_a_hit(self, mock_chat):
+        mock_chat.return_value = _reply(text="I took it down and withdrew it from the board.")
+        scenario = EvalScenario(
+            name="t", npc_id="veska_renn", player_message="x", expect_text_absent=["withdr"]
+        )
+
+        result = run_scenario(scenario, trials=1)
+
+        self.assertEqual(result.hits, 0)
 
     @patch("world.npc_eval.chat")
     def test_actor_is_cleaned_up_after_the_scenario(self, mock_chat):

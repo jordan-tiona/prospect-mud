@@ -779,6 +779,32 @@ class SayCommandTests(TestCase):
         self.assertEqual(kwargs["tool_calls"][0]["name"], "propose_commitment")
 
     @patch("commands.say.chat")
+    def test_reaction_turn_never_shows_the_player_the_pre_validation_text(self, mock_chat):
+        # Confirmed live 2026-10-14 (phase 3 notice scenario): Tarin
+        # blurted out a detail about the notice on a plain "how's
+        # work?" - propose_commitment's own first-pass text - and then
+        # visibly backtracked once the call was actually rejected for
+        # an unmet prerequisite. That happened because this first-pass
+        # text used to be rendered to the player unconditionally
+        # (_render_reply_segments at the top of this function), before
+        # validate_and_apply even ran - defeating the whole point of
+        # FORCE_REACTION_ACTIONS, whose own comment already says the
+        # reaction's text is meant to be "the final thing the player
+        # reads". This must never reach the player, win or lose.
+        self.actor.location = self.workshop
+        mock_chat.side_effect = [
+            _reply(
+                "There's a notice I'm not supposed to mention yet.",
+                tool_calls=[{"name": "propose_commitment", "arguments": {"commitment_type": "unverified_notice"}}],
+            ),
+            _reply("Let me rephrase - never mind, forget I said anything."),
+        ]
+        self._say("how's work?")
+
+        self.assertFalse(any("notice I'm not supposed to mention yet" in m for m in self.messages))
+        self.assertTrue(any("forget I said anything" in m for m in self.messages))
+
+    @patch("commands.say.chat")
     def test_report_parcel_delivery_forces_reaction_on_rejection(self, mock_chat):
         # docs/phase2e-word-gets-around-design.md: confirmed live
         # 2026-10-14 - without this, a rejected report_parcel_delivery
@@ -802,6 +828,33 @@ class SayCommandTests(TestCase):
         kwargs = self.mock_log_turn.call_args.kwargs
         self.assertEqual(
             kwargs["npc_response"], "I can't confirm that yet - there's no record of it being handed off."
+        )
+        self.assertFalse(kwargs["tool_calls"][0]["applied"])
+
+    @patch("commands.say.chat")
+    def test_report_notice_outcome_forces_reaction_on_rejection(self, mock_chat):
+        # docs/phase3-unverified-notice-design.md: the same fix as
+        # report_parcel_delivery above, for a different action with
+        # the same rejectable-precondition shape - without this, a
+        # rejected report_notice_outcome call (nothing fulfilled on
+        # record yet) would leave the model's own same-turn text as
+        # the final thing the player reads, even though it already
+        # thanked them as if the report succeeded.
+        self.actor.location = self.workshop
+        mock_chat.side_effect = [
+            _reply(
+                "Relieved to hear it checked out and stayed up.",
+                tool_calls=[{"name": "report_notice_outcome", "arguments": {"reported_resolution": "verified"}}],
+            ),
+            _reply("Actually, I haven't heard anything about it yet - don't think that's settled."),
+        ]
+        self._say("Veska checked the notice, it's staying up.")
+
+        self.assertEqual(mock_chat.call_count, 2)
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(
+            kwargs["npc_response"],
+            "Actually, I haven't heard anything about it yet - don't think that's settled.",
         )
         self.assertFalse(kwargs["tool_calls"][0]["applied"])
 

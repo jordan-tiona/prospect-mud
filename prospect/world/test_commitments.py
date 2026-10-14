@@ -28,6 +28,10 @@ from world.commitments import (
     reset_commitment,
 )
 
+NOTICE_TYPE = "unverified_notice"
+NOTICE_PROPOSER = "tarin_os"
+NOTICE_HOLDER = "veska_renn"
+
 COMMITMENT_TYPE = "discrepancy_report"
 HOLDER = "tarin_os"
 CLERK = "veska_renn"
@@ -389,3 +393,64 @@ class RecordAcknowledgmentWithPreconditionTests(TestCase):
         record_acknowledgment_with_precondition(self.actor, self.TYPE, self.CLERK, True)
         result = fulfill_commitment(self.actor, self.TYPE, "mara_voss")
         self.assertTrue(result.ok)
+
+
+class PrerequisiteGatedScenarioTests(TestCase):
+    """
+    docs/phase3-unverified-notice-design.md: "unverified_notice" can't
+    be offered (or hinted at) until "discrepancy_report" is already
+    fulfilled for this player - an engine-enforced prerequisite, not
+    just persona wording (CLAUDE.md hard rule 2).
+    """
+
+    def setUp(self):
+        room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.actor = create_object("typeclasses.characters.Character", key="Tester", location=room)
+
+    def _fulfill_discrepancy_report(self):
+        propose_commitment(self.actor, "discrepancy_report")
+        accept_commitment(self.actor, "discrepancy_report")
+        record_acknowledgment(self.actor, "discrepancy_report", "veska_renn")
+        fulfill_commitment(self.actor, "discrepancy_report", "tarin_os")
+
+    def test_propose_rejected_before_prerequisite_fulfilled(self):
+        result = propose_commitment(self.actor, NOTICE_TYPE)
+        self.assertFalse(result.ok)
+        self.assertEqual(get_state_summary(self.actor, NOTICE_TYPE), "not offered")
+
+    def test_propose_succeeds_once_prerequisite_fulfilled(self):
+        self._fulfill_discrepancy_report()
+        result = propose_commitment(self.actor, NOTICE_TYPE)
+        self.assertTrue(result.ok)
+
+    def test_prerequisite_check_is_per_player(self):
+        other = create_object("typeclasses.characters.Character", key="Other")
+        self._fulfill_discrepancy_report()
+        # Other player's own discrepancy_report is still unfulfilled.
+        result = propose_commitment(other, NOTICE_TYPE)
+        self.assertFalse(result.ok)
+
+    def test_proposer_hint_pose_hidden_before_prerequisite(self):
+        # Tarin is also the holder of his own, unrelated
+        # discrepancy_report hint - clear that one first (by offering
+        # it, not fulfilling it) so this isolates whether the new
+        # scenario's own hint leaks early, not whether Tarin has *any*
+        # hint at all.
+        propose_commitment(self.actor, "discrepancy_report")
+        self.assertIsNone(hint_pose_for(NOTICE_PROPOSER, self.actor))
+
+    def test_proposer_hint_pose_shown_once_prerequisite_fulfilled(self):
+        self._fulfill_discrepancy_report()
+        self.assertEqual(
+            hint_pose_for(NOTICE_PROPOSER, self.actor),
+            "looking a little uneasy about something posted at the Civic Office",
+        )
+
+    def test_proposer_hint_pose_gone_once_offered(self):
+        self._fulfill_discrepancy_report()
+        propose_commitment(self.actor, NOTICE_TYPE)
+        self.assertIsNone(hint_pose_for(NOTICE_PROPOSER, self.actor))
+
+    def test_holder_has_no_proposer_hint(self):
+        self._fulfill_discrepancy_report()
+        self.assertIsNone(hint_pose_for(NOTICE_HOLDER, self.actor))

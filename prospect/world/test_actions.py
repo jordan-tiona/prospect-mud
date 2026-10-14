@@ -26,15 +26,21 @@ from world.actions import (
     _validate_give_faulty_module,
     _validate_propose_commitment,
     _validate_report_commitment_outcome,
+    _validate_report_notice_outcome,
     _validate_report_parcel_delivery,
+    _validate_verify_notice,
     _validate_verify_revision_report,
+    _validate_withdraw_notice,
     get_quest_state,
     quest_context_for,
     validate_and_apply,
 )
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
-from world.commitments import commitment_context_for
+from world.commitments import commitment_context_for, get_fulfilled_commitment
+from world.notice_approval import RESOLUTION_VERIFIED
+from world.notice_approval import get_resolution as get_notice_resolution
+from world.notice_approval import notice_displayed, set_approval_mark_present
 from world.reputation import get_reputation
 from world.rumors import has_reputation_credit
 
@@ -540,11 +546,159 @@ class ParcelDeliveryRumorWiringTests(TestCase):
         _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
         self.assertTrue(has_reputation_credit(self.actor))
 
+
+class NoticeApprovalWiringTests(TestCase):
+    """
+    docs/phase3-unverified-notice-design.md: Tarin's claim about the
+    posted notice gets genuinely confirmed or contradicted by Veska's
+    independent inspection, mutual exclusion between verify/withdraw
+    falls out of fulfill_commitment_with_precondition's existing
+    STATUS_OPEN check, and Tarin's own view stays at "open" until a
+    separate, validated report tells him which way it went.
+    """
+
+    TYPE = "unverified_notice"
+
+    def setUp(self):
+        rooms = build_rooms()
+        npcs = build_npcs()
+        self.tarin = npcs["tarin_os"]
+        self.veska = npcs["veska_renn"]
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=rooms["maintenance_workshop"]
+        )
+
+    def _fulfill_discrepancy_report(self):
+        _validate_propose_commitment(self.tarin, self.actor, {"commitment_type": "discrepancy_report"})
+        _validate_accept_commitment(self.tarin, self.actor, {"commitment_type": "discrepancy_report"})
+        _validate_report_commitment_outcome(self.veska, self.actor, {"commitment_type": "discrepancy_report"})
+        _validate_report_commitment_outcome(self.tarin, self.actor, {"commitment_type": "discrepancy_report"})
+
+    def _open_notice(self):
+        # Only fulfill the prerequisite once - calling this twice in a
+        # test (e.g. to open a second instance after a reset) must not
+        # try to re-propose an already-fulfilled discrepancy_report.
+        if get_fulfilled_commitment(self.actor, "discrepancy_report") is None:
+            self._fulfill_discrepancy_report()
+        _validate_propose_commitment(self.tarin, self.actor, {"commitment_type": self.TYPE})
+        _validate_accept_commitment(self.tarin, self.actor, {"commitment_type": self.TYPE})
+
+    def _tarin_state(self):
+        return commitment_context_for("tarin_os", ["propose_commitment", "report_notice_outcome"], self.actor)
+
+    def _veska_state(self):
+        return commitment_context_for("veska_renn", ["verify_notice", "withdraw_notice"], self.actor)
+
+    def test_propose_rejected_before_discrepancy_report_fulfilled(self):
+        result = _validate_propose_commitment(self.tarin, self.actor, {"commitment_type": self.TYPE})
+        self.assertFalse(result.applied)
+
+    def test_verify_confirms_when_approval_mark_present(self):
+        self._open_notice()
+        result = _validate_verify_notice(self.veska, self.actor, {"confirmed": True})
+        self.assertTrue(result.applied)
+        commitment = get_fulfilled_commitment(self.actor, self.TYPE)
+        self.assertEqual(get_notice_resolution(self.actor, commitment["commitment_id"]), RESOLUTION_VERIFIED)
+
+    def test_verify_contradicts_when_approval_mark_missing(self):
+        self._open_notice()
+        set_approval_mark_present(self.actor, False)
+        result = _validate_verify_notice(self.veska, self.actor, {"confirmed": True})
+        self.assertFalse(result.applied)
+        # The commitment stays open - the player can still ask for
+        # withdrawal instead, a wrong/missing mark doesn't poison it.
+        self.assertIn("open", self._tarin_state())
+
+    def test_withdraw_succeeds_regardless_of_approval_mark(self):
+        self._open_notice()
+        set_approval_mark_present(self.actor, False)
+        result = _validate_withdraw_notice(self.veska, self.actor, {"confirmed": True})
+        self.assertTrue(result.applied)
+        self.assertFalse(notice_displayed(self.actor))
+
+    def test_verify_and_withdraw_are_mutually_exclusive(self):
+        self._open_notice()
+        verify = _validate_verify_notice(self.veska, self.actor, {"confirmed": True})
+        self.assertTrue(verify.applied)
+
+        withdraw = _validate_withdraw_notice(self.veska, self.actor, {"confirmed": True})
+        self.assertFalse(withdraw.applied)
+        self.assertTrue(notice_displayed(self.actor))  # the verified path's outcome stands
+
+    def test_only_veska_has_a_holder_role(self):
+        self._open_notice()
+        result = _validate_verify_notice(self.tarin, self.actor, {"confirmed": True})
+        self.assertFalse(result.applied)
+
+    def test_tarin_does_not_know_the_resolution_before_being_told(self):
+        self._open_notice()
+        _validate_verify_notice(self.veska, self.actor, {"confirmed": True})
+        # discrepancy_report's own line legitimately says "fulfilled"
+        # (the scenario's prerequisite) - check the unverified_notice
+        # line specifically, not the whole multi-scenario context.
+        self.assertIn("'unverified_notice' commitment with this player (your side): open.", self._tarin_state())
+
+    def test_correct_report_reveals_fulfillment(self):
+        self._open_notice()
+        _validate_verify_notice(self.veska, self.actor, {"confirmed": True})
+        result = _validate_report_notice_outcome(self.tarin, self.actor, {"reported_resolution": "verified"})
+        self.assertTrue(result.applied)
+        self.assertIn(
+            "'unverified_notice' commitment with this player (your side): fulfilled.", self._tarin_state()
+        )
+
+    def test_mismatched_report_is_rejected(self):
+        self._open_notice()
+        _validate_verify_notice(self.veska, self.actor, {"confirmed": True})
+        result = _validate_report_notice_outcome(self.tarin, self.actor, {"reported_resolution": "withdrawn"})
+        self.assertFalse(result.applied)
+        self.assertIn("'unverified_notice' commitment with this player (your side): open.", self._tarin_state())
+
+    def test_veska_sees_the_real_resolution_after_verifying(self):
+        # Confirmed live (2026-10-14): without this, Veska's own state
+        # line just said "fulfilled" with no indication of which
+        # action actually settled it - she hallucinated "withdrawn"
+        # when asked afterward, even though she's the one who
+        # performed verify_notice. She must see the real fact,
+        # unlike Tarin's deliberately-withheld-until-reported view.
+        self._open_notice()
+        _validate_verify_notice(self.veska, self.actor, {"confirmed": True})
+        state = self._veska_state()
+        self.assertIn("approval mark", state)
+        self.assertNotIn("withdr", state)
+
+    def test_veska_sees_the_real_resolution_after_withdrawing(self):
+        self._open_notice()
+        _validate_withdraw_notice(self.veska, self.actor, {"confirmed": True})
+        state = self._veska_state()
+        self.assertIn("withdr", state)
+        self.assertNotIn("approval mark", state)
+
+    def test_report_with_no_fulfilled_commitment_is_rejected(self):
+        result = _validate_report_notice_outcome(self.tarin, self.actor, {"reported_resolution": "verified"})
+        self.assertFalse(result.applied)
+
+    def test_repeated_correct_report_is_rejected(self):
+        self._open_notice()
+        _validate_withdraw_notice(self.veska, self.actor, {"confirmed": True})
+        _validate_report_notice_outcome(self.tarin, self.actor, {"reported_resolution": "withdrawn"})
+        result = _validate_report_notice_outcome(self.tarin, self.actor, {"reported_resolution": "withdrawn"})
+        self.assertFalse(result.applied)
+
+    def test_informed_state_is_per_commitment_instance(self):
+        from world.commitments import reset_commitment
+
+        self._open_notice()
+        _validate_withdraw_notice(self.veska, self.actor, {"confirmed": True})
+        _validate_report_notice_outcome(self.tarin, self.actor, {"reported_resolution": "withdrawn"})
+
         reset_commitment(self.actor, self.TYPE)
-        self._deliver_to(self.veska)
+        self._open_notice()
+        result = _validate_verify_notice(self.veska, self.actor, {"confirmed": True})
+        self.assertTrue(result.applied)
         # A fresh instance - not yet reported - must not read as already
         # informed just because an earlier, now-cleared instance was.
-        self.assertIn("open", self._mara_state())
+        self.assertIn("'unverified_notice' commitment with this player (your side): open.", self._tarin_state())
 
 
 class RememberFactWiringTests(TestCase):

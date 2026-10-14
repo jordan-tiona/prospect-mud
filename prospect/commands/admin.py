@@ -21,11 +21,13 @@ from world.commitments import known_commitment_types_for, reset_commitment
 from world.conversation_log import (
     log_commitment_reset,
     log_memory_reset,
+    log_notice_reset,
     log_quest_reset,
     log_reset,
     log_rumor_reset,
 )
 from world.npc_memory import known_npc_ids_with_memory_for, reset_memory
+from world.notice_approval import reset_notice
 from world.noticeboard import reset_expected_revision
 from world.npc_profile import parse_persona
 from world.reputation import reset_reputation
@@ -234,7 +236,35 @@ class CmdResetCommitment(Command):
                 actor_dbref=target.dbref,
             )
 
-        if cleared_any or removed_parcels or previous_revision is not None or rumor_cleared or previous_mara_reputation:
+        # Phase 3: the notice-approval fact, resolution record, and
+        # Tarin-informed state are all downstream of unverified_notice -
+        # coordinated here for the same reason as the rumor/reputation
+        # block above, not as a separate `resetnotice` command.
+        notice_snapshot = reset_notice(target)
+        notice_cleared = bool(
+            notice_snapshot["previous_approval_mark_present"] is not None
+            or notice_snapshot["previous_resolutions"]
+            or not notice_snapshot["previous_notice_displayed"]
+            or notice_snapshot["previous_informed_commitment_ids"]
+        )
+        if notice_cleared:
+            log_notice_reset(
+                previous_approval_mark_present=notice_snapshot["previous_approval_mark_present"],
+                previous_resolutions=notice_snapshot["previous_resolutions"],
+                previous_notice_displayed=notice_snapshot["previous_notice_displayed"],
+                previous_informed_commitment_ids=notice_snapshot["previous_informed_commitment_ids"],
+                actor_key=target.key,
+                actor_dbref=target.dbref,
+            )
+
+        if (
+            cleared_any
+            or removed_parcels
+            or previous_revision is not None
+            or rumor_cleared
+            or previous_mara_reputation
+            or notice_cleared
+        ):
             caller.msg(f"You reset {target.key}'s commitment progress back to the start.")
             if removed_parcels:
                 caller.msg(f"Removed {removed_parcels} stray carried parcel(s) no longer tied to anything open.")
@@ -242,6 +272,8 @@ class CmdResetCommitment(Command):
                 caller.msg("Cleared their generated noticeboard revision - the display will show a fresh one.")
             if rumor_cleared or previous_mara_reputation:
                 caller.msg("Cleared their parcel-delivery rumor knowledge and Mara's reputation credit.")
+            if notice_cleared:
+                caller.msg("Cleared their notice-approval fact, resolution record, and Tarin's informed state.")
         else:
             caller.msg(f"{target.key} has no commitment progress to reset.")
 

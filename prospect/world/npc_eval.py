@@ -31,11 +31,14 @@ from world.actions import _create_parcel_for, get_tool_schemas, quest_context_fo
 from world.commitments import (
     accept_commitment,
     commitment_context_for,
+    fulfill_commitment,
     fulfill_commitment_with_precondition,
     get_open_commitment_id,
     propose_commitment,
+    record_acknowledgment,
 )
 from world.llm_client import chat
+from world.notice_approval import RESOLUTION_VERIFIED, RESOLUTION_WITHDRAWN, record_resolution
 from world.npc_profile import parse_persona
 from world.prompt_builder import build_system_prompt
 
@@ -49,6 +52,14 @@ class EvalScenario:
     player_message: str
     expect_calls: set = field(default_factory=set)
     expect_no_calls: set = field(default_factory=set)
+    # Case-insensitive substring checks against the reply's own spoken
+    # text - for a scenario whose success/failure isn't about which
+    # tool call fired at all (e.g. Veska correctly stating which
+    # resolution actually happened), only what the model actually
+    # said. Checked in addition to expect_calls/expect_no_calls, not
+    # instead of them - a scenario can use either, both, or neither.
+    expect_text_contains: list = field(default_factory=list)
+    expect_text_absent: list = field(default_factory=list)
     history: list = field(default_factory=list)
     setup: callable = None  # optional actor -> None, to seed quest/commitment state
     notes: str = ""
@@ -120,6 +131,98 @@ _MARA_PARCEL_HANDED_OFF_CONTEXT = [
         "content": '*Mara hands over the parcel.* "Thanks for taking care of that - let me know how it goes."',
     },
 ]
+
+
+def _fulfill_discrepancy_report(actor) -> None:
+    propose_commitment(actor, "discrepancy_report")
+    accept_commitment(actor, "discrepancy_report")
+    record_acknowledgment(actor, "discrepancy_report", "veska_renn")
+    fulfill_commitment(actor, "discrepancy_report", "tarin_os")
+
+
+def _setup_notice_offered(actor):
+    # docs/phase3-unverified-notice-design.md: the engine-level
+    # prerequisite (discrepancy_report fulfilled) must already hold
+    # before unverified_notice can even be offered.
+    _fulfill_discrepancy_report(actor)
+    propose_commitment(actor, "unverified_notice")
+
+
+def _setup_notice_accepted(actor):
+    _fulfill_discrepancy_report(actor)
+    propose_commitment(actor, "unverified_notice")
+    accept_commitment(actor, "unverified_notice")
+
+
+def _setup_notice_resolved(actor, resolution):
+    _fulfill_discrepancy_report(actor)
+    propose_commitment(actor, "unverified_notice")
+    accept_commitment(actor, "unverified_notice")
+    result = fulfill_commitment_with_precondition(actor, "unverified_notice", "veska_renn", True)
+    record_resolution(actor, result.commitment_id, resolution)
+
+
+def _setup_notice_resolved_verified(actor):
+    _setup_notice_resolved(actor, RESOLUTION_VERIFIED)
+
+
+def _setup_notice_resolved_withdrawn(actor):
+    _setup_notice_resolved(actor, RESOLUTION_WITHDRAWN)
+
+
+_TARIN_NOTICE_OFFERED_CONTEXT = [
+    {
+        "role": "assistant",
+        "content": (
+            '*Tarin still looks a little uneasy.* "There\'s a notice posted about the whole '
+            'business - I was told it\'s got the right approval mark, but I haven\'t checked '
+            'myself. Could you settle that with Veska, one way or the other?"'
+        ),
+    },
+]
+
+
+_VESKA_NOTICE_OPEN_CONTEXT = [
+    {"role": "user", "content": "Tarin asked me to settle something about a posted notice."},
+    {
+        "role": "assistant",
+        "content": '"All right - do you want me to check it, or would you rather I just take it down?"',
+    },
+]
+
+
+# docs/phase3-unverified-notice-design.md's requested cross-hook check:
+# a prior discrepancy_report acknowledgment in Veska's own history,
+# immediately followed by a notice request - her established low-bar,
+# non-investigative framing for the first action must not leak into
+# the second, genuinely-checked one.
+_VESKA_DISCREPANCY_THEN_NOTICE_CONTEXT = [
+    {
+        "role": "user",
+        "content": "Tarin asked me to report a shipment discrepancy - 12 received, manifest says 16.",
+    },
+    {"role": "assistant", "content": '"All right, noted - I\'ll have that on file."'},
+]
+
+
+def _setup_veska_discrepancy_then_notice(actor):
+    _fulfill_discrepancy_report(actor)
+    propose_commitment(actor, "unverified_notice")
+    accept_commitment(actor, "unverified_notice")
+
+
+def _setup_veska_notice_then_fresh_discrepancy(actor):
+    # The reverse order: resolve the notice first, then open a *new*
+    # discrepancy_report instance (via reset_commitment - a player
+    # only ever has one in real play, so a genuine "second" one isn't
+    # otherwise reachable) so there's something real for her to record
+    # without touching the already-resolved notice state.
+    from world.commitments import reset_commitment
+
+    _setup_notice_resolved_verified(actor)
+    reset_commitment(actor, "discrepancy_report")
+    propose_commitment(actor, "discrepancy_report")
+    accept_commitment(actor, "discrepancy_report")
 
 
 _MARA_PARCEL_OFFERED_CONTEXT = [
@@ -431,6 +534,202 @@ SCENARIOS = [
             "supposed to be hiding from her, not a tool-calling miss."
         ),
     ),
+    # docs/phase3-unverified-notice-design.md: NPC-initiated
+    # conversation (Tarin), the two mutually-exclusive resolutions and
+    # genuine corroboration (Veska), and the cross-hook check between
+    # Veska's two differently-toned actions, requested during co-design.
+    EvalScenario(
+        name="tarin_propose_notice_on_followup_after_report_filed",
+        npc_id="tarin_os",
+        setup=_fulfill_discrepancy_report,
+        player_message="Anything else on your mind?",
+        expect_calls={"propose_commitment"},
+        notes=(
+            "Known issue, not expected to score well (guideline #18 in "
+            "docs/npc-action-prompt-guidelines.md): a genuinely neutral small-talk "
+            "opener scored 0/12 across two different phrasings before prompt_version "
+            "21's wording fix (which removed a self-defeating line that explicitly "
+            "told Tarin NOT to treat 'how's it going' as an opening for this hook), "
+            "and only ~1/8-2/8 after it - the fix made the model narrate the notice "
+            "in prose more often, but the matching propose_commitment call with the "
+            "correct commitment_type still mostly doesn't fire (empty arguments, the "
+            "wrong commitment_type, or no call at all, in that frequency order). "
+            "Raising max_reply_tokens from 90 to 200 did not meaningfully help "
+            "(1/8). Two materially different fixes producing no reliable improvement "
+            "is this project's own stop-iterating signal (guideline #5/#10) - left as "
+            "a known, not-fully-solved limitation. Real-world cost: the errand may "
+            "take several real conversations to actually get offered, not a state- "
+            "integrity risk (a missed trigger just means nothing happens that turn)."
+        ),
+    ),
+    EvalScenario(
+        name="tarin_bare_greeting_does_not_propose_notice",
+        npc_id="tarin_os",
+        setup=_fulfill_discrepancy_report,
+        player_message="Mornin' Tarin.",
+        expect_no_calls={"propose_commitment"},
+        notes="Same bar as the discrepancy report's own bare-greeting case - a greeting alone isn't an opening.",
+    ),
+    EvalScenario(
+        name="tarin_does_not_propose_notice_in_the_same_breath_as_report_closing",
+        npc_id="tarin_os",
+        setup=_fulfill_discrepancy_report,
+        history=[
+            {"role": "user", "content": "Oh yeah, I spoke to Veska and she filed the report."},
+            {
+                "role": "assistant",
+                "content": '"Thanks for letting me know. It\'s a relief to have it officially on record."',
+            },
+        ],
+        player_message="Keepin' busy?",
+        expect_no_calls={"propose_commitment"},
+        notes=(
+            "Known issue, not expected to score well (guideline #19): an ordinary "
+            "small-talk opener sent as the very next line after Tarin's own reply "
+            "closing out the discrepancy report brought up the notice immediately, "
+            "with no gap at all - correct per the low-bar rule (guideline #18), but "
+            "read as unnaturally eager pacing rather than a trigger-wording problem. "
+            "prompt_version 22 added an explicit one-exchange pacing rule (3/10 - "
+            "still mostly fires, but some improvement over the live report that "
+            "prompted this). A more forceful rewrite (prompt_version 23, reverted) "
+            "scored worse (1/10) - two materially different wordings with no "
+            "reliable improvement, so per guideline #5/#10 this is left as a known, "
+            "partially-mitigated limitation rather than chased further. Real-world "
+            "cost: low - an eager topic change reads as mildly abrupt pacing, not a "
+            "state-integrity risk, and the notice itself is still correctly gated by "
+            "the engine regardless of when it's mentioned."
+        ),
+    ),
+    # tarin_notice_does_not_surface_before_prerequisite was removed
+    # 2026-10-16: the eval run that was meant to test it instead showed
+    # Tarin correctly proposing discrepancy_report (the OTHER, still-
+    # legitimately-eligible errand) on the same direct check-in opener -
+    # a correct result the test's own expect_no_calls={"propose_commitment"}
+    # couldn't distinguish from a real leak, since the harness only
+    # matches on action name, not arguments. The actual engine-level
+    # guarantee (unverified_notice can't be proposed or hinted before
+    # its prerequisite is met) is deterministic, not probabilistic, and
+    # is already exhaustively covered by world/test_commitments.py's
+    # PrerequisiteGatedScenarioTests - nothing live-model-specific to
+    # check here.
+    EvalScenario(
+        name="tarin_accept_notice_commitment_after_offer",
+        npc_id="tarin_os",
+        setup=_setup_notice_offered,
+        history=_TARIN_NOTICE_OFFERED_CONTEXT,
+        player_message="Sure, I'll see what Veska says.",
+        expect_calls={"accept_commitment"},
+    ),
+    EvalScenario(
+        name="veska_verify_notice_on_explicit_check_request",
+        npc_id="veska_renn",
+        setup=_setup_notice_accepted,
+        history=_VESKA_NOTICE_OPEN_CONTEXT,
+        player_message="Could you actually check whether the approval mark's there?",
+        expect_calls={"verify_notice"},
+        expect_no_calls={"withdraw_notice", "report_commitment_outcome"},
+    ),
+    EvalScenario(
+        name="veska_withdraw_notice_on_explicit_takedown_request",
+        npc_id="veska_renn",
+        setup=_setup_notice_accepted,
+        history=_VESKA_NOTICE_OPEN_CONTEXT,
+        player_message="Just take it down for now, don't worry about checking it.",
+        expect_calls={"withdraw_notice"},
+        expect_no_calls={"verify_notice", "report_commitment_outcome"},
+    ),
+    EvalScenario(
+        name="veska_cross_hook_notice_after_discrepancy_report",
+        npc_id="veska_renn",
+        setup=_setup_veska_discrepancy_then_notice,
+        history=_VESKA_DISCREPANCY_THEN_NOTICE_CONTEXT,
+        player_message="Separately - could you check if that posted notice has its approval mark?",
+        expect_calls={"verify_notice"},
+        expect_no_calls={"report_commitment_outcome", "withdraw_notice"},
+        notes=(
+            "Requested during phase 3 co-design: her established low-bar, "
+            "non-investigative framing for report_commitment_outcome (immediately "
+            "prior in this same history) must not leak into the genuinely-checked "
+            "verify_notice - and the reverse, a fresh discrepancy report after a "
+            "notice check, is the other half of this cross-hook check."
+        ),
+    ),
+    EvalScenario(
+        name="veska_cross_hook_discrepancy_report_after_notice",
+        npc_id="veska_renn",
+        setup=_setup_veska_notice_then_fresh_discrepancy,
+        player_message="Tarin asked me to report a shipment discrepancy - 12 received, manifest says 16.",
+        expect_calls={"report_commitment_outcome"},
+        expect_no_calls={"verify_notice", "withdraw_notice"},
+        notes="The other half of the cross-hook check above, run in the opposite order.",
+    ),
+    EvalScenario(
+        name="tarin_report_notice_outcome_clear_verified_report_fires",
+        npc_id="tarin_os",
+        setup=_setup_notice_resolved_verified,
+        player_message="Veska checked the notice - the approval mark's there, it's staying up.",
+        expect_calls={"report_notice_outcome"},
+    ),
+    EvalScenario(
+        name="tarin_report_notice_outcome_clear_withdrawn_report_fires",
+        npc_id="tarin_os",
+        setup=_setup_notice_resolved_withdrawn,
+        player_message="Veska pulled the notice down until it's sorted out.",
+        expect_calls={"report_notice_outcome"},
+    ),
+    EvalScenario(
+        name="tarin_report_notice_outcome_question_does_not_fire",
+        npc_id="tarin_os",
+        setup=_setup_notice_resolved_verified,
+        player_message="Did Veska ever get around to checking that notice?",
+        expect_no_calls={"report_notice_outcome"},
+        notes=(
+            "Known issue, guideline #18: confirmed live (2026-10-16) at roughly "
+            "4/10 - on a plain question naming neither resolution, the model "
+            "sometimes defaults reported_resolution to the schema's first enum "
+            "value ('verified') rather than asking, the same pattern as guideline "
+            "#17. Confirmed the validator independently catches a wrong guess every "
+            "time (0/8 false successes when the real resolution was 'withdrawn' "
+            "instead) - a right guess can only coincide with reality, never "
+            "fabricate an unearned success. This fixture happens to use a "
+            "'verified' resolution, so a 'miss' here only costs a skipped "
+            "clarifying question, not corrupted state."
+        ),
+    ),
+    # docs/engineering-pitfalls.md #8 / the holder_knowledge_projector
+    # fix (2026-10-14): confirmed live that without this, Veska's own
+    # engine-state line said only "fulfilled," with nothing telling
+    # her which resolution actually happened - asked afterward, she
+    # hallucinated the wrong one. These check what she actually says,
+    # not a tool call (there's no action for "which one did you do,"
+    # only her own recollection of a completed turn).
+    EvalScenario(
+        name="veska_states_real_resolution_after_verify",
+        npc_id="veska_renn",
+        setup=_setup_notice_resolved_verified,
+        player_message="Sorry, which was it - did you end up checking that notice, or taking it down?",
+        expect_no_calls={"verify_notice", "withdraw_notice"},
+        expect_text_contains=["approval mark"],
+        expect_text_absent=["withdr"],
+    ),
+    EvalScenario(
+        name="veska_states_real_resolution_after_withdraw",
+        npc_id="veska_renn",
+        setup=_setup_notice_resolved_withdrawn,
+        player_message="Sorry, which was it - did you end up checking that notice, or taking it down?",
+        expect_no_calls={"verify_notice", "withdraw_notice"},
+        # Not "withdr", and not pinned to "taken down" either - confirmed
+        # live (2026-10-14) the model never uses the word "withdrawn"
+        # itself, instead freely varying between "taken down," "took
+        # it down," "pulled down," etc. (matching her persona's own
+        # vocabulary, "pull the notice from public display," rather
+        # than the engine's internal RESOLUTION_WITHDRAWN name) - every
+        # phrasing actually observed across 20 live trials included
+        # "down" somewhere, so check for that instead of one exact verb
+        # form.
+        expect_text_contains=["down"],
+        expect_text_absent=["approval mark"],
+    ),
 ]
 
 
@@ -463,9 +762,21 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
         for _ in range(trials):
             reply = chat(messages, tools=tools, max_tokens=profile.max_reply_tokens)
             called = {call["name"] for call in reply.tool_calls}
-            ok = scenario.expect_calls <= called and not (scenario.expect_no_calls & called)
+            text = (reply.text or "").lower()
+            ok = (
+                scenario.expect_calls <= called
+                and not (scenario.expect_no_calls & called)
+                and all(s.lower() in text for s in scenario.expect_text_contains)
+                and not any(s.lower() in text for s in scenario.expect_text_absent)
+            )
             if ok:
                 hits += 1
+            elif scenario.expect_text_contains or scenario.expect_text_absent:
+                # A text-content scenario's failure is usually about
+                # wording, not the tool-call set - keep the actual text
+                # alongside it rather than just the (likely correct,
+                # unhelpful) called-action set.
+                unexpected.append((called, reply.text))
             else:
                 unexpected.append(called)
         return EvalResult(scenario, hits, trials, unexpected)

@@ -90,6 +90,14 @@ FORCE_REACTION_ACTIONS = {
     "report_commitment_outcome",
     "verify_revision_report",
     "report_parcel_delivery",
+    # Phase 3: all three have a real rejectable precondition
+    # (verify_notice can genuinely contradict Tarin's claim;
+    # report_notice_outcome checks a reported resolution against the
+    # real one) or share the same open-commitment-required bar as
+    # accept/decline_commitment above (withdraw_notice).
+    "verify_notice",
+    "withdraw_notice",
+    "report_notice_outcome",
 }
 
 
@@ -304,12 +312,35 @@ def _handle_llm_reply(
         )
         return
 
+    # Whether this turn will get a follow-up "react to what actually
+    # happened" call - computed now, before validation, since it only
+    # depends on the tool call names and whether there's any text at
+    # all, not on whether the call(s) end up applied. FORCE_REACTION_ACTIONS
+    # exists precisely because a rejected call is where the model's
+    # same-turn text is most likely to already claim an outcome the
+    # engine didn't grant (see that set's own comment) - so for those
+    # actions, this first-pass text must never reach the player at all.
+    # Showing it here and then showing the reaction's corrected text
+    # afterward (as this used to do) let the model's wrong/premature
+    # guess leak out as a visible "said it, then took it back" moment -
+    # confirmed live 2026-10-14 (phase 3 notice scenario: Tarin blurted
+    # out the notice detail on a plain "how's work?" before backtracking
+    # once propose_commitment was actually rejected for the unmet
+    # prerequisite). Deferring to the reaction's own render in
+    # _handle_action_reaction is what was already documented as the
+    # intent; this was just never actually enforced here.
+    tool_call_names = {call["name"] for call in reply.tool_calls}
+    needs_reaction = reply.tool_calls and (
+        not segments or tool_call_names & FORCE_REACTION_ACTIONS
+    )
+
     # segments may be empty here (tool_calls present, no dialogue/emote
     # text) - in that case nothing below sends anything until the
     # first applied tool's narration, so the leading blank line has to
     # wait for that instead of being attached to a segment that never
     # renders.
-    _render_reply_segments(target, caller, segments, pronouns, lead_blank=bool(segments))
+    if not needs_reaction:
+        _render_reply_segments(target, caller, segments, pronouns, lead_blank=bool(segments))
 
     tool_call_records = []
     tool_results = []
@@ -341,11 +372,6 @@ def _handle_llm_reply(
             # dialogue). Also separates multiple narrations from each
             # other, for a turn with more than one applied tool call.
             _msg_with_lead_blank(caller, result.narration)
-
-    tool_call_names = {call["name"] for call in reply.tool_calls}
-    needs_reaction = reply.tool_calls and (
-        not segments or tool_call_names & FORCE_REACTION_ACTIONS
-    )
 
     if needs_reaction:
         # Ask the model to react now that it's seen the outcome,

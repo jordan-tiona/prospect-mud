@@ -219,6 +219,40 @@ def log_rumor_reset(
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
+def log_notice_reset(
+    *,
+    previous_approval_mark_present,
+    previous_resolutions: dict,
+    previous_notice_displayed: bool,
+    previous_informed_commitment_ids: list,
+    actor_key: str,
+    actor_dbref: str,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    Append a marker record for the "unverified_notice" portion of a
+    `resetcommitment` command (see commands/admin.py's
+    CmdResetCommitment) - a human clearing a player's phase 3 notice-
+    approval state mid-test. Its own `"event": "notice_reset"`,
+    parallel to `log_rumor_reset`.
+    """
+    record = {
+        "event": "notice_reset",
+        "timestamp": _now_iso(),
+        "previous_approval_mark_present": previous_approval_mark_present,
+        "previous_resolutions": previous_resolutions,
+        "previous_notice_displayed": previous_notice_displayed,
+        "previous_informed_commitment_ids": previous_informed_commitment_ids,
+        "actor_key": actor_key,
+        "actor_dbref": actor_dbref,
+    }
+
+    target_path = path or DEFAULT_LOG_PATH
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with target_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
 def log_reset(
     *,
     conversation_id: Optional[str],

@@ -29,6 +29,14 @@ from world.commitments import get_open_commitment_id as _get_open_commitment_id
 from world.commitments import propose_commitment as _propose_commitment
 from world.commitments import record_acknowledgment as _record_acknowledgment
 from world.commitments import record_acknowledgment_with_precondition as _record_acknowledgment_with_precondition
+from world.notice_approval import RESOLUTION_VERIFIED, RESOLUTION_WITHDRAWN
+from world.notice_approval import approval_mark_present as _approval_mark_present
+from world.notice_approval import get_resolution as _get_notice_resolution
+from world.notice_approval import is_informed_of as _is_informed_of_notice
+from world.notice_approval import mark_informed as _mark_notice_informed
+from world.notice_approval import project_tarin_notice_knowledge as _project_tarin_notice_knowledge
+from world.notice_approval import project_veska_notice_knowledge as _project_veska_notice_knowledge
+from world.notice_approval import record_resolution as _record_notice_resolution
 from world.npc_memory import remember_fact as _remember_fact
 from world.npc_profile import parse_persona
 from world.reputation import adjust_reputation as _adjust_reputation
@@ -38,12 +46,15 @@ from world.rumors import mark_informed as _mark_informed
 from world.rumors import mark_reputation_credited as _mark_reputation_credited
 from world.rumors import project_mara_parcel_knowledge as _project_mara_parcel_knowledge
 
-# Phase 2E: wired here, not in world/commitments.py's SCENARIOS literal,
-# since world/rumors.py imports from world/commitments.py and this
-# avoids a circular import. SCENARIOS is the same dict object
-# commitments.py's own functions read from, so mutating this field in
-# place is visible everywhere, not just through this module.
+# Phase 2E/3: wired here, not in world/commitments.py's SCENARIOS
+# literal, since world/rumors.py and world/notice_approval.py both
+# import from world/commitments.py and this avoids a circular import.
+# SCENARIOS is the same dict object commitments.py's own functions
+# read from, so mutating this field in place is visible everywhere,
+# not just through this module.
 SCENARIOS["deliver_parcel"].proposer_knowledge_projector = _project_mara_parcel_knowledge
+SCENARIOS["unverified_notice"].proposer_knowledge_projector = _project_tarin_notice_knowledge
+SCENARIOS["unverified_notice"].holder_knowledge_projector = _project_veska_notice_knowledge
 
 
 @dataclass
@@ -536,6 +547,93 @@ def _validate_report_parcel_delivery(npc, actor, arguments: dict) -> ActionResul
     return ActionResult(True, f"{npc.key} is glad to hear the parcel reached {recipient_name}.")
 
 
+# Phase 3 "The Unverified Notice" (docs/phase3-unverified-notice-
+# design.md): Tarin proposes/is told the outcome; Veska independently
+# resolves it one of two mutually-exclusive ways. Both verify_notice
+# and withdraw_notice route through fulfill_commitment_with_precondition,
+# which already requires STATUS_OPEN to proceed - so once either path
+# succeeds, the other finds no open commitment left and is rejected,
+# the same mutual-exclusion-for-free mechanism 2C's multi-holder parcel
+# already relies on. Neither action takes a real argument (the model's
+# only decision is which of the two to call); each still needs one
+# required field per docs/npc-action-prompt-guidelines.md guideline #7
+# (a zero-argument schema is reliably skipped in favor of narrating in
+# prose instead of calling the tool).
+def _validate_verify_notice(npc, actor, arguments: dict) -> ActionResult:
+    npc_id = npc.db.npc_id
+    scenario = SCENARIOS["unverified_notice"]
+    if npc_id not in scenario.holder_npc_ids:
+        return ActionResult(False, "", reason=f"{npc_id!r} has no holder role for 'unverified_notice'")
+
+    commitment_id = _get_open_commitment_id(actor, "unverified_notice")
+    precondition_ok = bool(commitment_id) and _approval_mark_present(actor)
+
+    result = _fulfill_commitment_with_precondition(actor, "unverified_notice", npc_id, precondition_ok)
+    if not result.ok:
+        return ActionResult(False, "", reason=result.reason)
+
+    _record_notice_resolution(actor, result.commitment_id, RESOLUTION_VERIFIED)
+    return ActionResult(True, f"{npc.key} checks the notice herself and confirms the approval mark is there.")
+
+
+def _validate_withdraw_notice(npc, actor, arguments: dict) -> ActionResult:
+    npc_id = npc.db.npc_id
+    scenario = SCENARIOS["unverified_notice"]
+    if npc_id not in scenario.holder_npc_ids:
+        return ActionResult(False, "", reason=f"{npc_id!r} has no holder role for 'unverified_notice'")
+
+    commitment_id = _get_open_commitment_id(actor, "unverified_notice")
+    # Withdrawal doesn't contest Tarin's claim either way - it only
+    # requires an actual open commitment to act on, same bar as any
+    # other commitment action's basic precondition.
+    precondition_ok = bool(commitment_id)
+
+    result = _fulfill_commitment_with_precondition(actor, "unverified_notice", npc_id, precondition_ok)
+    if not result.ok:
+        return ActionResult(False, "", reason=result.reason)
+
+    _record_notice_resolution(actor, result.commitment_id, RESOLUTION_WITHDRAWN)
+    return ActionResult(True, f"{npc.key} pulls the notice from public display until it's sorted out.")
+
+
+_NOTICE_RESOLUTION_ARG_MAP = {"verified": RESOLUTION_VERIFIED, "withdrawn": RESOLUTION_WITHDRAWN}
+
+
+def _validate_report_notice_outcome(npc, actor, arguments: dict) -> ActionResult:
+    npc_id = npc.db.npc_id
+    if npc_id != "tarin_os":
+        return ActionResult(False, "", reason=f"{npc_id!r} has no role in the notice-resolution report")
+
+    reported_resolution = arguments.get("reported_resolution")
+    expected = _NOTICE_RESOLUTION_ARG_MAP.get(reported_resolution)
+    if expected is None:
+        return ActionResult(False, "", reason=f"invalid reported_resolution: {reported_resolution!r}")
+
+    commitment = _get_fulfilled_commitment(actor, "unverified_notice")
+    if commitment is None:
+        return ActionResult(False, "", reason="no fulfilled unverified_notice commitment on record")
+
+    actual = _get_notice_resolution(actor, commitment["commitment_id"])
+    if expected != actual:
+        return ActionResult(
+            False,
+            "",
+            reason=(
+                f"reported resolution {reported_resolution!r} does not match the actual "
+                f"resolution {actual!r}"
+            ),
+        )
+
+    commitment_id = commitment["commitment_id"]
+    if _is_informed_of_notice(actor, commitment_id):
+        return ActionResult(False, "", reason="already informed of this resolution")
+
+    _mark_notice_informed(actor, commitment_id)
+    if actual == RESOLUTION_VERIFIED:
+        return ActionResult(True, f"{npc.key} is relieved to hear the notice checked out and stayed up.")
+    return ActionResult(True, f"{npc.key} is glad the notice was pulled until it's sorted out.")
+
+
 def _fold_accents(text: str) -> str:
     # "Corner Café" has to still match a model that writes "Corner
     # Cafe" without the accent - strip combining marks rather than
@@ -624,6 +722,9 @@ _ACTION_VALIDATORS = {
     "accept_handoff": _validate_accept_handoff,
     "verify_revision_report": _validate_verify_revision_report,
     "report_parcel_delivery": _validate_report_parcel_delivery,
+    "verify_notice": _validate_verify_notice,
+    "withdraw_notice": _validate_withdraw_notice,
+    "report_notice_outcome": _validate_report_notice_outcome,
     "remember_fact": _validate_remember_fact,
 }
 
@@ -948,6 +1049,81 @@ ACTION_SCHEMAS = {
                     }
                 },
                 "required": ["reported_recipient"],
+            },
+        },
+    },
+    "verify_notice": {
+        "type": "function",
+        "function": {
+            "name": "verify_notice",
+            "description": (
+                "Go check the posted notice yourself for the required approval mark, rather "
+                "than taking anyone's word for it. Call it the moment the player asks you to "
+                "confirm the notice is correctly approved, instead of asking them to take it "
+                "down. The engine tells you what you actually find when you check - it is not "
+                "something you can assume or guess at."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": (
+                            "Always true - this action takes no real argument, it just "
+                            "confirms you're acting now."
+                        ),
+                    }
+                },
+                "required": ["confirmed"],
+            },
+        },
+    },
+    "withdraw_notice": {
+        "type": "function",
+        "function": {
+            "name": "withdraw_notice",
+            "description": (
+                "Pull the posted notice from public display, regardless of whether its "
+                "approval mark actually checks out. Call it the moment the player asks you to "
+                "take the notice down instead of verifying it."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": (
+                            "Always true - this action takes no real argument, it just "
+                            "confirms you're acting now."
+                        ),
+                    }
+                },
+                "required": ["confirmed"],
+            },
+        },
+    },
+    "report_notice_outcome": {
+        "type": "function",
+        "function": {
+            "name": "report_notice_outcome",
+            "description": (
+                "Record that the player has just told you what happened with the notice at "
+                "the Civic Office - either that Veska checked it herself and it's staying up, "
+                "or that she pulled it. The engine checks that against the real record and "
+                "will tell you the result - it is not something you can tell just by what they "
+                "say. Do not call it for a question, a guess between the two, a case where "
+                "they're unsure, or a claim that leaves it unresolved."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "reported_resolution": {
+                        "type": "string",
+                        "enum": ["verified", "withdrawn"],
+                        "description": "Which outcome the player says actually happened.",
+                    }
+                },
+                "required": ["reported_resolution"],
             },
         },
     },

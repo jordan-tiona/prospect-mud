@@ -222,6 +222,10 @@ class ResetCommitmentCommandTests(TestCase):
         self.mock_log_rumor_reset = rumor_log_patcher.start()
         self.addCleanup(rumor_log_patcher.stop)
 
+        notice_log_patcher = patch("commands.admin.log_notice_reset")
+        self.mock_log_notice_reset = notice_log_patcher.start()
+        self.addCleanup(notice_log_patcher.stop)
+
     def test_resets_own_commitment_with_no_argument(self):
         propose_commitment(self.actor, self.COMMITMENT_TYPE)
         accept_commitment(self.actor, self.COMMITMENT_TYPE)
@@ -365,6 +369,43 @@ class ResetCommitmentCommandTests(TestCase):
 
         self.assertFalse(any("rumor knowledge" in m for m in self.messages))
         self.mock_log_rumor_reset.assert_not_called()
+
+    def test_reset_clears_notice_approval_state(self):
+        # docs/phase3-unverified-notice-design.md: resetcommitment must
+        # also clear the notice's approval-mark fixture, resolution
+        # record, and Tarin's informed state, since all three are
+        # downstream of unverified_notice the same way rumor/reputation
+        # are downstream of deliver_parcel above.
+        from world.actions import (
+            _validate_accept_commitment as _acc,
+            _validate_propose_commitment as _prop,
+            _validate_report_commitment_outcome as _rco,
+            _validate_withdraw_notice,
+        )
+        from world.notice_approval import notice_displayed
+
+        tarin = self.npcs["tarin_os"]
+        veska = self.npcs["veska_renn"]
+        _prop(tarin, self.actor, {"commitment_type": "discrepancy_report"})
+        _acc(tarin, self.actor, {"commitment_type": "discrepancy_report"})
+        _rco(veska, self.actor, {"commitment_type": "discrepancy_report"})
+        _rco(tarin, self.actor, {"commitment_type": "discrepancy_report"})
+        _prop(tarin, self.actor, {"commitment_type": "unverified_notice"})
+        _acc(tarin, self.actor, {"commitment_type": "unverified_notice"})
+        _validate_withdraw_notice(veska, self.actor, {"confirmed": True})
+        self.assertFalse(notice_displayed(self.actor))
+
+        self.actor.execute_cmd("resetcommitment")
+
+        self.assertTrue(notice_displayed(self.actor))
+        self.assertTrue(any("notice-approval fact" in m for m in self.messages))
+        self.mock_log_notice_reset.assert_called_once()
+
+    def test_reset_with_no_notice_progress_does_not_mention_it_or_log(self):
+        self.actor.execute_cmd("resetcommitment")
+
+        self.assertFalse(any("notice-approval fact" in m for m in self.messages))
+        self.mock_log_notice_reset.assert_not_called()
 
 
 class ResetMemoryCommandTests(TestCase):

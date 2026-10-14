@@ -46,6 +46,13 @@ COMMITMENT_ACTIONS = {
     "decline_commitment",
     "report_commitment_outcome",
     "accept_handoff",
+    # Phase 3 ("The Unverified Notice"): Veska's two scenario-specific
+    # fulfilling actions, parallel to accept_handoff's role for the
+    # parcel scenario - without this, commitment_context_for would
+    # never inject "unverified_notice" state for her at all, since
+    # neither action name is report_commitment_outcome/accept_handoff.
+    "verify_notice",
+    "withdraw_notice",
 }
 
 
@@ -84,6 +91,23 @@ class ScenarioConfig:
     # register as the scenario description below - not new setting
     # lore, just this NPC's situational demeanor.
     holder_hint_pose: str = ""
+    # Phase 3 ("The Unverified Notice"): the proposer-side equivalent
+    # of holder_hint_pose, for a scenario (like this one) where the
+    # proposer isn't also the holder - deliver_parcel hit this same
+    # asymmetry and solved it with a physical object instead (Mara had
+    # one available); this scenario doesn't, so Tarin needs his own
+    # passive cue once he's actually eligible to raise it. Same
+    # "not offered" gating as holder_hint_pose, via hint_pose_for below.
+    proposer_hint_pose: str = ""
+    # Phase 3: an optional prerequisite - this commitment_type can't be
+    # offered (and its proposer_hint_pose won't show) until a different
+    # commitment_type is already STATUS_FULFILLED for this player. ""
+    # means no prerequisite, the default for every existing scenario.
+    # Checked in propose_commitment and hint_pose_for, not just left to
+    # the proposer's own persona wording - CLAUDE.md hard rule 2 means
+    # the engine enforces this, not just hopes the model doesn't offer
+    # it early.
+    requires_fulfilled_commitment_type: str = ""
     # Narration templates for world/actions.py's validators to render
     # (ActionResult.narration - design-bible 16.5 step 4's "shown to
     # the player together with the narrated outcome"). Formatted with
@@ -113,6 +137,22 @@ class ScenarioConfig:
     # fulfill_commitment_with_precondition keeps from a parcel's actual
     # possession check.
     proposer_knowledge_projector: Optional[Callable[[object, str], str]] = None
+    # The holder-side equivalent of proposer_knowledge_projector, for a
+    # scenario where "fulfilled" alone isn't enough for the holder to
+    # answer later questions about what actually happened - e.g.
+    # unverified_notice, where Veska is the one who performs either
+    # verify_notice or withdraw_notice, and "fulfilled" alone doesn't
+    # say which. Confirmed live (2026-10-14): without this, Veska had
+    # no engine-grounded fact to answer "which one did I do?" after the
+    # tool-call turn itself, and hallucinated the wrong one (claimed
+    # she'd withdrawn the notice when she'd actually verified it) - a
+    # real narrated contradiction of the engine's own authoritative
+    # state, not just a wording quirk, since nothing else in the
+    # pipeline ever told her which fact was true. None (the default)
+    # means no projection - commitment_context_for then just shows the
+    # holder its ordinary unprojected state, same as every scenario
+    # before this one.
+    holder_knowledge_projector: Optional[Callable[[object, str], str]] = None
 
     @property
     def effective_proposer_npc_id(self) -> str:
@@ -175,6 +215,29 @@ SCENARIOS = {
         ack_narration="{npc} confirms the revision {actor} reported matches the record.",
         fulfill_narration="{npc} is glad to hear the display's revision checked out.",
     ),
+    # docs/phase3-scope.md / docs/phase3-unverified-notice-design.md:
+    # "The Unverified Notice." Tarin proposes (once his own
+    # discrepancy_report is fulfilled - requires_fulfilled_commitment_
+    # type below), Veska resolves it one of two mutually-exclusive ways
+    # via world/actions.py's verify_notice/withdraw_notice, both routed
+    # through fulfill_commitment_with_precondition - whichever fires
+    # first leaves no open commitment for the other to find, so mutual
+    # exclusion falls out of existing code rather than needing new
+    # cross-type bookkeeping. No clerk role, same shape as deliver_parcel.
+    "unverified_notice": ScenarioConfig(
+        commitment_type="unverified_notice",
+        holder_npc_id="veska_renn",
+        proposer_npc_id="tarin_os",
+        requires_fulfilled_commitment_type="discrepancy_report",
+        proposer_hint_pose="looking a little uneasy about something posted at the Civic Office",
+        propose_narration="{npc} mentions the posted notice and asks {actor} to help settle whether it's right.",
+        accept_narration="{npc} is glad {actor} is willing to take it up with Veska.",
+        decline_narration="{npc} accepts that {actor} can't look into the notice right now.",
+        fulfill_narration="{npc} will hear how it went once {actor} tells him.",
+        # Phase 3: wired below, after import, to avoid a circular
+        # import (world/notice_approval.py imports from this module) -
+        # same workaround as deliver_parcel's projector.
+    ),
 }
 
 
@@ -224,6 +287,16 @@ def _find_open_commitment(actor, commitment_type: str) -> dict | None:
     return None
 
 
+def _prerequisite_met(actor, scenario: "ScenarioConfig") -> bool:
+    """Phase 3: True when scenario has no requires_fulfilled_commitment_
+    type, or the named prerequisite commitment_type is already
+    STATUS_FULFILLED for this player. Shared by propose_commitment and
+    hint_pose_for so the engine enforces this, not just persona wording."""
+    if not scenario.requires_fulfilled_commitment_type:
+        return True
+    return get_fulfilled_commitment(actor, scenario.requires_fulfilled_commitment_type) is not None
+
+
 def propose_commitment(actor, commitment_type: str) -> LifecycleResult:
     """
     The holder NPC offers the errand. Only records that an offer is
@@ -231,8 +304,11 @@ def propose_commitment(actor, commitment_type: str) -> LifecycleResult:
     one's already open or already pending, so re-offering mid-errand
     can't spawn a second instance.
     """
-    if get_scenario(commitment_type) is None:
+    scenario = get_scenario(commitment_type)
+    if scenario is None:
         return LifecycleResult(False, reason=f"unknown commitment_type: {commitment_type!r}")
+    if not _prerequisite_met(actor, scenario):
+        return LifecycleResult(False, reason="prerequisite commitment not yet fulfilled")
     if _find_open_commitment(actor, commitment_type):
         return LifecycleResult(False, reason="an open commitment of this type already exists")
     offers = _offers(actor)
@@ -507,6 +583,8 @@ def commitment_context_for(npc_id: str, npc_actions: list, actor) -> str | None:
                 f"(your side): {state}."
             )
         elif npc_id in scenario.holder_npc_ids:
+            if scenario.holder_knowledge_projector is not None:
+                state = scenario.holder_knowledge_projector(actor, state)
             lines.append(
                 f"Engine state for the {scenario.commitment_type!r} commitment with this player "
                 f"(your side): {state}."
@@ -534,10 +612,21 @@ def hint_pose_for(npc_id: str, actor) -> str | None:
     after it's served its purpose.
     """
     for scenario in SCENARIOS.values():
-        if npc_id not in scenario.holder_npc_ids or not scenario.holder_hint_pose:
-            continue
-        if get_state_summary(actor, scenario.commitment_type) == "not offered":
-            return scenario.holder_hint_pose
+        if npc_id in scenario.holder_npc_ids and scenario.holder_hint_pose:
+            if get_state_summary(actor, scenario.commitment_type) == "not offered":
+                return scenario.holder_hint_pose
+        # Phase 3: the proposer-side equivalent, for a scenario where
+        # the proposer isn't also the holder (deliver_parcel solved
+        # this with a physical object instead; this one doesn't have
+        # one). Also gated on the prerequisite, so the pose can't leak
+        # eligibility the player hasn't actually earned yet.
+        if (
+            npc_id == scenario.effective_proposer_npc_id
+            and scenario.proposer_hint_pose
+            and _prerequisite_met(actor, scenario)
+            and get_state_summary(actor, scenario.commitment_type) == "not offered"
+        ):
+            return scenario.proposer_hint_pose
     return None
 
 
