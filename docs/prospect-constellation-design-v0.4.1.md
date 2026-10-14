@@ -1165,6 +1165,12 @@ Any other `say` — multiple players present, no name given, and no lone NPC to 
 - **Age verification** meeting the laws of the jurisdictions where players are (many US states, the UK Online Safety Act and others), and attention to payment-processor restrictions.
 - **Legal review before launch.**
 
+### 16.10 Post-prototype polish notes
+
+**Status:** Established as deferred cosmetic/engineering cleanup; not worth interrupting the prototype for. Revisit once phase 1/2 functionality is settled.
+
+- **Drop numeric object IDs from player-facing room/object names.** Builder scripts currently print dbref numbers alongside object names for their own debug output (e.g. "Noticeboard prop ready: a civic information display (#189) in Corner Café"); these shouldn't leak into anything the player actually sees.
+
 ---
 
 ## 17. Unresolved decisions and canon safeguards

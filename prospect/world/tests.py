@@ -236,6 +236,29 @@ class EmoteSplitTests(SimpleTestCase):
     def test_emote_only_leaves_no_dialogue_segment(self):
         self.assertEqual(parse_reply("*shrugs*"), [("emote", "shrugs")])
 
+    def test_strips_backslash_escaped_quotes_from_dialogue(self):
+        # Confirmed live (2026-10-14, gpt-4.1-mini): the raw reply
+        # content sometimes contains literal backslash-escaped quotes,
+        # as if written to be embedded in a JSON string rather than
+        # plain chat text - e.g. '\"Mornin\'.\"' instead of '"Mornin\'."'.
+        # Real dialogue never legitimately contains a raw backslash.
+        text = '\\"Mornin\'. Thanks, it keeps the Old Quarter\'s spirits up.\\"'
+        self.assertEqual(
+            parse_reply(text),
+            [("dialogue", "Mornin'. Thanks, it keeps the Old Quarter's spirits up.")],
+        )
+
+    def test_strips_backslash_escaped_quotes_around_an_action(self):
+        text = '\\"Well, you\'ve come to the right place.\\" *leans against the counter* \\"Front-row seat.\\"'
+        self.assertEqual(
+            parse_reply(text),
+            [
+                ("dialogue", "Well, you've come to the right place."),
+                ("emote", "leans against the counter"),
+                ("dialogue", "Front-row seat."),
+            ],
+        )
+
     def test_action_splits_dialogue_into_two_segments(self):
         # the project owner's preferred pattern: dialogue - action -
         # dialogue, rendered as three separate lines rather than every

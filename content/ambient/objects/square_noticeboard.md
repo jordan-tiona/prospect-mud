@@ -18,7 +18,7 @@ Community notices and small advertisements are arranged behind a scratched trans
 
 --------------------------
 
-North: Corner Cafe
+North: Corner Café
 
 South: Residential Courtyard
 

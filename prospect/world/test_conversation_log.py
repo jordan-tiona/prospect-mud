@@ -86,6 +86,20 @@ class ConversationLogTests(SimpleTestCase):
         self.assertIsNone(record["npc_response"])
         self.assertEqual(record["flag_reason"], "llm_unavailable")
 
+    def test_initial_response_defaults_to_none(self):
+        self._log()
+        record = self._read_records()[0]
+        self.assertIsNone(record["initial_response"])
+
+    def test_initial_response_records_the_pre_reaction_text(self):
+        # commands/say.py's reaction path: the first completion's text
+        # (what the player actually saw) is distinct from npc_response
+        # (the follow-up reaction) - both must survive to the log.
+        self._log(initial_response="*shrugs* \"Could use a hand with something.\"", npc_response="Thanks.")
+        record = self._read_records()[0]
+        self.assertEqual(record["initial_response"], '*shrugs* "Could use a hand with something."')
+        self.assertEqual(record["npc_response"], "Thanks.")
+
 
 class ConversationResetLogTests(SimpleTestCase):
     """

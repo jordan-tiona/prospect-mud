@@ -16,10 +16,20 @@ activity would; this is a manual reset for that, not a game feature.
 
 from evennia.utils.utils import inherits_from
 
-from world.actions import DEFAULT_STOCK, QUEST_MODULE_EXCHANGE_KEY, get_quest_state
-from world.commitments import SCENARIOS, reset_commitment
-from world.conversation_log import log_commitment_reset, log_quest_reset, log_reset
+from world.actions import DEFAULT_STOCK, QUEST_MODULE_EXCHANGE_KEY, cleanup_stray_parcels, get_quest_state
+from world.commitments import known_commitment_types_for, reset_commitment
+from world.conversation_log import (
+    log_commitment_reset,
+    log_memory_reset,
+    log_quest_reset,
+    log_reset,
+    log_rumor_reset,
+)
+from world.npc_memory import known_npc_ids_with_memory_for, reset_memory
+from world.noticeboard import reset_expected_revision
 from world.npc_profile import parse_persona
+from world.reputation import reset_reputation
+from world.rumors import reset_rumor
 
 from .command import Command
 
@@ -186,7 +196,11 @@ class CmdResetCommitment(Command):
                 return
 
         cleared_any = False
-        for commitment_type in SCENARIOS:
+        # Not just SCENARIOS - also whatever's actually in this player's
+        # own data, so a commitment_type since renamed or removed (e.g.
+        # the 2026-10-13 parcel redesign) can still be found and cleared,
+        # rather than silently staying stuck forever.
+        for commitment_type in known_commitment_types_for(target):
             snapshot = reset_commitment(target, commitment_type)
             if not snapshot["had_offer"] and not snapshot["previous_statuses"]:
                 continue
@@ -199,7 +213,116 @@ class CmdResetCommitment(Command):
                 actor_dbref=target.dbref,
             )
 
-        if cleared_any:
+        removed_parcels = cleanup_stray_parcels(target)
+        previous_revision = reset_expected_revision(target)
+
+        # Phase 2E: the parcel-rumor knowledge and reputation credit
+        # are both downstream of deliver_parcel - coordinated here
+        # rather than a separate `resetrumor` command, so a tester
+        # resetting commitments can't forget the other half and leave
+        # Mara believing the parcel arrived (or still crediting
+        # reputation) from an instance that no longer exists.
+        rumor_snapshot = reset_rumor(target)
+        previous_mara_reputation = reset_reputation(target, "mara_voss")
+        rumor_cleared = bool(rumor_snapshot["informed_commitment_ids"]) or rumor_snapshot["reputation_credited"]
+        if rumor_cleared or previous_mara_reputation:
+            log_rumor_reset(
+                previous_informed_commitment_ids=rumor_snapshot["informed_commitment_ids"],
+                previous_reputation_credited=rumor_snapshot["reputation_credited"],
+                previous_mara_reputation=previous_mara_reputation,
+                actor_key=target.key,
+                actor_dbref=target.dbref,
+            )
+
+        if cleared_any or removed_parcels or previous_revision is not None or rumor_cleared or previous_mara_reputation:
             caller.msg(f"You reset {target.key}'s commitment progress back to the start.")
+            if removed_parcels:
+                caller.msg(f"Removed {removed_parcels} stray carried parcel(s) no longer tied to anything open.")
+            if previous_revision is not None:
+                caller.msg("Cleared their generated noticeboard revision - the display will show a fresh one.")
+            if rumor_cleared or previous_mara_reputation:
+                caller.msg("Cleared their parcel-delivery rumor knowledge and Mara's reputation credit.")
         else:
             caller.msg(f"{target.key} has no commitment progress to reset.")
+
+
+class CmdResetMemory(Command):
+    """
+    Clear a player's stored NPC memory (design-bible 16.6) back to
+    nothing, without restarting the server. Clears every NPC this
+    player actually has memory stored under, not just NPCs that
+    currently grant remember_fact - the same reasoning as
+    resetcommitment's known_commitment_types_for, in case that ever
+    changes later.
+
+    Usage:
+      resetmemory
+      resetmemory <player>
+    """
+
+    key = "resetmemory"
+    locks = "cmd:perm(Builder)"
+    help_category = "Building"
+
+    def func(self):
+        caller = self.caller
+        target_name = self.args.strip()
+
+        if not target_name:
+            target = caller
+        else:
+            target = caller.search(target_name, global_search=True)
+            if not target:
+                return
+
+        cleared_any = False
+        for npc_id in known_npc_ids_with_memory_for(target):
+            snapshot = reset_memory(target, npc_id)
+            if not snapshot["previous_facts"]:
+                continue
+            cleared_any = True
+            log_memory_reset(
+                npc_id=npc_id,
+                previous_facts=snapshot["previous_facts"],
+                actor_key=target.key,
+                actor_dbref=target.dbref,
+            )
+
+        if cleared_any:
+            caller.msg(f"You cleared {target.key}'s stored NPC memory.")
+        else:
+            caller.msg(f"{target.key} has no stored NPC memory to clear.")
+
+
+class CmdMemoryDebug(Command):
+    """
+    Toggle a visible `[memory] <NPC> notes: "..."` line whenever
+    remember_fact actually fires for a player, so you can confirm what
+    got stored without having to read server/logs/conversations.jsonl.
+    Off by default. Purely a testing aid - world/actions.py's
+    _validate_remember_fact checks this flag, not a game feature.
+
+    Usage:
+      memorydebug
+      memorydebug <player>
+    """
+
+    key = "memorydebug"
+    locks = "cmd:perm(Builder)"
+    help_category = "Building"
+
+    def func(self):
+        caller = self.caller
+        target_name = self.args.strip()
+
+        if not target_name:
+            target = caller
+        else:
+            target = caller.search(target_name, global_search=True)
+            if not target:
+                return
+
+        enabled = not target.attributes.get("memory_debug_enabled", default=False)
+        target.attributes.add("memory_debug_enabled", enabled)
+        state = "on" if enabled else "off"
+        caller.msg(f"Memory debug messages are now {state} for {target.key}.")

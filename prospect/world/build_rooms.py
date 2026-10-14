@@ -2,7 +2,7 @@
 Phase 1 prototype world builder.
 
 Creates the six-room test neighborhood from design-bible section 13.6
-(Lift Concourse, Old Quarter Square, Corner Cafe, Maintenance Workshop,
+(Lift Concourse, Old Quarter Square, Corner Café, Maintenance Workshop,
 Residential Courtyard, Civic Office), connected hub-and-spoke with Old
 Quarter Square as the hub, per that section's "connecting the other
 rooms" language.
@@ -46,9 +46,9 @@ ROOMS = [
     ),
     (
         "corner_cafe",
-        "Corner Cafe",
+        "Corner Café",
         "TODO(lore): placeholder description. Role (design bible 13.6): "
-        "a place for informal dialogue with a cafe owner.",
+        "a place for informal dialogue with a café owner.",
     ),
     (
         "maintenance_workshop",
@@ -95,7 +95,10 @@ SPOKES = [
 def _get_or_create_room(tag, name, desc):
     matches = search_tag(key=tag, category=BUILD_TAG_CATEGORY)
     if matches:
-        return matches[0]
+        room = matches[0]
+        if room.key != name:
+            room.key = name
+        return room
     room = create_object("typeclasses.rooms.Room", key=name)
     room.db.desc = desc
     room.tags.add(tag, category=BUILD_TAG_CATEGORY)

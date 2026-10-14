@@ -1,9 +1,10 @@
 # Phase 2 prototype: commitments as a quest primitive
 
-Status: Reviewed by the project owner and ChatGPT (2026-10-12). Phase 2A below
-is approved and implemented; the generic `Commitment` system (§2-3) is kept as
-future direction, not built now. See §11 for the reviewed roadmap and the
-reasoning behind splitting it this way.
+Status: **Phase 2 closed (2026-10-15).** 2A-2E are all implemented and live;
+see §14a for the close-out note and what's carried forward into phase 3.
+The rest of this doc is kept as the historical record of how phase 2 was
+scoped and built, increment by increment - see §11 for the original reviewed
+roadmap and the reasoning behind splitting it this way.
 Depends on: `docs/prospect-constellation-design-v0.4.1.md` (setting canon), `CLAUDE.md` (hard rules, phase 1 scope).
 
 ## 1. Goal
@@ -159,3 +160,102 @@ A good 2B scenario should have a commitment type where:
 - Both NPCs' dialogue reflects true, current commitment state fed fresh each turn.
 - Hard rule 1/2 integrity: no fabricated flavor text changes what the engine actually recorded as fulfilled.
 - If the scenario supports more than one sensible resolution path (declining, an alternate offer), each resolves to a distinct, sensible outcome without new code per path - this is the one claim 2A explicitly deferred (§11) and 2B is positioned to actually demonstrate, if the chosen scenario supports it.
+
+## 13. Phase 2C requirements, for scenario co-design with ChatGPT (2026-10-13)
+
+2B is complete, live, and confirmed working (§12 above), but its exit test turned out single-path (accept → report-to-Veska → return-to-Tarin, plus a decline/re-offer branch). The original phase 2 goal from §1 - **different players, approaching the same need differently, reach different sensible resolutions** - still has not been demonstrated by anything built. Per §11, this is the start of the "Later" tier: alternative resolutions, negotiation, and genuine (not near-unconditional) multi-party corroboration. As with §12, this section is requirements for the project owner to take into scenario discussion with ChatGPT, not a proposed scenario - no NPCs, needs, or lore are decided here.
+
+### Already built and proven - directly reusable, no rework needed
+
+- The generic `Commitment`/`Acknowledgment` lifecycle (`world/commitments.py`): propose/accept/decline/report, `SCENARIOS` config driving per-NPC role lookup (the model never picks its own role), per-player persistence, reset tooling, conversation logging of every call including rejected ones.
+- Per-NPC knowledge scoping tuned specifically to avoid leaking one NPC's role-irrelevant state to another (the `QUEST_STATE_VISIBILITY` fix from 2B).
+- Per-player conversational focus and multi-NPC-room addressing (`world/npc_addressing.py`) - already handles a room with more than one talk-capable NPC.
+- The live-model reliability eval harness (`world/npc_eval.py`) - run this after any new or reworded action, not just a read-through; §12's false-positive history is exactly what it exists to catch.
+- `docs/npc-action-prompt-guidelines.md`'s patterns, especially #10 (model tool-calls can decouple from its own hedging text) and #11 (eval-harness-catches-what-read-throughs-miss).
+
+### What 2C needs that 2A/2B didn't: two new capabilities, not one
+
+**A. Alternate resolution paths.** The scenario needs a need that can genuinely be met more than one way - not one authored path plus a decline. Each path should end in a different, distinct, engine-recorded status (not just "fulfilled" vs. "nothing happened"), and none of the paths can require new code once the scenario is authored - they should all route through the existing generic `Commitment` actions, distinguished only by which commitment type or which NPC the player engages. Concretely, this likely means **the fixed `SCENARIOS` entry needs more than one commitment type available for the same underlying need**, which the primitive supports today but 2A/2B never exercised with more than one type live at once.
+
+**B. Genuine corroboration, not a near-unconditional trigger.** §12 deliberately built Veska's confirmation to fire "essentially whenever told" and explicitly punted the harder version - an NPC that can actually refuse or grant based on some judgment - to this tier. That's the open question now. Recommendation, carried forward from §12's reasoning: **do not build this as the model scoring persuasiveness or credibility in free-form prose.** The §12 data point (a 10/10 reproducible false-positive on an ambiguous judgment call, surviving two independent persona rewrites) is direct evidence that this model's tool-calling doesn't reliably couple to fine-grained conversational judgment. Any "genuine" gate should still cash out to a **structured, checkable fact** the corroborating NPC's action validates against engine state - e.g., the player must have actually done or said a specific authored thing to a specific NPC first (checkable the same way 2A checked "do you actually possess the replacement module," not "did you argue persuasively"). The scenario design should pick a need where that kind of structured prerequisite exists naturally, so "genuine" means "has a real precondition," not "requires the model to judge rhetoric."
+
+### Still explicitly out of scope (carried over from §4, unchanged)
+
+- Rumor propagation / information spreading between NPCs.
+- Reputation numbers or faction standing.
+- Autonomous NPC goal-pursuit when the player isn't present.
+- Open-ended negotiation (collateral, partial payment, counter-offers with free-form terms).
+- Mediation between two NPCs' conflicting claims ("civic dispute") - still a second-commitment-holder-per-side problem; a reasonable *next* tier after 2C, not this one.
+- NPC-initiated commitments (an NPC raising the need unprompted on a later visit, without the player asking) - a real "Later" item distinct from the two above, worth flagging to ChatGPT as a possible stretch goal for this round but not a requirement; defer again if it doesn't fit cleanly.
+
+### What this means for picking a scenario with ChatGPT
+
+A good 2C scenario should have:
+- A single underlying need with **at least two authored resolution paths** that a player could plausibly reach through different conversation choices (e.g., two different ways to help, or helping vs. a distinct alternative that still counts as resolving it) - not one path plus decline.
+- A corroboration step (if the scenario has one) gated on a **structured fact**, not persuasive-sounding prose - something the engine can check the same mechanical way 2A/2B already check things.
+- Scope held to one new scenario, reusing existing rooms/cast where reasonable; any new NPC/room/lore this needs is new authored content (per CLAUDE.md) and gets the same `TODO(lore)` discipline until written.
+
+### Acceptance criteria / exit test for 2C (draft)
+
+- At least two distinct resolution paths exist for the same authored need, each reachable without new code once the scenario is authored, and each ending in a different, engine-recorded, distinguishable status.
+- If a corroboration step exists, it's gated on a structured fact the engine actually checks (not a free-form credibility judgment), and that gate has been run through `npc_eval.py` for reliability before being treated as proven, the same way §12's discoveries were only caught by the harness.
+- Hard rule 1/2 integrity holds throughout: no fabricated flavor text (on either path) changes what the engine records, and a dropped/rejected call is never silently "fixed up."
+- Each NPC's dialogue reflects true, current, per-player state fed fresh every turn, consistent across whichever path the player is on.
+- Per-player isolation holds: two players on different paths (or the same path at different stages) never cross-contaminate each other's state.
+- The chosen scenario does not reintroduce anything from the "still explicitly out of scope" list above as a side effect of making alternate paths work (e.g., don't accidentally need a reputation number to pick which path is "better").
+
+## 14a. Phase 2E and phase 2 close-out (2026-10-15)
+
+2E ("Word Gets Around" - `docs/phase2e-word-gets-around-design.md`) is complete and confirmed live. It filled the two pieces of §13 bible scope (13.5/1152) that no prior increment had touched: a short per-NPC reputation nudge, and an NPC not automatically knowing an authoritative event the engine already resolved (the knowledge/fulfillment split, `world/rumors.py`), learnable only through a validated, structured-argument conversational action (`report_parcel_delivery`) - not a generalized rumor/belief system, per that doc's own scope boundary.
+
+With 2E done, all four pieces the bible names for phase 2 (§1152: "per-player memory, a simple quest, rumor and reputation actions") are built and live: memory (`world/npc_memory.py`), quest/commitment (2A-2D, this doc), rumor and reputation (2E). The bible's exit test - "playtesters enjoy NPC conversations and cannot exploit game state" - has been exercised specifically as an exploit hunt during 2E's live playtesting (false delivery claims, wrong-recipient lies, vague/ambiguous reports), and every attempt was either correctly rejected by a validator or, in one known-limitation case (guideline #17), safely inert rather than exploitable. **Phase 2 is closed as of this commit.**
+
+One item from §14's "genuine corroboration" track was never built: a corroboration gate that can actually *fail* for a structured reason (as opposed to 2B/2E's near-unconditional or always-checkable-but-never-contested gates). It's carried forward as real phase 3 scope below, not dropped.
+
+## 14b. Phase 3: not yet scoped beyond this note
+
+Per CLAUDE.md's precedence rule (§1269), expanding into negotiation, genuine (failable) corroboration, mediation between conflicting NPC accounts, or NPC-initiated activity are reasonable next directions - all previously flagged as deferred-not-dropped at various points in this doc (§4, §11, §14) - but none is scoped yet. That's a design conversation with the project owner (and likely ChatGPT, per this project's established co-design pattern for new scenarios), not an engineering decision to make unilaterally. See the project's running notes for the live discussion.
+
+## 14c. Note on the "genuine corroboration" track specifically
+
+§14's acceptance criteria (a corroboration step that can be demonstrated failing live, for a real structured reason, with a real engine rejection and an authored "no, that's not right" line) were never built - 2E's `report_parcel_delivery` checks a report against reality (so it *can* reject), but that's a fulfillment-report check, not a third-party corroboration gate in §14's sense (an NPC withholding confirmation of someone else's claim pending its own structured check). This remains open §14 scope, a candidate for phase 3, not something phase 2's close-out should claim as done.
+
+## 15. Genuine corroboration requirements, for scenario co-design with ChatGPT (2026-10-14)
+
+2C's redesign (§13) is complete and confirmed live, including its own fulfillment logic (a holder's completion gated on a real, engine-checkable fact - parcel possession - rather than a credibility judgment). What's never been built is the other open half of §6/§13's "Later" tier: **corroboration that can actually fail**, not just the near-unconditional version §12 deliberately chose for Veska (her bar for acknowledging a report is "they brought it to me at all," by design, because §12's live testing showed this model's tool-calling doesn't reliably couple to fine-grained conversational judgment - guideline #10). This section is what the next scenario actually needs, for the project owner to take into design discussion with ChatGPT - it doesn't propose a scenario, NPCs, or any new lore; that's not engineering's call, same as every prior handoff in this doc.
+
+### What "genuine" must mean here, concretely
+
+The §13 recommendation already ruled out the obvious wrong answer: the gate must **never** be the model judging whether the player's claim sounds persuasive, confident, or detailed enough. That was tested and rejected - guideline #10's accept_help case false-positived 10/10 on a judgment call, and two rewrites didn't change it. A "genuine" corroboration gate still has to be a **structured fact the engine checks**, exactly like every other validated action in this project (hard rule 2) - the difference from Veska's case is only that this fact must be something the player can plausibly **fail to satisfy**, not something that's true the instant they show up.
+
+Two shapes that satisfy this, for ChatGPT to choose between (or something else, as long as it keeps this property):
+
+1. **A real, possessable object the corroborating NPC must actually receive or inspect** - the same pattern 2C's `Parcel`/`accept_handoff` already proved (a real Evennia object, a real possession check), just applied to a *corroboration* step instead of a *fulfillment* step. E.g., the corroborating NPC needs the player to produce something specific before confirming anything, and genuinely refuses if they don't have it.
+2. **A real engine-tracked value the corroborating NPC checks against what the player reports**, where the player can report it correctly or incorrectly and the engine - not the model - decides which. E.g., the player has to relay a specific detail they were actually given earlier (by another NPC, by an object's own description), and the corroborating NPC's action compares what the player said against the authoritative value, not against the model's sense of whether it "sounded right."
+
+Both avoid the rejected shape (judging confidence/persuasiveness) by keeping the actual pass/fail check inside the validator, in Python, against real stored state - the model only proposes the action; it never gets to decide whether the fact checks out.
+
+### Already built and directly reusable
+
+- The generic `Commitment`/`Acknowledgment` lifecycle (`world/commitments.py`) and multi-holder pattern (`holder_npc_ids`).
+- The real-object-plus-lock pattern (`typeclasses.objects.Parcel`-style: a real object, tagged to an exact commitment instance, checked by a validator - not a credibility judgment).
+- Per-NPC role enforcement on every generic action (`_require_proposer_role`, the role checks already in `fulfill_commitment`/`fulfill_commitment_with_precondition`/`accept_handoff`).
+- The discoverability rule (`world/build_quest_props.py` / `hint_pose_for`) - whatever NPC ends up holding the new corroboration step should get one too, per CLAUDE.md's standing rule.
+- `world/npc_eval.py` - run it on the new corroboration trigger specifically, the same way it already caught §12's false positives; a genuine-refusal gate is exactly the kind of action this project's history says needs it before being trusted.
+
+### What's new
+
+- Whatever structured fact backs the "can genuinely fail" property - likely a small, new piece of engine state (or a real object) specific to the authored scenario, not something existing code already tracks.
+- A validator for the corroborating NPC's action that checks that fact and returns a real rejection (not a drop that silently looks the same as success) when it's false - and an authored line for what that NPC says when corroboration genuinely fails, since right now no NPC in this project has ever had to say "no, that's not right" to something a player claimed.
+
+### Still explicitly out of scope (unchanged from §4/§11)
+
+Rumor propagation, reputation numbers, autonomous NPC goal-pursuit, open-ended negotiation, NPC-initiated activity, and mediation between two NPCs' conflicting claims. A genuine corroboration gate is not a credibility/reputation system - it's one more structured fact, same discipline as every fact this project has gated on so far.
+
+### Acceptance criteria / exit test (draft)
+
+- The corroboration step can be demonstrated failing, live, for a real reason (the structured fact is false) - not just succeeding every time it's tried.
+- The failure is a real engine rejection (logged, not silently fixed up), and the corroborating NPC's in-character response to a failed attempt doesn't claim success.
+- The gate is a structured fact a validator checks in Python, never the model's judgment of how convincing the player's claim sounded - confirmed by reading the validator, not just by it behaving correctly in a few live trials.
+- `world/npc_eval.py` covers both the pass and the fail case before this is treated as proven, per this project's established practice.
+- Per-player isolation and hard rule 1/2 integrity hold, same as every other scenario built so far.

@@ -16,7 +16,14 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 from evennia import default_cmds
 
-from commands.admin import CmdForget, CmdResetCommitment, CmdResetQuest, CmdRestock
+from commands.admin import (
+    CmdForget,
+    CmdMemoryDebug,
+    CmdResetCommitment,
+    CmdResetMemory,
+    CmdResetQuest,
+    CmdRestock,
+)
 from commands.look import CmdLook
 from commands.say import CmdSay
 
@@ -44,6 +51,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdRestock())
         self.add(CmdResetQuest())
         self.add(CmdResetCommitment())
+        self.add(CmdResetMemory())
+        self.add(CmdMemoryDebug())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

@@ -610,7 +610,7 @@ class SayCommandTests(TestCase):
         self.assertEqual(kwargs["player_message"], "Hello there.")
         self.assertEqual(kwargs["npc_response"], "Afternoon.")
         self.assertEqual(kwargs["model"], "test-model")
-        self.assertEqual(kwargs["prompt_version"], "12")
+        self.assertEqual(kwargs["prompt_version"], "35")
         self.assertEqual(kwargs["flagged"], False)
         self.assertEqual(kwargs["tool_calls"], [])
         self.assertIn("prompt_messages", kwargs)
@@ -663,19 +663,20 @@ class SayCommandTests(TestCase):
         self.assertTrue(kwargs["flag_reason"].startswith("llm_unavailable"))
         self.assertIn("timed out", kwargs["flag_reason"])
 
-    # -- module-exchange quest state (Mara + Tarin) -----------------------
+    # -- module-exchange quest state (retired 2026-10-13) ------------------
+    # Mara's and Tarin's personas no longer grant any of the quest
+    # actions, so quest_context_for never has anything to inject for
+    # either of them any more - confirmed here rather than just assumed,
+    # since this used to be live, asserted-true behavior for Mara.
 
     @patch("commands.say.chat")
-    def test_quest_context_injected_for_mara(self, mock_chat):
+    def test_quest_context_no_longer_injected_for_mara(self, mock_chat):
         mock_chat.return_value = _reply("Afternoon.")
         self._say("hello there")
 
         messages = mock_chat.call_args.args[0]
-        self.assertTrue(
-            any(
-                m["role"] == "system" and "heating-unit module errand" in m["content"]
-                for m in messages
-            )
+        self.assertFalse(
+            any("heating-unit module errand" in m.get("content", "") for m in messages)
         )
 
     @patch("commands.say.chat")
@@ -692,23 +693,151 @@ class SayCommandTests(TestCase):
             any("heating-unit module errand" in m.get("content", "") for m in messages)
         )
 
+    # -- per-player NPC memory --------------------------------------------
+
     @patch("commands.say.chat")
-    def test_accept_help_tool_call_updates_quest_state(self, mock_chat):
+    def test_remembered_fact_is_injected_on_a_later_turn(self, mock_chat):
+        mock_chat.return_value = _reply(
+            "Noted.", tool_calls=[{"name": "remember_fact", "arguments": {"fact": "grew up near the Docks"}}]
+        )
+        self._say("I grew up near the Docks, actually.")
+        mock_chat.reset_mock()
+
+        mock_chat.return_value = _reply("Good to see you again.")
+        self._say("hey there")
+
+        messages = mock_chat.call_args.args[0]
+        self.assertTrue(any("grew up near the Docks" in m.get("content", "") for m in messages))
+
+    @patch("commands.say.chat")
+    def test_no_memory_context_when_nothing_remembered(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("hello there")
+
+        messages = mock_chat.call_args.args[0]
+        self.assertFalse(any("no way to verify" in m.get("content", "") for m in messages))
+
+    @patch("commands.say.chat")
+    def test_memory_debug_off_shows_nothing(self, mock_chat):
+        mock_chat.return_value = _reply(
+            "Noted.", tool_calls=[{"name": "remember_fact", "arguments": {"fact": "grew up near the Docks"}}]
+        )
+        self._say("I grew up near the Docks, actually.")
+
+        self.assertFalse(any("[memory]" in m for m in self.messages))
+
+    @patch("commands.say.chat")
+    def test_memory_debug_on_shows_the_fact(self, mock_chat):
+        self.actor.attributes.add("memory_debug_enabled", True)
+        mock_chat.return_value = _reply(
+            "Noted.", tool_calls=[{"name": "remember_fact", "arguments": {"fact": "grew up near the Docks"}}]
+        )
+        self._say("I grew up near the Docks, actually.")
+
+        self.assertTrue(any("[memory]" in m and "grew up near the Docks" in m for m in self.messages))
+
+    @patch("commands.say.chat")
+    def test_hallucinated_retired_action_is_dropped_not_applied(self, mock_chat):
+        # accept_help was retired from Mara's persona (the heater errand
+        # served its purpose for 2A's exit test and isn't live content
+        # any more) - if the model ever hallucinates the call anyway, it
+        # must be rejected as not-permitted, not silently honored.
         mock_chat.return_value = _reply(
             "Oh, that'd be a help.", tool_calls=[{"name": "accept_help", "arguments": {}}]
         )
         self._say("want me to take that module to Tarin?")
 
-        self.assertEqual(get_quest_state(self.actor), "accepted")
+        self.assertEqual(get_quest_state(self.actor), "not_started")
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertFalse(kwargs["tool_calls"][0]["applied"])
+        self.assertIn("not a permitted action", kwargs["tool_calls"][0]["reason"])
+
+    # -- reaction-triggering turns (FORCE_REACTION_ACTIONS) ---------------
 
     @patch("commands.say.chat")
-    def test_give_faulty_module_requires_prior_acceptance(self, mock_chat):
-        mock_chat.return_value = _reply(
-            "Here you go.", tool_calls=[{"name": "give_faulty_module", "arguments": {}}]
-        )
-        self._say("can I get the module")
+    def test_reaction_turn_logs_both_the_original_and_reaction_text(self, mock_chat):
+        # propose_commitment is in FORCE_REACTION_ACTIONS, so this
+        # always makes a second model call to react to the applied
+        # result - the original turn's own text (what the player
+        # actually saw first) was previously never logged at all; only
+        # the reaction's text landed in npc_response, under the
+        # original turn's tool_calls - a mismatch between the two.
+        mock_chat.side_effect = [
+            _reply(
+                "Actually, I've got a parcel for Tarin.",
+                tool_calls=[{"name": "propose_commitment", "arguments": {"commitment_type": "deliver_parcel"}}],
+            ),
+            _reply("Could use a hand getting it to him, if you're headed that way."),
+        ]
+        self._say("anything I can help with today?")
 
-        self.assertEqual(get_quest_state(self.actor), "not_started")
+        self.assertEqual(mock_chat.call_count, 2)
+        self.mock_log_turn.assert_called_once()
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(kwargs["initial_response"], "Actually, I've got a parcel for Tarin.")
+        self.assertEqual(kwargs["npc_response"], "Could use a hand getting it to him, if you're headed that way.")
+        self.assertEqual(kwargs["tool_calls"][0]["name"], "propose_commitment")
+
+    @patch("commands.say.chat")
+    def test_report_parcel_delivery_forces_reaction_on_rejection(self, mock_chat):
+        # docs/phase2e-word-gets-around-design.md: confirmed live
+        # 2026-10-14 - without this, a rejected report_parcel_delivery
+        # call (e.g. no fulfilled commitment on record yet) left the
+        # model's own same-turn text as the final thing the player
+        # read, and that text had already thanked them as if the
+        # report succeeded. Adding this action to FORCE_REACTION_ACTIONS
+        # gives the model a second pass against the real (rejected)
+        # result, the same fix already in place for
+        # report_commitment_outcome/verify_revision_report.
+        mock_chat.side_effect = [
+            _reply(
+                "Thanks for letting me know it got to Tarin. That's a weight off my mind.",
+                tool_calls=[{"name": "report_parcel_delivery", "arguments": {"reported_recipient": "tarin"}}],
+            ),
+            _reply("I can't confirm that yet - there's no record of it being handed off."),
+        ]
+        self._say("Good news, the package has been delivered to Tarin.")
+
+        self.assertEqual(mock_chat.call_count, 2)
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(
+            kwargs["npc_response"], "I can't confirm that yet - there's no record of it being handed off."
+        )
+        self.assertFalse(kwargs["tool_calls"][0]["applied"])
+
+    @patch("commands.say.chat")
+    def test_non_reaction_turn_leaves_initial_response_unset(self, mock_chat):
+        # No FORCE_REACTION_ACTIONS tool call and real dialogue text -
+        # only one model call happens, so there's no separate initial
+        # vs. reaction text to distinguish.
+        mock_chat.return_value = _reply(
+            "Here you go.", tool_calls=[{"name": "serve_drink", "arguments": {"drink_type": "hot"}}]
+        )
+        self._say("hot drink please")
+
+        self.assertEqual(mock_chat.call_count, 1)
+        kwargs = self.mock_log_turn.call_args.kwargs
+        # Not passed at all on this path (log_turn's own default
+        # applies) - not asserting a literal None, since the mock only
+        # records what was actually passed.
+        self.assertIsNone(kwargs.get("initial_response"))
+        self.assertEqual(kwargs["npc_response"], "Here you go.")
+
+    @patch("commands.say.chat")
+    def test_reaction_error_still_logs_the_original_text(self, mock_chat):
+        mock_chat.side_effect = [
+            _reply(
+                "Here's an offer.",
+                tool_calls=[{"name": "propose_commitment", "arguments": {"commitment_type": "deliver_parcel"}}],
+            ),
+            LLMUnavailableError("timed out"),
+        ]
+        self._say("anything I can help with today?")
+
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(kwargs["initial_response"], "Here's an offer.")
+        self.assertIsNone(kwargs["npc_response"])
+        self.assertTrue(kwargs["flag_reason"].startswith("llm_unavailable"))
 
     @patch("commands.say.chat")
     def test_turn_id_increments_within_same_conversation(self, mock_chat):

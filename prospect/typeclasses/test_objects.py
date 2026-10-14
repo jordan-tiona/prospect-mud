@@ -45,3 +45,41 @@ class LeadingBlankLineTests(TestCase):
             attributes=[("desc", "A plain person.")],
         )
         self.assertTrue(other.return_appearance(self.looker).startswith("\n"))
+
+
+class ParcelLockTests(TestCase):
+    """
+    Phase 2C (docs/phase2c-misdelivered-parcel-proposal.md) requires
+    the parcel to move only through the scenario's validated actions,
+    never a player's own get/give/drop. These confirm all three are
+    actually blocked, not just the lock string that one of them
+    (give) doesn't consult.
+    """
+
+    def setUp(self):
+        self.room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.owner = create_object(
+            "typeclasses.characters.Character", key="Owner", location=self.room
+        )
+        self.other = create_object(
+            "typeclasses.characters.Character", key="Other", location=self.room
+        )
+
+    def test_cannot_get_from_room(self):
+        parcel = create_object(
+            "typeclasses.objects.Parcel", key="a small parcel", location=self.room
+        )
+        self.assertFalse(parcel.access(self.owner, "get"))
+
+    def test_cannot_drop(self):
+        parcel = create_object(
+            "typeclasses.objects.Parcel", key="a small parcel", location=self.owner
+        )
+        self.assertFalse(parcel.at_pre_drop(self.owner))
+
+    def test_cannot_give(self):
+        parcel = create_object(
+            "typeclasses.objects.Parcel", key="a small parcel", location=self.owner
+        )
+        self.assertFalse(parcel.at_pre_give(self.owner, self.other))
+        self.assertIs(parcel.location, self.owner)

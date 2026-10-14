@@ -43,12 +43,24 @@ def log_turn(
     tool_calls: list,
     flagged: bool,
     flag_reason: str = "",
+    initial_response: Optional[str] = None,
     path: Optional[Path] = None,
 ) -> None:
     """
     Append one turn to the conversation log. Never raises on its own
     account of what it's recording - a bad turn is exactly the kind
     of thing this log exists to capture for review, not to judge.
+
+    `initial_response` is only set for a turn where a tool call
+    triggered a follow-up "react to what you just did" model call
+    (commands/say.py's `_handle_action_reaction` - see
+    `FORCE_REACTION_ACTIONS`/`needs_reaction`): it's the raw text from
+    that *first* completion (what was actually spoken/emoted to the
+    player before the tool result came back), while `npc_response`
+    stays the final reply. Without this, that first completion's text
+    was never logged at all - lost entirely, even though the player
+    saw it - leaving `npc_response` holding only the reaction and
+    `tool_calls` from a different completion than the text next to it.
     """
     record = {
         "conversation_id": conversation_id,
@@ -67,6 +79,7 @@ def log_turn(
             "base_url": settings.LLM_BASE_URL,
             "reasoning_effort": settings.LLM_REASONING_EFFORT,
         },
+        "initial_response": initial_response,
         "npc_response": npc_response,
         "tool_calls": tool_calls,
         "flagged": flagged,
@@ -135,6 +148,67 @@ def log_commitment_reset(
         "commitment_type": commitment_type,
         "had_offer": had_offer,
         "previous_statuses": previous_statuses,
+        "actor_key": actor_key,
+        "actor_dbref": actor_dbref,
+    }
+
+    target_path = path or DEFAULT_LOG_PATH
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with target_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def log_memory_reset(
+    *,
+    npc_id: str,
+    previous_facts: list,
+    actor_key: str,
+    actor_dbref: str,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    Append a marker record for a `resetmemory` command (see
+    commands/admin.py's CmdResetMemory) - a human clearing a player's
+    stored NPC memory (design-bible 16.6) mid-test. Its own
+    `"event": "memory_reset"`, parallel to `log_commitment_reset`.
+    """
+    record = {
+        "event": "memory_reset",
+        "timestamp": _now_iso(),
+        "npc_id": npc_id,
+        "previous_facts": previous_facts,
+        "actor_key": actor_key,
+        "actor_dbref": actor_dbref,
+    }
+
+    target_path = path or DEFAULT_LOG_PATH
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with target_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def log_rumor_reset(
+    *,
+    previous_informed_commitment_ids: list,
+    previous_reputation_credited: bool,
+    previous_mara_reputation: int,
+    actor_key: str,
+    actor_dbref: str,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    Append a marker record for the rumor/reputation portion of a
+    `resetcommitment` command (see commands/admin.py's
+    CmdResetCommitment) - a human clearing a player's phase 2E
+    parcel-rumor knowledge and Mara reputation credit mid-test. Its own
+    `"event": "rumor_reset"`, parallel to `log_commitment_reset`.
+    """
+    record = {
+        "event": "rumor_reset",
+        "timestamp": _now_iso(),
+        "previous_informed_commitment_ids": previous_informed_commitment_ids,
+        "previous_reputation_credited": previous_reputation_credited,
+        "previous_mara_reputation": previous_mara_reputation,
         "actor_key": actor_key,
         "actor_dbref": actor_dbref,
     }

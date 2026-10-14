@@ -14,6 +14,7 @@ Phase 1 gives each prototype NPC exactly one action, per design-bible
 (Iri).
 """
 
+import unicodedata
 from dataclasses import dataclass
 
 from world.build_rooms import BUILD_TAG_CATEGORY as ROOM_TAG_CATEGORY
@@ -22,9 +23,27 @@ from world.commitments import SCENARIOS
 from world.commitments import accept_commitment as _accept_commitment
 from world.commitments import decline_commitment as _decline_commitment
 from world.commitments import fulfill_commitment as _fulfill_commitment
+from world.commitments import fulfill_commitment_with_precondition as _fulfill_commitment_with_precondition
+from world.commitments import get_fulfilled_commitment as _get_fulfilled_commitment
+from world.commitments import get_open_commitment_id as _get_open_commitment_id
 from world.commitments import propose_commitment as _propose_commitment
 from world.commitments import record_acknowledgment as _record_acknowledgment
+from world.commitments import record_acknowledgment_with_precondition as _record_acknowledgment_with_precondition
+from world.npc_memory import remember_fact as _remember_fact
 from world.npc_profile import parse_persona
+from world.reputation import adjust_reputation as _adjust_reputation
+from world.rumors import has_reputation_credit as _has_reputation_credit
+from world.rumors import is_informed_of as _is_informed_of
+from world.rumors import mark_informed as _mark_informed
+from world.rumors import mark_reputation_credited as _mark_reputation_credited
+from world.rumors import project_mara_parcel_knowledge as _project_mara_parcel_knowledge
+
+# Phase 2E: wired here, not in world/commitments.py's SCENARIOS literal,
+# since world/rumors.py imports from world/commitments.py and this
+# avoids a circular import. SCENARIOS is the same dict object
+# commitments.py's own functions read from, so mutating this field in
+# place is visible everywhere, not just through this module.
+SCENARIOS["deliver_parcel"].proposer_knowledge_projector = _project_mara_parcel_knowledge
 
 
 @dataclass
@@ -241,28 +260,65 @@ def quest_context_for(npc_actions: list, actor) -> str | None:
 # commitment_type; it never gets to choose its own role.
 
 
+def _require_proposer_role(npc, commitment_type) -> ActionResult | None:
+    """
+    propose/accept/decline are generic actions an NPC's persona grants
+    by name, with no per-call role check of their own (unlike
+    report_commitment_outcome/accept_handoff, which already check the
+    calling npc_id against the scenario). Without this, any NPC holding
+    one of these three actions for its *own* scenario (e.g. Tarin,
+    for discrepancy_report) could also invoke it for a *different*
+    scenario it has no role in (e.g. Tarin proposing and accepting
+    Mara's parcel errand on his own, handing over a parcel he never
+    actually held - confirmed live, 2026-10-13). Returns a dropped
+    ActionResult if the calling npc_id isn't this commitment_type's
+    proposer, else None to let the caller proceed.
+    """
+    scenario = SCENARIOS.get(commitment_type)
+    if scenario is None:
+        return ActionResult(False, "", reason=f"unknown commitment_type: {commitment_type!r}")
+    npc_id = npc.db.npc_id
+    if npc_id != scenario.effective_proposer_npc_id:
+        return ActionResult(False, "", reason=f"{npc_id!r} has no proposer role for {commitment_type!r}")
+    return None
+
+
 def _validate_propose_commitment(npc, actor, arguments: dict) -> ActionResult:
     commitment_type = arguments.get("commitment_type")
+    denied = _require_proposer_role(npc, commitment_type)
+    if denied:
+        return denied
     result = _propose_commitment(actor, commitment_type)
     if not result.ok:
         return ActionResult(False, "", reason=result.reason)
-    return ActionResult(True, f"{npc.key} brings the matter up and offers it to {actor.key}.")
+    scenario = SCENARIOS[commitment_type]
+    return ActionResult(True, scenario.propose_narration.format(npc=npc.key, actor=actor.key))
 
 
 def _validate_accept_commitment(npc, actor, arguments: dict) -> ActionResult:
     commitment_type = arguments.get("commitment_type")
+    denied = _require_proposer_role(npc, commitment_type)
+    if denied:
+        return denied
     result = _accept_commitment(actor, commitment_type)
     if not result.ok:
         return ActionResult(False, "", reason=result.reason)
-    return ActionResult(True, f"{npc.key} takes {actor.key} up on the offer to help.")
+    if commitment_type in PARCEL_COMMITMENT_TYPES:
+        _create_parcel_for(actor, result.commitment_id)
+    scenario = SCENARIOS[commitment_type]
+    return ActionResult(True, scenario.accept_narration.format(npc=npc.key, actor=actor.key))
 
 
 def _validate_decline_commitment(npc, actor, arguments: dict) -> ActionResult:
     commitment_type = arguments.get("commitment_type")
+    denied = _require_proposer_role(npc, commitment_type)
+    if denied:
+        return denied
     result = _decline_commitment(actor, commitment_type)
     if not result.ok:
         return ActionResult(False, "", reason=result.reason)
-    return ActionResult(True, f"{npc.key} accepts that {actor.key} isn't able to help with this.")
+    scenario = SCENARIOS[commitment_type]
+    return ActionResult(True, scenario.decline_narration.format(npc=npc.key, actor=actor.key))
 
 
 def _validate_report_commitment_outcome(npc, actor, arguments: dict) -> ActionResult:
@@ -276,25 +332,227 @@ def _validate_report_commitment_outcome(npc, actor, arguments: dict) -> ActionRe
         result = _record_acknowledgment(actor, commitment_type, npc_id)
         if not result.ok:
             return ActionResult(False, "", reason=result.reason)
-        return ActionResult(True, f"{npc.key} records {actor.key}'s report.")
-    if npc_id == scenario.holder_npc_id:
+        return ActionResult(True, scenario.ack_narration.format(npc=npc.key, actor=actor.key))
+    if npc_id in scenario.holder_npc_ids:
         result = _fulfill_commitment(actor, commitment_type, npc_id)
         if not result.ok:
             return ActionResult(False, "", reason=result.reason)
-        return ActionResult(True, f"{npc.key} confirms the report is on record and considers it settled.")
+        return ActionResult(True, scenario.fulfill_narration.format(npc=npc.key, actor=actor.key))
     return ActionResult(False, "", reason=f"{npc_id!r} has no role in commitment_type {commitment_type!r}")
+
+
+# docs/phase2c-misdelivered-parcel-proposal.md: commitment types whose
+# accepted commitment comes with a real Parcel object (rather than
+# 2B's clerk-acknowledgment evidence) and whose completion is
+# accept_handoff, not report_commitment_outcome.
+PARCEL_COMMITMENT_TYPES = {"deliver_parcel"}
+PARCEL_TAG_CATEGORY = "parcel_commitment"
+
+
+def _create_parcel_for(actor, commitment_id: str) -> None:
+    """
+    Mara's side of accepting a parcel-commitment offer: puts a real,
+    locked typeclasses.objects.Parcel (see that class's docstring)
+    directly into the player's inventory, tagged with this exact
+    commitment *instance* id - never the type in the abstract, so a
+    stale object from a reset or earlier instance can't satisfy a
+    new one (same discipline as commitments.py's acknowledgment
+    records).
+    """
+    from evennia import create_object
+
+    parcel = create_object(
+        "typeclasses.objects.Parcel",
+        key="a small misdirected parcel",
+        location=actor,
+    )
+    # Same information the discoverable hint object in the café gave
+    # (world/build_quest_props.py) - without that version's "not here"
+    # framing, which only made sense sitting on Mara's counter and
+    # would read oddly once the player is carrying it elsewhere.
+    parcel.db.desc = (
+        'A small, plainly wrapped parcel. The shipping label reads: '
+        '"Tarin Os, Maintenance Workshop."'
+    )
+    parcel.tags.add(commitment_id, category=PARCEL_TAG_CATEGORY)
+
+
+def _actor_has_correct_parcel(actor, commitment_id: str) -> bool:
+    """The engine-checkable fact accept_handoff validates against:
+    does the player actually, currently carry the one real object
+    tied to this exact commitment instance."""
+    return any(
+        commitment_id in obj.tags.get(category=PARCEL_TAG_CATEGORY, return_list=True)
+        for obj in actor.contents
+        if obj.is_typeclass("typeclasses.objects.Parcel", exact=False)
+    )
+
+
+def cleanup_stray_parcels(actor) -> int:
+    """
+    Delete any carried Parcel not tied to one of this player's
+    currently STATUS_OPEN commitments - e.g. left stranded by
+    `resetcommitment` clearing the commitment data out from under it,
+    or orphaned by a commitment_type rename (the parcel's own tag
+    still names the old commitment_id, which no longer corresponds to
+    anything). Parcel is locked against get/drop/give by design
+    (typeclasses.objects.Parcel), so without this an orphaned one
+    would otherwise sit in the player's inventory forever with no way
+    to remove it. Returns how many were deleted, for the admin command
+    to report.
+    """
+    from world.commitments import open_commitment_ids
+
+    open_ids = open_commitment_ids(actor)
+    removed = 0
+    for obj in list(actor.contents):
+        if not obj.is_typeclass("typeclasses.objects.Parcel", exact=False):
+            continue
+        tags = obj.tags.get(category=PARCEL_TAG_CATEGORY, return_list=True)
+        if not any(tag in open_ids for tag in tags):
+            obj.delete()
+            removed += 1
+    return removed
+
+
+def _validate_remember_fact(npc, actor, arguments: dict) -> ActionResult:
+    fact = arguments.get("fact", "")
+    result = _remember_fact(actor, npc.db.npc_id, fact)
+    if not result.ok:
+        return ActionResult(False, "", reason=result.reason)
+    # No narrated outcome by default - nothing observable in the world
+    # changed (design-bible 16.5 step 4's narration is for game-state
+    # consequences like an item changing hands; remembering something
+    # has none). But a Builder can flip this player's own
+    # memory_debug_enabled flag (commands/admin.py's `memorydebug`)
+    # to see exactly what got stored, for testing without having to
+    # read the conversation log. commands/say.py only shows a
+    # narration at all when it's non-empty, so leaving this "" when
+    # debug is off still shows nothing.
+    if actor.attributes.get("memory_debug_enabled", default=False):
+        return ActionResult(True, f"[memory] {npc.key} notes: \"{fact}\"")
+    return ActionResult(True, "")
+
+
+def _validate_accept_handoff(npc, actor, arguments: dict) -> ActionResult:
+    commitment_type = arguments.get("commitment_type")
+    scenario = SCENARIOS.get(commitment_type)
+    if scenario is None:
+        return ActionResult(False, "", reason=f"unknown commitment_type: {commitment_type!r}")
+
+    npc_id = npc.db.npc_id
+    if npc_id not in scenario.holder_npc_ids:
+        return ActionResult(False, "", reason=f"{npc_id!r} has no holder role for {commitment_type!r}")
+
+    commitment_id = _get_open_commitment_id(actor, commitment_type)
+    precondition_ok = bool(commitment_id) and _actor_has_correct_parcel(actor, commitment_id)
+
+    result = _fulfill_commitment_with_precondition(actor, commitment_type, npc_id, precondition_ok)
+    if not result.ok:
+        return ActionResult(False, "", reason=result.reason)
+
+    for obj in list(actor.contents):
+        if obj.is_typeclass("typeclasses.objects.Parcel", exact=False) and commitment_id in obj.tags.get(
+            category=PARCEL_TAG_CATEGORY, return_list=True
+        ):
+            obj.move_to(npc, quiet=True, move_type="give")
+    return ActionResult(True, scenario.fulfill_narration.format(npc=npc.key, actor=actor.key))
+
+
+def _validate_verify_revision_report(npc, actor, arguments: dict) -> ActionResult:
+    commitment_type = arguments.get("commitment_type")
+    scenario = SCENARIOS.get(commitment_type)
+    if scenario is None:
+        return ActionResult(False, "", reason=f"unknown commitment_type: {commitment_type!r}")
+
+    npc_id = npc.db.npc_id
+    if npc_id != scenario.clerk_npc_id:
+        return ActionResult(False, "", reason=f"{npc_id!r} has no clerk role for {commitment_type!r}")
+
+    # The actual check (docs/phase2-quest-prototype-design.md §14):
+    # the model only ever supplies reported_revision as an argument,
+    # the same way every other action's free-text argument works
+    # (e.g. serve_drink's drink_type) - it never sees whether that
+    # value is correct. revision_matches is the one place that
+    # decides, in Python, against the real stored value.
+    from world.noticeboard import revision_matches
+
+    reported_revision = arguments.get("reported_revision", "")
+    precondition_ok = revision_matches(actor, reported_revision)
+
+    result = _record_acknowledgment_with_precondition(actor, commitment_type, npc_id, precondition_ok)
+    if not result.ok:
+        return ActionResult(False, "", reason=result.reason)
+    return ActionResult(True, scenario.ack_narration.format(npc=npc.key, actor=actor.key))
+
+
+# Phase 2E (docs/phase2e-word-gets-around-design.md): Mara doesn't
+# automatically learn that her misdelivered parcel reached Tarin or
+# Veska - see world/rumors.py's project_mara_parcel_knowledge, wired
+# into the "deliver_parcel" scenario's proposer_knowledge_projector.
+# This is the action that actually tells her, once the player reports
+# it - scenario-specific to Mara and the parcel errand, not a generic
+# commitment action, the same way the old module-exchange quest's
+# actions were each specific to their one scenario rather than routed
+# through commitments.py's generic lifecycle.
+_RUMOR_RECIPIENT_NPC_IDS = {"tarin": "tarin_os", "veska": "veska_renn"}
+_RUMOR_RECIPIENT_DISPLAY_NAMES = {"tarin_os": "Tarin", "veska_renn": "Veska"}
+
+
+def _validate_report_parcel_delivery(npc, actor, arguments: dict) -> ActionResult:
+    npc_id = npc.db.npc_id
+    if npc_id != "mara_voss":
+        return ActionResult(False, "", reason=f"{npc_id!r} has no role in the parcel-delivery rumor")
+
+    reported_recipient = arguments.get("reported_recipient")
+    reported_npc_id = _RUMOR_RECIPIENT_NPC_IDS.get(reported_recipient)
+    if reported_npc_id is None:
+        return ActionResult(False, "", reason=f"invalid reported_recipient: {reported_recipient!r}")
+
+    commitment = _get_fulfilled_commitment(actor, "deliver_parcel")
+    if commitment is None:
+        return ActionResult(False, "", reason="no fulfilled deliver_parcel commitment on record")
+
+    if reported_npc_id != commitment["fulfilled_by_npc_id"]:
+        return ActionResult(
+            False,
+            "",
+            reason=(
+                f"reported recipient {reported_recipient!r} does not match the actual "
+                f"recipient {commitment['fulfilled_by_npc_id']!r}"
+            ),
+        )
+
+    commitment_id = commitment["commitment_id"]
+    if _is_informed_of(actor, commitment_id):
+        return ActionResult(False, "", reason="already informed of this delivery")
+
+    _mark_informed(actor, commitment_id)
+    if not _has_reputation_credit(actor):
+        _mark_reputation_credited(actor)
+        _adjust_reputation(actor, "mara_voss", 1)
+
+    recipient_name = _RUMOR_RECIPIENT_DISPLAY_NAMES[reported_npc_id]
+    return ActionResult(True, f"{npc.key} is glad to hear the parcel reached {recipient_name}.")
+
+
+def _fold_accents(text: str) -> str:
+    # "Corner Café" has to still match a model that writes "Corner
+    # Cafe" without the accent - strip combining marks rather than
+    # require an exact character match.
+    return "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
 
 
 def _find_neighborhood_room(destination_name: str):
     """Match free-text destination against the six known rooms, by
-    display name, case-insensitively. Returns the room object, or
-    None if it's not one of the six (per persona: "Don't describe
-    routes to places outside this neighborhood")."""
+    display name, case- and accent-insensitively. Returns the room
+    object, or None if it's not one of the six (per persona: "Don't
+    describe routes to places outside this neighborhood")."""
     from evennia import search_tag
 
-    destination_name = (destination_name or "").strip().lower()
+    destination_name = _fold_accents((destination_name or "").strip().lower())
     for tag, name, _desc in NEIGHBORHOOD_ROOMS:
-        if name.lower() == destination_name:
+        if _fold_accents(name.lower()) == destination_name:
             matches = search_tag(key=tag, category=ROOM_TAG_CATEGORY)
             return matches[0] if matches else None
     return None
@@ -363,6 +621,10 @@ _ACTION_VALIDATORS = {
     "accept_commitment": _validate_accept_commitment,
     "decline_commitment": _validate_decline_commitment,
     "report_commitment_outcome": _validate_report_commitment_outcome,
+    "accept_handoff": _validate_accept_handoff,
+    "verify_revision_report": _validate_verify_revision_report,
+    "report_parcel_delivery": _validate_report_parcel_delivery,
+    "remember_fact": _validate_remember_fact,
 }
 
 
@@ -601,6 +863,124 @@ ACTION_SCHEMAS = {
                     }
                 },
                 "required": ["commitment_type"],
+            },
+        },
+    },
+    "accept_handoff": {
+        "type": "function",
+        "function": {
+            "name": "accept_handoff",
+            "description": (
+                "Take physical custody of what the player is handing you for this errand. "
+                "Call it the moment they actually offer it to you, not just mention having "
+                "it or talk about possibly bringing it. The engine checks whether they really "
+                "have it on them and will tell you the result - it is not something you can "
+                "tell just by what they say."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "commitment_type": {
+                        "type": "string",
+                        "enum": list(SCENARIOS.keys()),
+                        "description": "Which errand this handoff completes.",
+                    }
+                },
+                "required": ["commitment_type"],
+            },
+        },
+    },
+    "verify_revision_report": {
+        "type": "function",
+        "function": {
+            "name": "verify_revision_report",
+            "description": (
+                "Check a revision number the player has just reported to you against the "
+                "authoritative record. Call it the moment they state a specific four-digit "
+                "number as what the display showed - the engine decides whether it matches, "
+                "not you; you have no way to know the real value yourself. Only call this for "
+                "an actual affirmative report of one specific number. Do not call it for a "
+                "question ('Is it 4182?'), a guess between options ('Was it 4182 or 4812?'), "
+                "a case where they're unsure or can't remember, or a number mentioned while "
+                "denying or doubting it ('I don't think it said 4182') - none of those is them "
+                "actually telling you the number is correct. If they haven't given you one "
+                "clear number as their report, ask for it instead of calling this."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "commitment_type": {
+                        "type": "string",
+                        "enum": list(SCENARIOS.keys()),
+                        "description": "Which errand this report concerns.",
+                    },
+                    "reported_revision": {
+                        "type": "string",
+                        "description": "The exact four-digit number the player just reported, as digits only.",
+                    },
+                },
+                "required": ["commitment_type", "reported_revision"],
+            },
+        },
+    },
+    "report_parcel_delivery": {
+        "type": "function",
+        "function": {
+            "name": "report_parcel_delivery",
+            "description": (
+                "Record that the player has just told you your misdelivered parcel actually "
+                "reached its recipient. Call it the moment they affirmatively report this, "
+                "naming which of Tarin or Veska took it in. The engine checks that against the "
+                "real record and will tell you the result - it is not something you can tell "
+                "just by what they say. Do not call it for a question ('Did Tarin get it?'), a "
+                "guess between options ('Was it Tarin or Veska?'), a case where they're unsure, "
+                "or a claim that leaves it unresolved ('I think I left it with one of them'). If "
+                "they haven't clearly named one recipient as their report, ask instead of "
+                "calling this."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "reported_recipient": {
+                        "type": "string",
+                        "enum": ["tarin", "veska"],
+                        "description": "Which of Tarin or Veska the player says actually received the parcel.",
+                    }
+                },
+                "required": ["reported_recipient"],
+            },
+        },
+    },
+    "remember_fact": {
+        "type": "function",
+        "function": {
+            "name": "remember_fact",
+            "description": (
+                "Note down one short, specific thing the PLAYER just told you about "
+                "THEMSELVES - where they're from, what they do, something that happened to "
+                "them, a preference or opinion they stated. Call it the moment they share "
+                "something like that, in the same turn, so you don't lose it. Never call this "
+                "for something you said about yourself, your own job, or your own life - you "
+                "already know everything about yourself permanently; this is only for "
+                "remembering the other person, never for noting your own words back to "
+                "yourself. This is also not for things about the world or other people, or "
+                "anything you'd need to verify - just what this specific player told you about "
+                "themselves. Don't call it for small talk with nothing specific in it, and "
+                "don't call it more than once or twice in a single conversation."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "fact": {
+                        "type": "string",
+                        "description": (
+                            "The fact itself, short and specific, in your own words - e.g. "
+                            "'grew up near the Docks' or 'used to work in maintenance before "
+                            "this.' Not a direct quote, not a full sentence of dialogue."
+                        ),
+                    }
+                },
+                "required": ["fact"],
             },
         },
     },

@@ -23,6 +23,7 @@ without touching this module.
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Callable, Optional
 
 # actor.db keys. Separate from phase 2A's QUEST_MODULE_EXCHANGE_KEY -
 # this is a different, more general mechanism living alongside it,
@@ -44,14 +45,37 @@ COMMITMENT_ACTIONS = {
     "accept_commitment",
     "decline_commitment",
     "report_commitment_outcome",
+    "accept_handoff",
 }
 
 
 @dataclass
 class ScenarioConfig:
     commitment_type: str
-    holder_npc_id: str  # the NPC the player promises, and later reports back to
-    clerk_npc_id: str  # the NPC who records the acknowledgment evidence
+    # Whose validated action actually *completes* this commitment -
+    # via fulfill_commitment's clerk-acknowledgment check, or
+    # fulfill_commitment_with_precondition's structured-fact check.
+    # In 2B this was also the NPC who proposes/accepts/declines; 2C
+    # (docs/phase2c-misdelivered-parcel-proposal.md) is the first
+    # scenario where those are different NPCs (Mara proposes, Tarin
+    # or Veska completes), which is why proposer_npc_id exists below.
+    holder_npc_id: str
+    # Other NPCs who can *also* fulfill this commitment, besides
+    # holder_npc_id - the 2C parcel redesign (2026-10-13): rather than
+    # the player naming a destination in conversation (unreliable, see
+    # that redesign's rationale), either Tarin or Veska can complete
+    # the same single commitment, whichever one the player actually
+    # reaches first. Empty for a single-holder scenario like 2B's.
+    alt_holder_npc_ids: tuple = ()
+    # The NPC who records corroborating evidence the holder checks
+    # before fulfilling (fulfill_commitment's pattern). Leave "" for a
+    # scenario with no clerk role at all - commitment_context_for and
+    # get_state_summary skip the clerk-specific wording in that case.
+    clerk_npc_id: str = ""
+    # Who proposes/accepts/declines the offer. "" means "same as
+    # holder_npc_id" - 2B's original shape, unchanged for that
+    # scenario without having to touch its config entry.
+    proposer_npc_id: str = ""
     # Shown in place of the holder's normal ambient_pose, only to a
     # player who hasn't been offered this commitment yet - a
     # deterministic discoverability hint that doesn't depend on
@@ -60,18 +84,96 @@ class ScenarioConfig:
     # register as the scenario description below - not new setting
     # lore, just this NPC's situational demeanor.
     holder_hint_pose: str = ""
+    # Narration templates for world/actions.py's validators to render
+    # (ActionResult.narration - design-bible 16.5 step 4's "shown to
+    # the player together with the narrated outcome"). Formatted with
+    # .format(npc=npc.key, actor=actor.key). Authored per scenario so
+    # this doesn't read as one identical mechanical line regardless of
+    # what's actually happening; the defaults below are a generic
+    # fallback for a scenario that hasn't been given its own wording.
+    propose_narration: str = "{npc} brings the matter up and offers it to {actor}."
+    accept_narration: str = "{npc} takes {actor} up on the offer to help."
+    decline_narration: str = "{npc} accepts that {actor} isn't able to help with this."
+    ack_narration: str = "{npc} records {actor}'s report."
+    fulfill_narration: str = "{npc} confirms the matter is settled."
+    # Phase 2E (docs/phase2e-word-gets-around-design.md): lets a
+    # scenario keep its proposer from automatically learning its own
+    # commitment's real fulfillment the instant a *different* NPC
+    # fulfills it - deliver_parcel's Mara doesn't find out the parcel
+    # arrived until a separate validated action tells her, even though
+    # the commitment itself is already STATUS_FULFILLED underneath.
+    # Takes (actor, state) and returns the state string to show the
+    # proposer instead - commitment_context_for applies this only on
+    # the proposer's own line, never the holder's, so Tarin/Veska still
+    # see their own real fulfillment accurately. None (the default)
+    # means no projection - every other scenario is unaffected. This
+    # module has no idea what Mara or a parcel are; the function itself
+    # lives in whatever scenario-specific module needs it (world/
+    # rumors.py for deliver_parcel), same separation of concerns
+    # fulfill_commitment_with_precondition keeps from a parcel's actual
+    # possession check.
+    proposer_knowledge_projector: Optional[Callable[[object, str], str]] = None
+
+    @property
+    def effective_proposer_npc_id(self) -> str:
+        return self.proposer_npc_id or self.holder_npc_id
+
+    @property
+    def holder_npc_ids(self) -> tuple:
+        return (self.holder_npc_id, *self.alt_holder_npc_ids)
 
 
-# The one authored scenario for this prototype (docs/phase2b-records-
-# discrepancy-proposal.md's "Approved owner scenario"). Scenario
-# content (who, why) belongs to the project owner; this config only
-# wires the engine roles.
+# The authored scenarios for this prototype. Scenario content (who,
+# why) belongs to the project owner; this config only wires the
+# engine roles.
 SCENARIOS = {
+    # docs/phase2b-records-discrepancy-proposal.md's "Approved owner
+    # scenario".
     "discrepancy_report": ScenarioConfig(
         commitment_type="discrepancy_report",
         holder_npc_id="tarin_os",
         clerk_npc_id="veska_renn",
         holder_hint_pose="frowning over a shipment manifest",
+        propose_narration="{npc} brings up the mismatched manifest and asks {actor} to help sort it out.",
+        accept_narration="{npc} is glad {actor} is willing to take this to the Civic Office.",
+        ack_narration="{npc} notes the report in {actor}'s file.",
+        fulfill_narration="{npc} marks the discrepancy as settled, now that it's on record.",
+    ),
+    # docs/phase2c-misdelivered-parcel-proposal.md's "Scenario Premise",
+    # redesigned 2026-10-13: Mara proposes a single generic errand, not
+    # a destination to pick in conversation - either Tarin or Veska can
+    # complete it, whichever one the player actually brings the parcel
+    # to. That NPC's own fulfillment (see fulfill_commitment_with_
+    # precondition's holder_npc_ids check) is what decides the route,
+    # not a verbal commitment extracted by Mara beforehand.
+    "deliver_parcel": ScenarioConfig(
+        commitment_type="deliver_parcel",
+        holder_npc_id="tarin_os",
+        alt_holder_npc_ids=("veska_renn",),
+        proposer_npc_id="mara_voss",
+        propose_narration="{npc} explains the mixed-up parcel and asks {actor} to help get it where it belongs.",
+        accept_narration="{npc} hands {actor} the parcel.",
+        decline_narration="{npc} accepts that {actor} can't help with the parcel right now.",
+        fulfill_narration="{npc} takes the parcel from {actor} and sees it's properly accounted for.",
+        # Phase 2E: wired below, after import, to avoid a circular
+        # import (world/rumors.py imports from this module).
+    ),
+    # docs/phase2-quest-prototype-design.md §14 / docs/phase2d-
+    # noticeboard-check-proposal.md: Mara proposes/closes, Iri
+    # corroborates - but unlike discrepancy_report's unconditional
+    # acknowledgment, Iri's check is gated on a real structured fact
+    # (world/noticeboard.py's stored per-player revision), via
+    # record_acknowledgment_with_precondition below. This is the
+    # first scenario where corroboration can genuinely fail.
+    "verify_display_revision": ScenarioConfig(
+        commitment_type="verify_display_revision",
+        holder_npc_id="mara_voss",
+        clerk_npc_id="iri_vael",
+        holder_hint_pose="glancing at the café's information display",
+        propose_narration="{npc} asks {actor} to confirm the café's display is showing the current revision.",
+        accept_narration="{npc} is glad {actor} is willing to check the number with the Civic Office.",
+        ack_narration="{npc} confirms the revision {actor} reported matches the record.",
+        fulfill_narration="{npc} is glad to hear the display's revision checked out.",
     ),
 }
 
@@ -161,6 +263,7 @@ def accept_commitment(actor, commitment_type: str) -> LifecycleResult:
         "commitment_type": commitment_type,
         "maker_dbref": actor.dbref,
         "holder_npc_id": get_scenario(commitment_type).holder_npc_id,
+        "fulfilled_by_npc_id": None,
         "status": STATUS_OPEN,
         "created_at": _now_iso(),
     }
@@ -217,6 +320,49 @@ def record_acknowledgment(actor, commitment_type: str, clerk_npc_id: str) -> Lif
     return LifecycleResult(True, commitment_id=commitment["commitment_id"])
 
 
+def record_acknowledgment_with_precondition(
+    actor, commitment_type: str, clerk_npc_id: str, precondition_ok: bool
+) -> LifecycleResult:
+    """
+    Alternative to record_acknowledgment for a scenario where
+    corroboration is a real structured-fact check (docs/phase2-quest-
+    prototype-design.md §14's "genuine corroboration") rather than
+    2B's unconditional "they brought it to me, that's enough." The
+    caller (world/actions.py) computes precondition_ok from real game
+    state (e.g. world/noticeboard.py's stored revision) - this
+    function has no idea what that fact actually is, same separation
+    of concerns fulfill_commitment_with_precondition keeps from the
+    parcel's possession check.
+
+    A false precondition changes nothing: no ack is recorded, the
+    commitment stays open, and a later attempt (with a corrected
+    value) remains possible - a wrong guess must never permanently
+    poison the commitment.
+    """
+    scenario = get_scenario(commitment_type)
+    if scenario is None or scenario.clerk_npc_id != clerk_npc_id:
+        return LifecycleResult(False, reason=f"{clerk_npc_id!r} has no clerk role for {commitment_type!r}")
+
+    commitment = _find_open_commitment(actor, commitment_type)
+    if commitment is None:
+        return LifecycleResult(False, reason="no open commitment of this type to report")
+
+    acks = _acks(actor)
+    if commitment["commitment_id"] in acks:
+        return LifecycleResult(False, reason="already acknowledged")
+
+    if not precondition_ok:
+        return LifecycleResult(False, reason="reported value did not match")
+
+    acks[commitment["commitment_id"]] = {
+        "clerk_npc_id": clerk_npc_id,
+        "player_dbref": actor.dbref,
+        "recorded_at": _now_iso(),
+    }
+    _save_acks(actor, acks)
+    return LifecycleResult(True, commitment_id=commitment["commitment_id"])
+
+
 def fulfill_commitment(actor, commitment_type: str, holder_npc_id: str) -> LifecycleResult:
     """
     The holder NPC's role: checks for a matching clerk acknowledgment
@@ -226,7 +372,7 @@ def fulfill_commitment(actor, commitment_type: str, holder_npc_id: str) -> Lifec
     acknowledgment record is.
     """
     scenario = get_scenario(commitment_type)
-    if scenario is None or scenario.holder_npc_id != holder_npc_id:
+    if scenario is None or holder_npc_id not in scenario.holder_npc_ids:
         return LifecycleResult(False, reason=f"{holder_npc_id!r} has no holder role for {commitment_type!r}")
 
     commitment = _find_open_commitment(actor, commitment_type)
@@ -238,6 +384,76 @@ def fulfill_commitment(actor, commitment_type: str, holder_npc_id: str) -> Lifec
         return LifecycleResult(False, reason="no matching clerk acknowledgment on record")
 
     commitment["status"] = STATUS_FULFILLED
+    commitment["fulfilled_by_npc_id"] = holder_npc_id
+    commitments = _commitments(actor)
+    commitments[commitment["commitment_id"]] = commitment
+    _save_commitments(actor, commitments)
+    return LifecycleResult(True, commitment_id=commitment["commitment_id"])
+
+
+def get_fulfilled_commitment(actor, commitment_type: str) -> dict | None:
+    """
+    Public lookup, parallel to get_open_commitment_id, for anything
+    that needs to know *which* commitment instance was fulfilled and
+    who actually fulfilled it (e.g. world/rumors.py checking a reported
+    recipient against the real fulfilled_by_npc_id, or projecting the
+    proposer's own knowledge of it). At most one fulfilled instance of
+    a given type can exist for a player at a time in this prototype -
+    reset_commitment removes the record entirely rather than leaving a
+    second one behind.
+    """
+    for commitment in _commitments(actor).values():
+        if commitment["commitment_type"] == commitment_type and commitment["status"] == STATUS_FULFILLED:
+            return commitment
+    return None
+
+
+def get_open_commitment_id(actor, commitment_type: str) -> str | None:
+    """
+    Public lookup for world/actions.py to tie a physical object (e.g.
+    a Parcel) to the exact open commitment *instance*, the same way
+    record_acknowledgment ties an acknowledgment to one - never to the
+    type in the abstract, so a stale object from a reset or prior
+    instance can't satisfy a new one.
+    """
+    commitment = _find_open_commitment(actor, commitment_type)
+    return commitment["commitment_id"] if commitment else None
+
+
+def fulfill_commitment_with_precondition(
+    actor, commitment_type: str, holder_npc_id: str, precondition_ok: bool
+) -> LifecycleResult:
+    """
+    Alternative to fulfill_commitment for a scenario where completion
+    is a direct, immediately-checkable physical fact (docs/phase2c-
+    misdelivered-parcel-proposal.md §2's "genuine corroboration")
+    rather than 2B's separate clerk-acknowledgment step. The caller
+    (world/actions.py) computes precondition_ok from real game state
+    (e.g. a Parcel object's actual location) - this function has no
+    idea what a parcel is, same separation of concerns fulfill_commitment
+    keeps from the module-exchange quest's item logic.
+
+    Reusable for any future scenario shaped this way, not just the
+    parcel one: nothing here names a parcel. Also reusable for a
+    scenario with more than one valid holder (holder_npc_ids) - the
+    2C parcel redesign's "whichever NPC the player reaches first"
+    shape: the open commitment itself (STATUS_OPEN, checked above) is
+    what the second NPC's later attempt finds missing, so no separate
+    cross-holder exclusion logic is needed.
+    """
+    scenario = get_scenario(commitment_type)
+    if scenario is None or holder_npc_id not in scenario.holder_npc_ids:
+        return LifecycleResult(False, reason=f"{holder_npc_id!r} has no holder role for {commitment_type!r}")
+
+    commitment = _find_open_commitment(actor, commitment_type)
+    if commitment is None:
+        return LifecycleResult(False, reason="no open commitment of this type to fulfill")
+
+    if not precondition_ok:
+        return LifecycleResult(False, reason="required precondition not met")
+
+    commitment["status"] = STATUS_FULFILLED
+    commitment["fulfilled_by_npc_id"] = holder_npc_id
     commitments = _commitments(actor)
     commitments[commitment["commitment_id"]] = commitment
     _save_commitments(actor, commitments)
@@ -252,6 +468,11 @@ def get_state_summary(actor, commitment_type: str) -> str:
     """
     commitment = _find_open_commitment(actor, commitment_type)
     if commitment:
+        scenario = get_scenario(commitment_type)
+        if not scenario.clerk_npc_id:
+            # No clerk role in this scenario - "acknowledged" would be
+            # a fact this commitment_type never produces.
+            return "open"
         acked = commitment["commitment_id"] in _acks(actor)
         return "open, acknowledged by the records clerk" if acked else "open, not yet acknowledged"
     if _offers(actor).get(commitment_type):
@@ -278,12 +499,19 @@ def commitment_context_for(npc_id: str, npc_actions: list, actor) -> str | None:
     lines = []
     for scenario in SCENARIOS.values():
         state = get_state_summary(actor, scenario.commitment_type)
-        if npc_id == scenario.holder_npc_id:
+        if npc_id == scenario.effective_proposer_npc_id:
+            if scenario.proposer_knowledge_projector is not None:
+                state = scenario.proposer_knowledge_projector(actor, state)
             lines.append(
                 f"Engine state for the {scenario.commitment_type!r} commitment with this player "
                 f"(your side): {state}."
             )
-        elif npc_id == scenario.clerk_npc_id:
+        elif npc_id in scenario.holder_npc_ids:
+            lines.append(
+                f"Engine state for the {scenario.commitment_type!r} commitment with this player "
+                f"(your side): {state}."
+            )
+        elif scenario.clerk_npc_id and npc_id == scenario.clerk_npc_id:
             reportable = state in ("open, not yet acknowledged", "open, acknowledged by the records clerk")
             clerk_state = state if reportable else "no open commitment to report"
             lines.append(
@@ -306,11 +534,36 @@ def hint_pose_for(npc_id: str, actor) -> str | None:
     after it's served its purpose.
     """
     for scenario in SCENARIOS.values():
-        if npc_id != scenario.holder_npc_id or not scenario.holder_hint_pose:
+        if npc_id not in scenario.holder_npc_ids or not scenario.holder_hint_pose:
             continue
         if get_state_summary(actor, scenario.commitment_type) == "not offered":
             return scenario.holder_hint_pose
     return None
+
+
+def known_commitment_types_for(actor) -> set:
+    """
+    Every commitment_type the admin `resetcommitment` command should
+    consider for this player - the currently-authored SCENARIOS, *and*
+    whatever's actually in this player's own stored data, even a type
+    that's since been renamed or removed from SCENARIOS entirely (e.g.
+    the 2026-10-13 parcel redesign's old "deliver_parcel_to_tarin").
+    Without this, a reset silently can't see - and can never clear -
+    a commitment filed under a type name the engine no longer knows
+    about, leaving it permanently stuck.
+    """
+    return set(SCENARIOS) | set(_offers(actor)) | {
+        c["commitment_type"] for c in _commitments(actor).values()
+    }
+
+
+def open_commitment_ids(actor) -> set:
+    """Every commitment_id currently STATUS_OPEN for this player,
+    across all commitment types - for world/actions.py to check a
+    carried Parcel (or any future scenario's physical object) against,
+    so a reset or a renamed/removed commitment_type doesn't leave an
+    orphaned, undisposable object with nothing left pointing to it."""
+    return {c["commitment_id"] for c in _commitments(actor).values() if c["status"] == STATUS_OPEN}
 
 
 def reset_commitment(actor, commitment_type: str) -> dict:

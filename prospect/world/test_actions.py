@@ -18,15 +18,25 @@ from evennia import create_object
 from world.actions import (
     ACTION_SCHEMAS,
     _validate_accept_commitment,
+    _validate_accept_handoff,
+    _validate_accept_help,
+    _validate_accept_replacement,
     _validate_decline_commitment,
+    _validate_exchange_module,
+    _validate_give_faulty_module,
     _validate_propose_commitment,
     _validate_report_commitment_outcome,
+    _validate_report_parcel_delivery,
+    _validate_verify_revision_report,
     get_quest_state,
     quest_context_for,
     validate_and_apply,
 )
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
+from world.commitments import commitment_context_for
+from world.reputation import get_reputation
+from world.rumors import has_reputation_credit
 
 
 class ActionValidatorTests(TestCase):
@@ -90,6 +100,15 @@ class ActionValidatorTests(TestCase):
         self.assertTrue(result.applied)
         self.assertIn("north", result.narration)
 
+    def test_give_directions_matches_despite_missing_accent(self):
+        # The real room name is "Corner Café"; a model that drops the
+        # accent (or one that includes it) must both still match.
+        self.actor.move_to(self.square, quiet=True)
+        unaccented = validate_and_apply(self.iri, self.actor, "give_directions", {"destination": "Corner Cafe"})
+        accented = validate_and_apply(self.iri, self.actor, "give_directions", {"destination": "Corner Café"})
+        self.assertTrue(unaccented.applied)
+        self.assertTrue(accented.applied)
+
     def test_give_directions_across_hub(self):
         self.actor.move_to(self.cafe, quiet=True)
         result = validate_and_apply(self.iri, self.actor, "give_directions", {"destination": "Civic Office"})
@@ -116,63 +135,65 @@ class ActionValidatorTests(TestCase):
         result = validate_and_apply(self.mara, self.actor, "set_drink_price", {"price": 5})
         self.assertFalse(result.applied)
 
-    # -- module-exchange quest (Mara + Tarin) -----------------------------
+    # -- module-exchange quest (retired from live content, 2026-10-13 -----
+    # the heater/module errand served its purpose for 2A's exit test and
+    # was dropped from Mara's and Tarin's personas - see mara_voss.md's
+    # and tarin_os.md's git history for the content that used to live
+    # there. The state-machine code and its validators are untouched and
+    # still worth protecting against a silent regression, so these test
+    # the private validators directly (same pattern as
+    # CommitmentActionWiringTests below) rather than through
+    # validate_and_apply, which would now reject every one of these for
+    # both NPCs - confirmed by test_retired_actions_rejected_by_persona.
 
     def test_quest_starts_not_started(self):
         self.assertEqual(get_quest_state(self.actor), "not_started")
 
     def test_accept_help_from_not_started(self):
-        result = validate_and_apply(self.mara, self.actor, "accept_help", {})
+        result = _validate_accept_help(self.mara, self.actor, {})
         self.assertTrue(result.applied)
         self.assertEqual(get_quest_state(self.actor), "accepted")
 
     def test_accept_help_twice_is_dropped(self):
-        validate_and_apply(self.mara, self.actor, "accept_help", {})
-        result = validate_and_apply(self.mara, self.actor, "accept_help", {})
+        _validate_accept_help(self.mara, self.actor, {})
+        result = _validate_accept_help(self.mara, self.actor, {})
         self.assertFalse(result.applied)
         self.assertEqual(get_quest_state(self.actor), "accepted")
 
     def test_give_faulty_module_requires_accepted(self):
-        result = validate_and_apply(self.mara, self.actor, "give_faulty_module", {})
+        result = _validate_give_faulty_module(self.mara, self.actor, {})
         self.assertFalse(result.applied)
         self.assertEqual(get_quest_state(self.actor), "not_started")
 
     def test_give_faulty_module_after_accepted(self):
-        validate_and_apply(self.mara, self.actor, "accept_help", {})
-        result = validate_and_apply(self.mara, self.actor, "give_faulty_module", {})
+        _validate_accept_help(self.mara, self.actor, {})
+        result = _validate_give_faulty_module(self.mara, self.actor, {})
         self.assertTrue(result.applied)
         self.assertEqual(get_quest_state(self.actor), "has_faulty_module")
 
     def test_exchange_module_requires_faulty_module_in_hand(self):
-        result = validate_and_apply(self.tarin, self.actor, "exchange_module", {})
+        result = _validate_exchange_module(self.tarin, self.actor, {})
         self.assertFalse(result.applied)
         self.assertEqual(get_quest_state(self.actor), "not_started")
 
-    def test_exchange_module_not_permitted_for_mara(self):
-        validate_and_apply(self.mara, self.actor, "accept_help", {})
-        validate_and_apply(self.mara, self.actor, "give_faulty_module", {})
-        result = validate_and_apply(self.mara, self.actor, "exchange_module", {})
-        self.assertFalse(result.applied)
-        self.assertIn("not a permitted action", result.reason)
-
     def test_full_quest_sequence(self):
-        self.assertTrue(validate_and_apply(self.mara, self.actor, "accept_help", {}).applied)
-        self.assertTrue(validate_and_apply(self.mara, self.actor, "give_faulty_module", {}).applied)
-        self.assertTrue(validate_and_apply(self.tarin, self.actor, "exchange_module", {}).applied)
+        self.assertTrue(_validate_accept_help(self.mara, self.actor, {}).applied)
+        self.assertTrue(_validate_give_faulty_module(self.mara, self.actor, {}).applied)
+        self.assertTrue(_validate_exchange_module(self.tarin, self.actor, {}).applied)
         self.assertEqual(get_quest_state(self.actor), "has_replacement_module")
-        self.assertTrue(validate_and_apply(self.mara, self.actor, "accept_replacement", {}).applied)
+        self.assertTrue(_validate_accept_replacement(self.mara, self.actor, {}).applied)
         self.assertEqual(get_quest_state(self.actor), "completed")
 
     def test_accept_replacement_too_early_is_dropped(self):
-        validate_and_apply(self.mara, self.actor, "accept_help", {})
-        validate_and_apply(self.mara, self.actor, "give_faulty_module", {})
-        result = validate_and_apply(self.mara, self.actor, "accept_replacement", {})
+        _validate_accept_help(self.mara, self.actor, {})
+        _validate_give_faulty_module(self.mara, self.actor, {})
+        result = _validate_accept_replacement(self.mara, self.actor, {})
         self.assertFalse(result.applied)
         self.assertEqual(get_quest_state(self.actor), "has_faulty_module")
 
     def test_quest_state_is_per_player(self):
         other = create_object("typeclasses.characters.Character", key="Other", location=self.cafe)
-        validate_and_apply(self.mara, self.actor, "accept_help", {})
+        _validate_accept_help(self.mara, self.actor, {})
         self.assertEqual(get_quest_state(self.actor), "accepted")
         self.assertEqual(get_quest_state(other), "not_started")
 
@@ -180,7 +201,7 @@ class ActionValidatorTests(TestCase):
         self.assertIsNone(quest_context_for(["give_directions"], self.actor))
 
     def test_quest_context_for_mara_reflects_current_state(self):
-        validate_and_apply(self.mara, self.actor, "accept_help", {})
+        _validate_accept_help(self.mara, self.actor, {})
         context = quest_context_for(["serve_drink", "accept_help", "give_faulty_module", "accept_replacement"], self.actor)
         self.assertIn("accepted", context)
 
@@ -193,8 +214,8 @@ class ActionValidatorTests(TestCase):
         self.assertIn("not yet at a stage that involves you", context)
 
     def test_quest_context_for_tarin_reflects_his_own_stage(self):
-        validate_and_apply(self.mara, self.actor, "accept_help", {})
-        validate_and_apply(self.mara, self.actor, "give_faulty_module", {})
+        _validate_accept_help(self.mara, self.actor, {})
+        _validate_give_faulty_module(self.mara, self.actor, {})
         context = quest_context_for(["hand_over_item", "exchange_module"], self.actor)
         self.assertIn("has_faulty_module", context)
 
@@ -210,6 +231,22 @@ class ActionValidatorTests(TestCase):
             self.assertTrue(
                 schema["parameters"]["required"], f"{name}'s schema must require at least one argument"
             )
+
+    def test_retired_actions_rejected_by_persona(self):
+        # Confirms the retirement actually took: neither NPC's real,
+        # current persona grants these any more, so the permission
+        # gate in validate_and_apply rejects all of them now, even
+        # though the validators above still work correctly on their
+        # own terms.
+        for npc, name in (
+            (self.mara, "accept_help"),
+            (self.mara, "give_faulty_module"),
+            (self.mara, "accept_replacement"),
+            (self.tarin, "exchange_module"),
+        ):
+            result = validate_and_apply(npc, self.actor, name, {})
+            self.assertFalse(result.applied)
+            self.assertIn("not a permitted action", result.reason)
 
 
 class CommitmentActionWiringTests(TestCase):
@@ -291,8 +328,370 @@ class CommitmentActionWiringTests(TestCase):
             "accept_commitment",
             "decline_commitment",
             "report_commitment_outcome",
+            "accept_handoff",
         ):
             schema = ACTION_SCHEMAS[name]["function"]
             self.assertTrue(
                 schema["parameters"]["required"], f"{name}'s schema must require at least one argument"
             )
+
+
+class ParcelActionWiringTests(TestCase):
+    """
+    docs/phase2c-misdelivered-parcel-proposal.md, redesigned
+    2026-10-13: Mara proposes one generic errand (no destination
+    chosen in conversation); whichever of Tarin or Veska the player
+    actually carries the real Parcel object to completes it. The
+    earlier design (two separate commitment types, destination picked
+    at accept time) let the model lock in a destination the player
+    never actually said - see git history for that version and why it
+    was replaced. Covers the full pipeline (parcel creation on accept,
+    the possession check, either-holder completion) through the
+    private validators, same level as CommitmentActionWiringTests
+    above.
+    """
+
+    TYPE = "deliver_parcel"
+
+    def setUp(self):
+        rooms = build_rooms()
+        npcs = build_npcs()
+        self.mara = npcs["mara_voss"]
+        self.tarin = npcs["tarin_os"]
+        self.veska = npcs["veska_renn"]
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=rooms["corner_cafe"]
+        )
+
+    def _carried_parcels(self):
+        return [obj for obj in self.actor.contents if obj.is_typeclass("typeclasses.objects.Parcel", exact=False)]
+
+    def _accept(self):
+        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        _validate_accept_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+
+    def test_accepting_creates_a_real_carried_parcel(self):
+        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        self.assertEqual(self._carried_parcels(), [])
+        _validate_accept_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        self.assertEqual(len(self._carried_parcels()), 1)
+
+    def test_carried_parcel_has_a_description(self):
+        # It shouldn't lose its description once handed over - a
+        # player should be able to `look` at what they're carrying,
+        # same as they could examine it sitting in the cafe.
+        self._accept()
+        parcel = self._carried_parcels()[0]
+        self.assertTrue(parcel.db.desc)
+        self.assertIn("Tarin Os", parcel.db.desc)
+
+    def test_handoff_without_the_parcel_is_dropped(self):
+        self._accept()
+        for parcel in self._carried_parcels():
+            parcel.location = None  # simulate not actually having it on hand
+        result = _validate_accept_handoff(self.tarin, self.actor, {"commitment_type": self.TYPE})
+        self.assertFalse(result.applied)
+
+    def test_full_direct_delivery_route(self):
+        self._accept()
+        self.assertEqual(len(self._carried_parcels()), 1)
+
+        result = _validate_accept_handoff(self.tarin, self.actor, {"commitment_type": self.TYPE})
+        self.assertTrue(result.applied)
+        # Custody actually transferred - the player no longer carries it.
+        self.assertEqual(self._carried_parcels(), [])
+
+    def test_full_civic_office_route(self):
+        # Same single commitment type - Veska completing it instead of
+        # Tarin is exactly the point of the redesign: the destination
+        # is decided by who the player actually brings it to.
+        self._accept()
+        result = _validate_accept_handoff(self.veska, self.actor, {"commitment_type": self.TYPE})
+        self.assertTrue(result.applied)
+
+    def test_cannot_complete_at_the_other_npc_after_one_completes(self):
+        self._accept()
+        _validate_accept_handoff(self.tarin, self.actor, {"commitment_type": self.TYPE})
+
+        result = _validate_accept_handoff(self.veska, self.actor, {"commitment_type": self.TYPE})
+        self.assertFalse(result.applied)
+
+    def test_stock_give_cannot_move_the_parcel(self):
+        self._accept()
+        parcel = self._carried_parcels()[0]
+        self.assertFalse(parcel.at_pre_give(self.actor, self.tarin))
+        self.assertIs(parcel.location, self.actor)
+
+    def test_stock_drop_cannot_move_the_parcel(self):
+        self._accept()
+        parcel = self._carried_parcels()[0]
+        self.assertFalse(parcel.access(self.actor, "drop"))
+
+    def test_only_the_proposer_can_propose_it(self):
+        # Confirmed live, 2026-10-13: Tarin holds propose_commitment/
+        # accept_commitment generically (for his own discrepancy_report
+        # role) and, with no per-call role check, could also invoke
+        # them for the parcel errand - handing over a parcel he never
+        # actually held, without Mara ever being involved.
+        result = _validate_propose_commitment(self.tarin, self.actor, {"commitment_type": self.TYPE})
+        self.assertFalse(result.applied)
+        self.assertIn("no proposer role", result.reason)
+
+    def test_only_the_proposer_can_accept_it(self):
+        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        result = _validate_accept_commitment(self.tarin, self.actor, {"commitment_type": self.TYPE})
+        self.assertFalse(result.applied)
+        self.assertEqual(self._carried_parcels(), [])
+
+    def test_only_the_proposer_can_decline_it(self):
+        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        result = _validate_decline_commitment(self.tarin, self.actor, {"commitment_type": self.TYPE})
+        self.assertFalse(result.applied)
+
+
+class ParcelDeliveryRumorWiringTests(TestCase):
+    """
+    docs/phase2e-word-gets-around-design.md: Mara's deliver_parcel
+    proposer-side view is held at "open" until report_parcel_delivery
+    actually tells her, even once the real commitment is fulfilled -
+    and the one-time Mara reputation credit survives a reset/replay of
+    the underlying commitment without being awarded twice.
+    """
+
+    TYPE = "deliver_parcel"
+
+    def setUp(self):
+        rooms = build_rooms()
+        npcs = build_npcs()
+        self.mara = npcs["mara_voss"]
+        self.tarin = npcs["tarin_os"]
+        self.veska = npcs["veska_renn"]
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=rooms["corner_cafe"]
+        )
+
+    def _deliver_to(self, holder):
+        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        _validate_accept_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        return _validate_accept_handoff(holder, self.actor, {"commitment_type": self.TYPE})
+
+    def _mara_state(self):
+        context = commitment_context_for("mara_voss", ["propose_commitment", "report_parcel_delivery"], self.actor)
+        return context
+
+    def test_mara_does_not_know_before_being_told(self):
+        self._deliver_to(self.tarin)
+        context = self._mara_state()
+        self.assertIn("open", context)
+        self.assertNotIn("fulfilled", context)
+
+    def test_correct_report_succeeds_and_reveals_fulfillment(self):
+        self._deliver_to(self.tarin)
+        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+        self.assertTrue(result.applied)
+        self.assertIn("fulfilled", self._mara_state())
+
+    def test_correct_report_awards_reputation(self):
+        self._deliver_to(self.tarin)
+        self.assertEqual(get_reputation(self.actor, "mara_voss"), 0)
+        _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+        self.assertEqual(get_reputation(self.actor, "mara_voss"), 1)
+
+    def test_report_naming_veska_when_tarin_actually_received_it_is_rejected(self):
+        self._deliver_to(self.tarin)
+        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "veska"})
+        self.assertFalse(result.applied)
+        self.assertEqual(get_reputation(self.actor, "mara_voss"), 0)
+        self.assertIn("open", self._mara_state())
+
+    def test_report_with_no_fulfilled_commitment_is_rejected(self):
+        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+        self.assertFalse(result.applied)
+
+    def test_only_mara_has_a_role_in_this_rumor(self):
+        self._deliver_to(self.tarin)
+        result = _validate_report_parcel_delivery(self.tarin, self.actor, {"reported_recipient": "tarin"})
+        self.assertFalse(result.applied)
+
+    def test_repeated_correct_report_does_not_double_credit(self):
+        self._deliver_to(self.tarin)
+        _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+        self.assertFalse(result.applied)
+        self.assertEqual(get_reputation(self.actor, "mara_voss"), 1)
+
+    def test_reputation_credited_only_once_across_multiple_commitment_instances(self):
+        from world.commitments import reset_commitment
+
+        self._deliver_to(self.tarin)
+        _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+        self.assertEqual(get_reputation(self.actor, "mara_voss"), 1)
+
+        reset_commitment(self.actor, self.TYPE)
+        self._deliver_to(self.veska)
+        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "veska"})
+        self.assertTrue(result.applied)  # the new instance can still be reported...
+        self.assertEqual(get_reputation(self.actor, "mara_voss"), 1)  # ...but credit doesn't stack
+
+    def test_informed_knowledge_is_per_commitment_instance(self):
+        from world.commitments import reset_commitment
+
+        self._deliver_to(self.tarin)
+        _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+        self.assertTrue(has_reputation_credit(self.actor))
+
+        reset_commitment(self.actor, self.TYPE)
+        self._deliver_to(self.veska)
+        # A fresh instance - not yet reported - must not read as already
+        # informed just because an earlier, now-cleared instance was.
+        self.assertIn("open", self._mara_state())
+
+
+class RememberFactWiringTests(TestCase):
+    """world/npc_memory.py's remember_fact through the full permission-
+    gated pipeline (validate_and_apply), same level as the other
+    *WiringTests classes above."""
+
+    def setUp(self):
+        rooms = build_rooms()
+        npcs = build_npcs()
+        self.mara = npcs["mara_voss"]
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=rooms["corner_cafe"]
+        )
+
+    def test_remembered_fact_is_injected_next_turn(self):
+        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "grew up near the Docks"})
+        self.assertTrue(result.applied)
+        from world.npc_memory import memory_context_for
+
+        self.assertIn("grew up near the Docks", memory_context_for("mara_voss", self.actor))
+
+    def test_narration_is_empty_by_default(self):
+        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "likes cold drinks"})
+        self.assertEqual(result.narration, "")
+
+    def test_narration_shows_the_fact_when_debug_enabled(self):
+        self.actor.attributes.add("memory_debug_enabled", True)
+        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "likes cold drinks"})
+        self.assertIn("likes cold drinks", result.narration)
+        self.assertIn("Mara Voss", result.narration)
+
+    def test_debug_narration_omitted_for_a_dropped_call(self):
+        self.actor.attributes.add("memory_debug_enabled", True)
+        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": ""})
+        self.assertFalse(result.applied)
+        self.assertEqual(result.narration, "")
+
+    def test_flagged_fact_dropped_through_full_pipeline(self):
+        result = validate_and_apply(
+            self.mara, self.actor, "remember_fact", {"fact": "As an AI, I don't have personal experiences."}
+        )
+        self.assertFalse(result.applied)
+
+    def test_remember_fact_schema_requires_an_argument(self):
+        schema = ACTION_SCHEMAS["remember_fact"]["function"]
+        self.assertTrue(schema["parameters"]["required"])
+
+
+class VerifyRevisionReportWiringTests(TestCase):
+    """
+    docs/phase2-quest-prototype-design.md §14 / docs/phase2d-
+    noticeboard-check-proposal.md: Iri's corroboration is gated on a
+    real structured fact (world/noticeboard.py), not a credibility
+    judgment - this is the first corroboration step in the project
+    that can genuinely fail. Covers the full pipeline through the
+    private validators, same level as the other *WiringTests classes.
+    """
+
+    TYPE = "verify_display_revision"
+
+    def setUp(self):
+        rooms = build_rooms()
+        npcs = build_npcs()
+        self.mara = npcs["mara_voss"]
+        self.iri = npcs["iri_vael"]
+        self.tarin = npcs["tarin_os"]
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=rooms["corner_cafe"]
+        )
+
+    def _accept(self):
+        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        _validate_accept_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+
+    def test_correct_report_succeeds(self):
+        from world.noticeboard import get_or_create_expected_revision
+
+        self._accept()
+        expected = get_or_create_expected_revision(self.actor)
+        result = _validate_verify_revision_report(
+            self.iri, self.actor, {"commitment_type": self.TYPE, "reported_revision": expected}
+        )
+        self.assertTrue(result.applied)
+
+    def test_wrong_report_is_rejected(self):
+        from world.noticeboard import get_or_create_expected_revision
+
+        self._accept()
+        expected = get_or_create_expected_revision(self.actor)
+        wrong = "9999" if expected != "9999" else "1111"
+        result = _validate_verify_revision_report(
+            self.iri, self.actor, {"commitment_type": self.TYPE, "reported_revision": wrong}
+        )
+        self.assertFalse(result.applied)
+
+    def test_rejection_reason_does_not_leak_the_expected_value(self):
+        from world.noticeboard import get_or_create_expected_revision
+
+        self._accept()
+        expected = get_or_create_expected_revision(self.actor)
+        wrong = "9999" if expected != "9999" else "1111"
+        result = _validate_verify_revision_report(
+            self.iri, self.actor, {"commitment_type": self.TYPE, "reported_revision": wrong}
+        )
+        self.assertNotIn(expected, result.reason)
+
+    def test_wrong_npc_cannot_verify(self):
+        from world.noticeboard import get_or_create_expected_revision
+
+        self._accept()
+        expected = get_or_create_expected_revision(self.actor)
+        result = _validate_verify_revision_report(
+            self.tarin, self.actor, {"commitment_type": self.TYPE, "reported_revision": expected}
+        )
+        self.assertFalse(result.applied)
+
+    def test_retry_after_wrong_report_can_still_succeed(self):
+        from world.noticeboard import get_or_create_expected_revision
+
+        self._accept()
+        expected = get_or_create_expected_revision(self.actor)
+        wrong = "9999" if expected != "9999" else "1111"
+        _validate_verify_revision_report(
+            self.iri, self.actor, {"commitment_type": self.TYPE, "reported_revision": wrong}
+        )
+        result = _validate_verify_revision_report(
+            self.iri, self.actor, {"commitment_type": self.TYPE, "reported_revision": expected}
+        )
+        self.assertTrue(result.applied)
+
+    def test_mara_closes_it_after_genuine_acknowledgment(self):
+        from world.noticeboard import get_or_create_expected_revision
+
+        self._accept()
+        expected = get_or_create_expected_revision(self.actor)
+        _validate_verify_revision_report(
+            self.iri, self.actor, {"commitment_type": self.TYPE, "reported_revision": expected}
+        )
+        result = _validate_report_commitment_outcome(self.mara, self.actor, {"commitment_type": self.TYPE})
+        self.assertTrue(result.applied)
+
+    def test_mara_cannot_close_it_without_acknowledgment(self):
+        self._accept()
+        result = _validate_report_commitment_outcome(self.mara, self.actor, {"commitment_type": self.TYPE})
+        self.assertFalse(result.applied)
+
+    def test_verify_revision_report_schema_requires_arguments(self):
+        schema = ACTION_SCHEMAS["verify_revision_report"]["function"]
+        self.assertEqual(set(schema["parameters"]["required"]), {"commitment_type", "reported_revision"})

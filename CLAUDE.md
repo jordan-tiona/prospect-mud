@@ -61,6 +61,17 @@ If a content file doesn't exist yet, use a clearly marked stub and tell me, rath
 
 Personas and lore (personality, voice, knowledge, setting content) are authored by the project owner. The `## Actions` section of a persona file, and the tool-calling rules in `content/npc-shared-rules.md`, are different: they describe engine mechanics in prompt form, which is implementation work. Before writing or editing either, check **`docs/npc-action-prompt-guidelines.md`** for prompt-wording pitfalls found during playtesting — they recur with every new action regardless of model.
 
+Before adding a new generic multi-scenario action, a new per-player visibility mechanic, or a new admin reset/cleanup command, check **`docs/engineering-pitfalls.md`** — engine/architecture mistakes (missing role checks, Evennia's superuser lock bypass, reset tools that only know about current config, orphaned objects, incomplete turn logging) caught live during phase 2; they're a different kind of recurring bug than the prompt-wording ones above.
+
+## Quest/commitment discoverability
+
+**Every quest or commitment a player can discover must have a passive, in-world cue** — not only a conversational trigger a player has to think to ask about. No "going up to every NPC asking 'need any help?'" (project owner, 2026-10-13). Concretely, a quest-giving NPC needs at least one of:
+
+- A per-player pose hint (`world.commitments.hint_pose_for`, e.g. Tarin "frowning over a shipment manifest"), and/or
+- A discoverable room object (`world/build_quest_props.py`, e.g. the misdelivered parcel on Mara's counter) — a real, inspectable, non-pickable object whose `view`/`search` locks are wired to `server/conf/lockfuncs.py`'s `commitment_hint_visible(<commitment_type>)`, so it's visible only to a player whose own state for that commitment is still `"not offered"`. This makes it genuinely per-player (quests are isolated per player, not shared-world, per the design doc) with no separate timer or respawn logic — it falls out of the lock check alone.
+
+Apply this to every new quest/commitment scenario going forward; the actual hint text (pose or object description) is still authored content.
+
 ## Working style
 
 - **Propose a plan before writing code** for anything beyond a small change, and wait for approval.

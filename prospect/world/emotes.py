@@ -44,7 +44,17 @@ def _fix_self_pronouns(text: str, pronouns: str) -> str:
     return _SELF_PRONOUN_RE.sub(_replace, text)
 
 
+_ESCAPED_QUOTE_RE = re.compile(r'\\(["\'])')
+
+
 def _clean_dialogue(text: str) -> str:
+    # Deterministic backstop for a model quirk confirmed live
+    # (2026-10-14, gpt-4.1-mini): the raw reply content sometimes
+    # contains literal backslash-escaped quotes (`\"like this\"`),
+    # as if it were being embedded in a JSON string rather than
+    # written as plain chat text - real spoken dialogue should never
+    # contain a raw backslash, so this is always safe to strip.
+    text = _ESCAPED_QUOTE_RE.sub(r"\1", text)
     text = re.sub(r"\s{2,}", " ", text).strip()
     return text.strip(" \"'")
 
@@ -79,7 +89,7 @@ def format_emote(npc_key: str, emote_text: str, pronouns: str = "") -> str:
     `pronouns` (e.g. "she/her", from the NPC's persona file) fixes up
     any first-person self-reference the model wrote despite being told
     not to - see _fix_self_pronouns above."""
-    text = emote_text.strip()
+    text = _ESCAPED_QUOTE_RE.sub(r"\1", emote_text.strip())
     if pronouns:
         text = _fix_self_pronouns(text, pronouns)
     if text and text[-1] not in ".!?":

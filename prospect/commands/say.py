@@ -43,6 +43,8 @@ from world.conversation_log import log_turn
 from world.emotes import format_emote, parse_reply
 from world.llm_client import LLMUnavailableError, chat
 from world.npc_addressing import present_talkative_npcs, resolve_addressee
+from world.npc_memory import memory_context_for
+from world.reputation import reputation_context_for
 from world.npc_profile import parse_persona
 from world.output_check import is_flagged
 from world.prompt_builder import build_system_prompt
@@ -86,6 +88,8 @@ FORCE_REACTION_ACTIONS = {
     "accept_commitment",
     "decline_commitment",
     "report_commitment_outcome",
+    "verify_revision_report",
+    "report_parcel_delivery",
 }
 
 
@@ -322,7 +326,12 @@ def _handle_llm_reply(
         tool_results.append(
             {"applied": result.applied, "reason": result.reason, "narration": result.narration}
         )
-        if result.applied and call["name"] not in SUPPRESS_IMMEDIATE_NARRATION:
+        if result.applied and result.narration and call["name"] not in SUPPRESS_IMMEDIATE_NARRATION:
+            # `result.narration` can be legitimately empty (e.g.
+            # remember_fact with memory_debug_enabled off) - every
+            # other action always has real narration text, so this
+            # guard is a no-op for them and just lets an empty one
+            # skip cleanly instead of sending a bare leading newline.
             # A blank line ahead of this - when the model gives
             # dialogue/an action *and* a tool call in the same turn,
             # this mechanical narration line would otherwise run
@@ -400,6 +409,7 @@ def _handle_action_reaction(
         log_turn(
             **log_context,
             model=reply.model,
+            initial_response=original_raw_text,
             npc_response=raw_text,
             tool_calls=tool_call_records,
             flagged=True,
@@ -423,6 +433,7 @@ def _handle_action_reaction(
     log_turn(
         **log_context,
         model=reply.model,
+        initial_response=original_raw_text,
         npc_response=raw_text,
         tool_calls=tool_call_records,
         flagged=False,
@@ -457,6 +468,7 @@ def _handle_action_reaction_error(
     log_turn(
         **log_context,
         model="",
+        initial_response=original_raw_text,
         npc_response=None,
         tool_calls=tool_call_records,
         flagged=False,
@@ -515,6 +527,12 @@ def engage_npc(target, caller, message):
     commitment_context = commitment_context_for(profile.npc_id, profile.actions, caller)
     if commitment_context:
         messages.append({"role": "system", "content": commitment_context})
+    memory_context = memory_context_for(profile.npc_id, caller)
+    if memory_context:
+        messages.append({"role": "system", "content": memory_context})
+    reputation_context = reputation_context_for(profile.npc_id, caller)
+    if reputation_context:
+        messages.append({"role": "system", "content": reputation_context})
     messages += history + [_player_turn(message)]
 
     log_context = {

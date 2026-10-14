@@ -82,6 +82,99 @@ class RoomObject(ObjectParent, DefaultObject):
         self.locks.add("get:false()")
 
 
+class RevisionDisplayObject(RoomObject):
+    """
+    Phase 2D's civic information display (docs/phase2-quest-
+    prototype-design.md §14, docs/phase2d-noticeboard-check-proposal.md):
+    looks the same to everyone except the four-digit revision number,
+    which is this specific looker's own stored value
+    (world.noticeboard.get_or_create_expected_revision) - generated
+    the first time *they* examine it, not one shared fact everyone
+    sees alike. The first typeclass in this project where `look
+    <object>` genuinely varies by who's looking, rather than every
+    looker getting the same static db.desc.
+
+    Always visible to everyone (ordinary café furniture, not gated
+    behind commitment state like typeclasses.objects.CommitmentHintObject) -
+    only its *content* is per-player, not its presence.
+    """
+
+    def get_display_desc(self, looker, **kwargs):
+        from world.noticeboard import get_or_create_expected_revision
+
+        if not hasattr(looker, "attributes"):
+            # Defensive: something without real per-player state (not
+            # expected in practice) - fall back to the plain db.desc
+            # rather than guessing at a revision for it.
+            return super().get_display_desc(looker, **kwargs)
+
+        revision = get_or_create_expected_revision(looker)
+        text = (
+            "A small civic information display cycles through local notices "
+            "and public-service announcements. A four-digit revision "
+            f"identifier appears beneath the notices: {revision}."
+        )
+        return indent_paragraphs(text)
+
+
+class CommitmentHintObject(RoomObject):
+    """
+    A RoomObject whose entire purpose is per-player narrative hiding
+    (world/build_quest_props.py, server/conf/lockfuncs.py's
+    commitment_hint_visible) - once a player has engaged with the
+    commitment it hints at, it should quietly stop existing for them.
+
+    Evennia's `view`/`search` locks default to letting a superuser
+    bypass them entirely (access()'s own `no_superuser_bypass=False`
+    default) - exactly wrong for a solo project where the project
+    owner's own account *is* the superuser doing the actual
+    playtesting (confirmed live, 2026-10-13: the lock function itself
+    correctly returned False, but the object still showed up and
+    was still `look`-able regardless). Forces no_superuser_bypass for
+    view/search specifically, so the mechanic actually works for the
+    one account that needs to see it work; everything else (a
+    builder's examine/edit/delete permissions) is untouched.
+    """
+
+    def access(self, accessing_obj, access_type="read", default=False, no_superuser_bypass=False, **kwargs):
+        if access_type in ("view", "search"):
+            no_superuser_bypass = True
+        return super().access(
+            accessing_obj, access_type=access_type, default=default, no_superuser_bypass=no_superuser_bypass, **kwargs
+        )
+
+
+class Parcel(ObjectParent, DefaultObject):
+    """
+    A single player's quest item for the phase 2C misdelivered-parcel
+    scenario (docs/phase2c-misdelivered-parcel-proposal.md). Its
+    `location` is the real, engine-checkable possession fact the
+    scenario's handoff actions validate against - but per that
+    proposal's §4/§10, the *only* thing allowed to move it is the
+    validated NPC action tied to a scenario commitment, never a
+    player's own `get`/`give`/`drop`. Locking those out here, on the
+    object, means the handoff actions never have to reconcile "did
+    this move through the quest, or did a stock command do it
+    instead" - there is only one path.
+
+    `get:false()` works the same way as `RoomObject`'s (CmdGet checks
+    `access(getter, "get")` directly). Drop/give need more: Evennia's
+    default `at_pre_drop` does honor a lock, but `at_pre_give` does
+    not consult locks at all (ignores any `give:false()` lock string),
+    so both are overridden here to unconditionally refuse - confirmed
+    against evennia.objects.objects.DefaultObject's hook source, not
+    assumed from the lock string alone.
+    """
+
+    def at_object_creation(self):
+        super().at_object_creation()
+        self.locks.add("get:false();drop:false()")
+
+    def at_pre_give(self, giver, getter, **kwargs):
+        giver.msg(f"{self.get_display_name(giver)} isn't yours to give away.")
+        return False
+
+
 class Object(ObjectParent, DefaultObject):
     """
     This is the root Object typeclass, representing all entities that
