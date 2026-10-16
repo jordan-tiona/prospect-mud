@@ -20,6 +20,7 @@ Per kind:
     required_sections - '## Heading' sections the content file must have
     needs_heading     - content file's '# Heading' is the object's key
     params            - {name: {"values": [...], "required": bool}}
+    locks             - optional lock string template, formatted from params
 """
 
 ROOM_KIND = {
@@ -69,6 +70,9 @@ KINDS = {
         "id_field": "object_id",
         "required_sections": ["Short Description", "Description"],
         "needs_heading": True,
+        # Filled from params (a missing param formats as ""); see
+        # world/build_quest_props.py's lock_string.
+        "locks": "view:{visibility}({commitment_type});search:{visibility}({commitment_type});get:false()",
         "params": {
             # server/conf/lockfuncs.py - used for both view: and search: locks
             "visibility": {

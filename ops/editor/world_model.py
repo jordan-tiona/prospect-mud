@@ -6,6 +6,7 @@ the editor. The only writer is write_json(), used for sector/manifest files.
 """
 
 import ast
+import hashlib
 import json
 import re
 from dataclasses import dataclass, field
@@ -126,3 +127,35 @@ def sector_ids(root=ROOT):
 
 def load_sector(root, sector_id):
     return read_json(sector_path(root, sector_id))
+
+
+MANIFEST_DIR = 'prospect/world/data/sectors'
+EDITOR_ONLY_FIELDS = ('editor', 'notes')
+
+
+def manifest_path(root, sector_id):
+    return Path(root) / MANIFEST_DIR / f'{sector_id}.json'
+
+
+def _sha256(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def _without_editor_fields(value):
+    if isinstance(value, dict):
+        return {k: _without_editor_fields(v) for k, v in value.items() if k not in EDITOR_ONLY_FIELDS}
+    if isinstance(value, list):
+        return [_without_editor_fields(v) for v in value]
+    return value
+
+
+def source_hashes(root, sector_id, sector, content_refs):
+    """{source path: sha256} for a manifest's `sources`. The sector file is hashed
+    without editor-only fields (moving a map box isn't a game change), and text is
+    hashed with LF line endings so Windows checkouts (autocrlf) hash the same."""
+    canonical = json.dumps(_without_editor_fields(sector), sort_keys=True, ensure_ascii=False)
+    hashes = {f'{SECTORS_DIR}/{sector_id}/sector.json': _sha256(canonical.encode('utf-8'))}
+    for relative in sorted(content_refs):
+        data = content_path(root, relative).read_bytes().replace(b'\r\n', b'\n')
+        hashes[f'content/{relative}'] = _sha256(data)
+    return hashes
