@@ -3,17 +3,17 @@ object_id: civic_office_skitter_ledger
 status: Provisional
 approval: Draft
 moved_from: prospect/world/build_skitter_ledger.py ROOM_LINE, DESC (verbatim, Tools lane, 2026-10-16)
-Lore wording written 2026-10-16 (LR-0001 part 1). Awaiting project-owner approval; once approved, Dev/Tools copy ## Short Description and ## Description back to prospect/world/build_skitter_ledger.py (ROOM_LINE, DESC).
+Lore wording redrafted 2026-10-16 (LR-0001 part 1): the log is electronic, per the project owner. The # heading changed from "a ledger", so the object's key changes with it; see LR-0001's Resolution for the Dev/Tools follow-ups (build script key/strings, aliases, the `read ledger` test). object_id stays as is: it's an identifier, not prose.
 -->
 
 <!-- The per-player logged count is appended by the engine (typeclasses.objects.SkitterLedgerObject), not authored here. -->
 
-# a ledger
+# a pest log
 
 ## Short Description
 
-A pest ledger lies open on a side table beside the counter.
+A small screen at the end of the counter shows the office's pest log.
 
 ## Description
 
-A plain, well-thumbed ledger the office keeps for skitter reports. Each line gives a name and the number of skitters that person has put down, written up by Iri Vael as people come in to report them.
+The office's pest log, kept on a small screen at the end of the counter: a running list of names, each with the number of skitters that person has reported putting down. Iri Vael enters the reports as people bring them in.
