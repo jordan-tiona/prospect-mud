@@ -40,6 +40,10 @@ class NPCProfile:
     # the comment and never reaches a prompt. Optional - an NPC with no
     # authored desc yet just keeps Evennia's default "nothing special."
     desc: str | None = None
+    # The NPC's longer `probe` description (commands/probe.py), same
+    # metadata-comment rule as `desc` so it never reaches a prompt.
+    # Optional - without one, `probe` shows the `look` text.
+    probe_desc: str | None = None
 
 
 def _parse_metadata(comment_text: str) -> dict:
@@ -112,4 +116,5 @@ def parse_persona_text(npc_id: str, raw: str) -> NPCProfile:
         body=strip_html_comments(raw),
         max_reply_tokens=max_reply_tokens,
         desc=fields.get("desc") or None,
+        probe_desc=fields.get("probe_desc") or None,
     )

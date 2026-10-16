@@ -59,10 +59,24 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Status: approved (2026-10-16)
 - Resolution: Added `status: Provisional` and `approval: Draft` to the metadata comment of all six personas (`daven_varek`, `given_marr`, `iri_vael`, `mara_voss`, `tarin_os`, `veska_renn`), after `prompt_version`. `Provisional` follows bible 14.6's own status line (the cast are "lightweight example profiles", not established NPCs), matching the room files. All six parse unchanged through `world/npc_profile.py`. Owner approved all six on 2026-10-16; every persona is now `approval: Approved`.
 
+## LR-DEV-0001: PROBE descriptions, and teaching PROBE in the Medical Bay tannoy
+- Requested by: dev
+- Needed for: the new `probe <thing>` command (`prospect/commands/probe.py`, owner-approved design 2026-10-16). `look <thing>` is unchanged; `probe` shows a longer, closer description. Until one is written, `probe` shows the `look` text, so nothing is broken meanwhile.
+- What's needed:
+  1. **Probe descriptions** - a longer, closer look than the existing `## Description`, for what's placed in Elsewhere:
+     - Ambient objects (`content/ambient/objects/`) and objects (`content/objects/`): a new `## Probe Description` section after `## Description`. For the pest log, civic display, signpost and planting bed, `probe` shows their per-player `look` text for now, so they can be skipped.
+     - Ambient NPCs (`content/ambient/npcs/`): the same `## Probe Description` section.
+     - Talk NPCs (`content/npcs/`, all six): a `probe_desc:` line in the metadata comment, next to `desc:` - **not** a body section, since the persona body is sent to the model.
+     Any object or NPC can be left without one. No out-of-character hints in the text (owner, 2026-10-16); extra detail lines such as condition or size will come from the engine later.
+  2. **Tannoy wording** - the Medical Bay tannoy (`prospect/world/tutorial.py`, `_ROOM_TANNOYS`, still `TODO(lore)`) now has a placeholder clause teaching PROBE alongside SAY, directions and LOOK. Final wording for the whole announcement, including PROBE, is still the owner's to write or approve.
+- Blocking: no
+- Status: open
+- Resolution:
+
 ## LR-TOOLS-0003: Remove stray direction lines from the square noticeboard
 - Requested by: tools
 - Needed for: `content/ambient/objects/square_noticeboard.md`, shown live on `look noticeboard` in Old Quarter Square.
 - What's needed: Its `## Description` ends with a `--------------------------` separator and five direction lines ("North: Corner Café", "South: Residential Courtyard", "East: Maintenance Workshop", "West: Civic Office", "Up: Lift Concourse"). They look like leftover drafting notes, and players see them. "Up" is also wrong now: the Lift Concourse is northeast of the square. Remove everything from the separator down, keeping the paragraph above it, and per spec 8.1 don't mention directions in the description. Then re-approve. Players see the change after the next export and rebuild.
 - Blocking: no
-- Status: open
-- Resolution:
+- Status: approved (2026-10-16)
+- Resolution: Removed the separator and the five direction lines from `content/ambient/objects/square_noticeboard.md`'s `## Description`; the paragraph above them is unchanged. No new prose was written, so the file stays `approval: Approved` on the strength of its existing approval. Directions in the square come from the exits and the signpost (`content/objects/old_quarter_square_signpost.md`), not this board. Reaches players after the next export and rebuild.

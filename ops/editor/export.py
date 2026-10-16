@@ -45,25 +45,36 @@ def _talk_npc(entity_id, raw):
     attributes = {'npc_id': entity_id}
     if profile.desc:
         attributes['desc'] = profile.desc
+    if profile.probe_desc:  # `probe_desc:` metadata line, never the persona body
+        attributes['probe_desc'] = profile.probe_desc
     return {'key': key, 'aliases': [key.split()[0]], 'attributes': attributes}
+
+
+def _with_probe(attributes, probe_desc):
+    """`probe <thing>` text (commands/probe.py), only when authored."""
+    if probe_desc:
+        attributes['probe_desc'] = probe_desc
+    return attributes
 
 
 def _ambient_npc(entity_id, raw):
     content = parse_ambient_npc_text(entity_id, raw)
-    return {'key': content.key, 'aliases': [], 'attributes': {'desc': content.desc}, 'poses': content.poses}
+    return {'key': content.key, 'aliases': [], 'attributes': _with_probe({'desc': content.desc}, content.probe_desc),
+            'poses': content.poses}
 
 
 def _ambient_object(entity_id, raw):
     content = parse_ambient_object_text(entity_id, raw)
     return {'key': content.key, 'aliases': [],
-            'attributes': {'room_line': content.short_desc, 'desc': content.desc}}
+            'attributes': _with_probe({'room_line': content.short_desc, 'desc': content.desc}, content.probe_desc)}
 
 
 def _object(entity_id, raw):
     """content/objects/ files: '# key', '## Short Description' (room line),
-    optional '## Description' and '## Spoke Lines' (a '- ' list)."""
+    optional '## Description', '## Probe Description' and '## Spoke Lines' (a '- ' list)."""
     content = parse_content('', raw)
-    attributes = {'room_line': content.sections['Short Description']}
+    attributes = _with_probe({'room_line': content.sections['Short Description']},
+                             content.sections.get('Probe Description'))
     if content.sections.get('Description'):
         attributes['desc'] = content.sections['Description']
     if 'Spoke Lines' in content.sections:

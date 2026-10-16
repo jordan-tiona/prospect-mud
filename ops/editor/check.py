@@ -59,6 +59,10 @@ def _content_issues(root, where, relative, kind, object_id):
             issues.append(Issue(ERROR, 'missing_section', where, f'content/{relative} has no "## {section}"'))
     if kind['needs_heading'] and not content.heading:
         issues.append(Issue(ERROR, 'missing_heading', where, f'content/{relative} has no "# Name" heading'))
+    if content.sections.get('Probe Description') and kind.get('probe', True) is False:
+        issues.append(Issue(WARNING, 'probe_unused', where,
+                            f'content/{relative} has a "## Probe Description", but this kind shows its '
+                            'per-player look text for probe too, so players never see it'))
     if 'TODO(lore)' in content.visible_text:
         issues.append(Issue(WARNING, 'visible_todo', where,
                             f'content/{relative} has TODO(lore) text outside an HTML comment'))

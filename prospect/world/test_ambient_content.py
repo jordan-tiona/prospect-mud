@@ -93,6 +93,15 @@ class ParseAmbientNPCTests(SimpleTestCase):
         with self.assertRaises(AmbientContentParseError):
             parse_ambient_npc_text("some_other_npc", _VALID_NPC)
 
+    def test_probe_description_is_optional(self):
+        self.assertIsNone(parse_ambient_npc_text("square_elderly_kethari", _VALID_NPC).probe_desc)
+
+    def test_parses_probe_description(self):
+        raw = _VALID_NPC + "\n## Probe Description\n\nThe longer probe text.\n"
+        content = parse_ambient_npc_text("square_elderly_kethari", raw)
+        self.assertEqual(content.probe_desc, "The longer probe text.")
+        self.assertEqual(content.desc, "The full examine text.")
+
 
 class ParseAmbientObjectTests(SimpleTestCase):
     def test_parses_valid_file(self):
@@ -113,3 +122,12 @@ class ParseAmbientObjectTests(SimpleTestCase):
     def test_mismatched_object_id_raises(self):
         with self.assertRaises(AmbientContentParseError):
             parse_ambient_object_text("some_other_object", _VALID_OBJECT)
+
+    def test_probe_description_is_optional(self):
+        self.assertIsNone(parse_ambient_object_text("square_noticeboard", _VALID_OBJECT).probe_desc)
+
+    def test_parses_probe_description(self):
+        raw = _VALID_OBJECT + "\n## Probe Description\n\nThe longer probe text.\n"
+        content = parse_ambient_object_text("square_noticeboard", raw)
+        self.assertEqual(content.probe_desc, "The longer probe text.")
+        self.assertEqual(content.desc, "The full examine text.")

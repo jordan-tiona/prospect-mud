@@ -392,7 +392,9 @@ function sectionsHTML(file, kind) {
   if (kind === 'talk_npc') {
     // Personas are long prompt text: show the look description, keep the rest folded.
     const desc = file.fields?.desc;
+    const probe = file.fields?.probe_desc;
     return `<h3>Look description</h3><div class="prose">${desc ? prose(desc) : '<p class="muted">None authored (the persona has no <code>desc:</code> field), so players see the default.</p>'}</div>
+      <h3>Probe description</h3><div class="prose">${probe ? prose(probe) : '<p class="muted">None authored (no <code>probe_desc:</code> field), so <code>probe</code> shows the look description.</p>'}</div>
       <h3>Persona</h3><details><summary>${sections.length} section(s): ${esc(sections.map(([h]) => h).join(', '))}</summary>
       ${sections.map(([h, body]) => `<h3>${esc(h)}</h3><div class="prose">${prose(body)}</div>`).join('')}</details>`;
   }

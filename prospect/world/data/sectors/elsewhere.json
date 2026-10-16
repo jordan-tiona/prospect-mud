@@ -230,7 +230,7 @@
     "square_noticeboard": {
       "aliases": [],
       "attributes": {
-        "desc": "Community notices and small advertisements are arranged behind a scratched transparent cover. Some are neatly printed; others have been written by hand. The frame has been repainted more than once, and the edges of older postings show beneath the newer ones. Nothing on the board suggests that the square's residents lack things to discuss.\n\n--------------------------\n\nNorth: Corner Café\n\nSouth: Residential Courtyard\n\nEast: Maintenance Workshop\n\nWest: Civic Office\n\nUp: Lift Concourse",
+        "desc": "Community notices and small advertisements are arranged behind a scratched transparent cover. Some are neatly printed; others have been written by hand. The frame has been repainted more than once, and the edges of older postings show beneath the newer ones. Nothing on the board suggests that the square's residents lack things to discuss.",
         "room_line": "A glass-fronted notice board hangs beside one of the passages leading into the square."
       },
       "key": "Public notice board",
@@ -497,7 +497,7 @@
     "content/ambient/npcs/square_elderly_kethari.md": "d228eca91b685f53c82aa29caf06a889c0a9822a5c85a76c142d2777e34a1f49",
     "content/ambient/objects/civic_services_board.md": "d1751d34f571441cf2f78df33d2332bd886c3826d81b22807be711d42244275f",
     "content/ambient/objects/concourse_arrival_directory.md": "27ee9d1dd8bfeac27f41caa4dfa4425ddb3fe3effe36fbe4fa4b056e2f2f29f4",
-    "content/ambient/objects/square_noticeboard.md": "717f81e41bed9d30c629162b5990f637fc04a408c84e3b143bc2ac0986501a7e",
+    "content/ambient/objects/square_noticeboard.md": "7eeb1bf9dcab2eea313cb70a719e4c5ca5c55e8e91c2f4bca37d194a7f910464",
     "content/ambient/objects/workshop_parts_tray.md": "765b022208203357627f64ed29cf054bfa9277eb8207f41a11ef861f1bc4d335",
     "content/npcs/daven_varek.md": "14edcdd32dd343c2dc3678efd25126481d726ea65957bd2d9d9187e04bb7672b",
     "content/npcs/given_marr.md": "d389d9ec951c7e87be53f5940f26071b61cc398430440ad58caadc2b120ea8b1",
