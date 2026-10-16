@@ -44,6 +44,7 @@ from world.commitments import commitment_context_for
 from world.conversation_log import log_turn
 from world.emotes import format_emote, parse_reply
 from world.llm_budget import (
+    call_cost_usd,
     global_daily_limit_reached,
     player_over_budget,
     record_global_spend,
@@ -174,6 +175,15 @@ def _get_last_message(npc) -> dict:
     return npc.ndb.last_player_message
 
 
+def _combine_usage(first: dict, second: dict) -> dict:
+    """Token usage for a whole turn that made two model calls (the
+    action-call turn plus its follow-up reaction) - see log_turn's
+    own docstring for why the logged usage/cost covers the full turn,
+    not just one completion."""
+    keys = set(first) | set(second)
+    return {key: first.get(key, 0) + second.get(key, 0) for key in keys}
+
+
 def _assistant_turn_messages(raw_text, calls, tool_results):
     """
     OpenAI-style assistant message for one reply - with its `tool_calls`
@@ -271,7 +281,7 @@ def _render_reply_segments(target, caller, segments, pronouns, lead_blank=False)
 
 def _handle_llm_reply(
     reply, target, caller, history, player_message, log_context, pending, messages, max_tokens,
-    pronouns="",
+    call_started, pronouns="",
 ):
     """
     Runs once the model has responded, back on the main thread (a
@@ -306,6 +316,7 @@ def _handle_llm_reply(
     # follow-up reaction call of its own.
     record_player_usage(caller, reply.usage.get("total_tokens", 0))
     record_global_spend(reply.usage)
+    latency_ms = (time.time() - call_started) * 1000
 
     raw_text = reply.text.strip()
     flagged, flag_reason = is_flagged(raw_text)
@@ -320,6 +331,9 @@ def _handle_llm_reply(
             model=reply.model,
             npc_response=raw_text,
             tool_calls=[],
+            usage=reply.usage,
+            cost_usd=call_cost_usd(reply.usage),
+            latency_ms=latency_ms,
             flagged=True,
             flag_reason=flag_reason,
         )
@@ -335,6 +349,9 @@ def _handle_llm_reply(
             model=reply.model,
             npc_response=raw_text,
             tool_calls=[],
+            usage=reply.usage,
+            cost_usd=call_cost_usd(reply.usage),
+            latency_ms=latency_ms,
             flagged=False,
         )
         return
@@ -410,11 +427,11 @@ def _handle_llm_reply(
         deferred = deferToThread(chat, followup_messages, max_tokens=max_tokens)
         deferred.addCallback(
             _handle_action_reaction, target, caller, history, player_message, log_context, pending,
-            tool_call_records, pronouns, raw_text, reply.tool_calls, tool_results,
+            tool_call_records, pronouns, raw_text, reply.tool_calls, tool_results, reply.usage, call_started,
         )
         deferred.addErrback(
             _handle_action_reaction_error, target, caller, history, player_message, log_context, pending,
-            tool_call_records, raw_text, reply.tool_calls, tool_results,
+            tool_call_records, raw_text, reply.tool_calls, tool_results, reply.usage, call_started,
         )
         return
 
@@ -435,13 +452,16 @@ def _handle_llm_reply(
         model=reply.model,
         npc_response=raw_text,
         tool_calls=tool_call_records,
+        usage=reply.usage,
+        cost_usd=call_cost_usd(reply.usage),
+        latency_ms=latency_ms,
         flagged=False,
     )
 
 
 def _handle_action_reaction(
     reply, target, caller, history, player_message, log_context, pending, tool_call_records,
-    pronouns, original_raw_text, original_calls, tool_results,
+    pronouns, original_raw_text, original_calls, tool_results, original_usage, call_started,
 ):
     """
     Runs once the follow-up call (asking the model to react to its own
@@ -460,6 +480,11 @@ def _handle_action_reaction(
     # _handle_llm_reply before this was dispatched.
     record_player_usage(caller, reply.usage.get("total_tokens", 0))
     record_global_spend(reply.usage)
+    # The whole turn's usage/cost/latency for logging (log_turn's own
+    # docstring) covers both completions - from the very first call's
+    # dispatch, not reset for this second one.
+    combined_usage = _combine_usage(original_usage, reply.usage)
+    latency_ms = (time.time() - call_started) * 1000
 
     raw_text = reply.text.strip()
     flagged, flag_reason = is_flagged(raw_text)
@@ -471,6 +496,9 @@ def _handle_action_reaction(
             initial_response=original_raw_text,
             npc_response=raw_text,
             tool_calls=tool_call_records,
+            usage=combined_usage,
+            cost_usd=call_cost_usd(combined_usage),
+            latency_ms=latency_ms,
             flagged=True,
             flag_reason=flag_reason,
         )
@@ -495,15 +523,19 @@ def _handle_action_reaction(
         initial_response=original_raw_text,
         npc_response=raw_text,
         tool_calls=tool_call_records,
+        usage=combined_usage,
+        cost_usd=call_cost_usd(combined_usage),
+        latency_ms=latency_ms,
         flagged=False,
     )
 
 
 def _handle_action_reaction_error(
     failure, target, caller, history, player_message, log_context, pending, tool_call_records,
-    original_raw_text, original_calls, tool_results,
+    original_raw_text, original_calls, tool_results, original_usage, call_started,
 ):
     pending.discard(caller.dbref)
+    latency_ms = (time.time() - call_started) * 1000
     if not failure.check(LLMUnavailableError):
         logger.log_err(f"say command: unexpected error getting {target.key}'s reaction: {failure}")
     # The action already happened. For most actions it was already
@@ -530,13 +562,19 @@ def _handle_action_reaction_error(
         initial_response=original_raw_text,
         npc_response=None,
         tool_calls=tool_call_records,
+        # Only the first call's usage - the second (this one) never
+        # completed, so it has none of its own to add.
+        usage=original_usage,
+        cost_usd=call_cost_usd(original_usage),
+        latency_ms=latency_ms,
         flagged=False,
         flag_reason=f"llm_unavailable: {failure.value}",
     )
 
 
-def _handle_llm_error(failure, target, caller, log_context, pending):
+def _handle_llm_error(failure, target, caller, log_context, pending, call_started):
     pending.discard(caller.dbref)
+    latency_ms = (time.time() - call_started) * 1000
     if not failure.check(LLMUnavailableError):
         # Not the expected failure mode - log it so it's not silently
         # lost, but still give the player the same graceful fallback
@@ -550,6 +588,9 @@ def _handle_llm_error(failure, target, caller, log_context, pending):
         model="",
         npc_response=None,
         tool_calls=[],
+        usage=None,
+        cost_usd=0.0,
+        latency_ms=latency_ms,
         flagged=False,
         flag_reason=f"llm_unavailable: {failure.value}",
     )
@@ -658,12 +699,13 @@ def engage_npc(target, caller, message):
     pending.add(caller.dbref)
     caller.ndb.last_llm_call_time = time.time()
     last_messages[caller.dbref] = message
+    call_started = time.time()
     deferred = deferToThread(chat, messages, tools=tools, max_tokens=profile.max_reply_tokens)
     deferred.addCallback(
         _handle_llm_reply, target, caller, history, message, log_context, pending,
-        messages, profile.max_reply_tokens, profile.pronouns,
+        messages, profile.max_reply_tokens, call_started, profile.pronouns,
     )
-    deferred.addErrback(_handle_llm_error, target, caller, log_context, pending)
+    deferred.addErrback(_handle_llm_error, target, caller, log_context, pending, call_started)
 
 
 class CmdSay(DefaultCmdSay):

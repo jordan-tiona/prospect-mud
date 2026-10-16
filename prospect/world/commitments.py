@@ -29,6 +29,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable, Optional
 
+from world.session_log import log_quest_event, session_id_for
+
 # actor.db keys. Separate from phase 2A's QUEST_MODULE_EXCHANGE_KEY -
 # this is a different, more general mechanism living alongside it,
 # not a replacement.
@@ -324,6 +326,18 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _log_quest_event(actor, event: str, scenario: "ScenarioConfig", commitment_id: Optional[str] = None) -> None:
+    log_quest_event(
+        session_id=session_id_for(actor),
+        actor_key=actor.key,
+        actor_dbref=actor.dbref,
+        event=event,
+        commitment_type=scenario.commitment_type,
+        mandatory=scenario.mandatory,
+        commitment_id=commitment_id,
+    )
+
+
 def _commitments(actor) -> dict:
     return actor.attributes.get(COMMITMENTS_KEY, default={})
 
@@ -527,6 +541,7 @@ def accept_commitment(actor, commitment_type: str) -> LifecycleResult:
 
     offers[commitment_type] = False
     _save_offers(actor, offers)
+    _log_quest_event(actor, "quest_started", get_scenario(commitment_type), commitment_id)
     return LifecycleResult(True, commitment_id=commitment_id)
 
 
@@ -546,6 +561,7 @@ def decline_commitment(actor, commitment_type: str) -> LifecycleResult:
     declined = _declined_types(actor)
     declined[commitment_type] = True
     _save_declined_types(actor, declined)
+    _log_quest_event(actor, "quest_abandoned", get_scenario(commitment_type))
     return LifecycleResult(True)
 
 
@@ -647,6 +663,7 @@ def fulfill_commitment(actor, commitment_type: str, holder_npc_id: str) -> Lifec
     commitments = _commitments(actor)
     commitments[commitment["commitment_id"]] = commitment
     _save_commitments(actor, commitments)
+    _log_quest_event(actor, "quest_completed", scenario, commitment["commitment_id"])
     return LifecycleResult(True, commitment_id=commitment["commitment_id"])
 
 
@@ -716,6 +733,7 @@ def fulfill_commitment_with_precondition(
     commitments = _commitments(actor)
     commitments[commitment["commitment_id"]] = commitment
     _save_commitments(actor, commitments)
+    _log_quest_event(actor, "quest_completed", scenario, commitment["commitment_id"])
     return LifecycleResult(True, commitment_id=commitment["commitment_id"])
 
 

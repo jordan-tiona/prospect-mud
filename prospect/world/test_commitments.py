@@ -55,6 +55,116 @@ PARCEL_HOLDER_A = "tarin_os"
 PARCEL_HOLDER_B = "veska_renn"
 
 
+class QuestEventLoggingTests(TestCase):
+    """
+    The structured quest_started/quest_abandoned/quest_completed
+    gameplay events (world/session_log.py, game-plan.md 6.2) that
+    world/commitments.py's lifecycle functions log on every genuine
+    transition - never on a rejected/duplicate call.
+    """
+
+    def setUp(self):
+        # An explicit room/home, rather than relying on the default
+        # home (settings.DEFAULT_HOME, "#2") existing - whether it
+        # does is order-dependent on other tests in this run having
+        # built one first, which caused an intermittent dangling-
+        # foreign-key IntegrityError running this class in isolation
+        # (2026-10-16, same root cause as world/test_llm_budget.py's
+        # PlayerBudgetTests).
+        room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=room, home=room
+        )
+
+    @patch("world.commitments.log_quest_event")
+    def test_accept_logs_quest_started(self, mock_log):
+        propose_commitment(self.actor, COMMITMENT_TYPE)
+        mock_log.reset_mock()
+
+        accept_commitment(self.actor, COMMITMENT_TYPE)
+
+        mock_log.assert_called_once()
+        kwargs = mock_log.call_args.kwargs
+        self.assertEqual(kwargs["event"], "quest_started")
+        self.assertEqual(kwargs["commitment_type"], COMMITMENT_TYPE)
+        self.assertFalse(kwargs["mandatory"])
+        self.assertTrue(kwargs["commitment_id"])
+
+    @patch("world.commitments.log_quest_event")
+    def test_rejected_accept_does_not_log(self, mock_log):
+        # No pending offer to accept at all.
+        accept_commitment(self.actor, COMMITMENT_TYPE)
+
+        mock_log.assert_not_called()
+
+    @patch("world.commitments.log_quest_event")
+    def test_decline_logs_quest_abandoned(self, mock_log):
+        propose_commitment(self.actor, COMMITMENT_TYPE)
+        mock_log.reset_mock()
+
+        decline_commitment(self.actor, COMMITMENT_TYPE)
+
+        mock_log.assert_called_once()
+        kwargs = mock_log.call_args.kwargs
+        self.assertEqual(kwargs["event"], "quest_abandoned")
+        self.assertEqual(kwargs["commitment_type"], COMMITMENT_TYPE)
+
+    @patch("world.commitments.log_quest_event")
+    def test_rejected_decline_does_not_log(self, mock_log):
+        decline_commitment(self.actor, COMMITMENT_TYPE)
+
+        mock_log.assert_not_called()
+
+    @patch("world.commitments.log_quest_event")
+    def test_fulfill_commitment_logs_quest_completed(self, mock_log):
+        propose_commitment(self.actor, COMMITMENT_TYPE)
+        accept_commitment(self.actor, COMMITMENT_TYPE)
+        record_acknowledgment(self.actor, COMMITMENT_TYPE, CLERK)
+        mock_log.reset_mock()
+
+        fulfill_commitment(self.actor, COMMITMENT_TYPE, HOLDER)
+
+        mock_log.assert_called_once()
+        kwargs = mock_log.call_args.kwargs
+        self.assertEqual(kwargs["event"], "quest_completed")
+        self.assertEqual(kwargs["commitment_type"], COMMITMENT_TYPE)
+        self.assertFalse(kwargs["mandatory"])
+
+    @patch("world.commitments.log_quest_event")
+    def test_rejected_fulfill_commitment_does_not_log(self, mock_log):
+        # No open commitment at all.
+        fulfill_commitment(self.actor, COMMITMENT_TYPE, HOLDER)
+
+        mock_log.assert_not_called()
+
+    @patch("world.commitments.log_quest_event")
+    def test_fulfill_commitment_with_precondition_logs_the_mandatory_flag(self, mock_log):
+        # hunt_skitters (mandatory=True) exercises the other
+        # fulfillment path and the mandatory flag's True case -
+        # verify_display_revision above only covers mandatory=False.
+        propose_commitment(self.actor, "hunt_skitters")
+        accept_commitment(self.actor, "hunt_skitters")
+        mock_log.reset_mock()
+
+        fulfill_commitment_with_precondition(self.actor, "hunt_skitters", "tarin_os", True)
+
+        mock_log.assert_called_once()
+        kwargs = mock_log.call_args.kwargs
+        self.assertEqual(kwargs["event"], "quest_completed")
+        self.assertEqual(kwargs["commitment_type"], "hunt_skitters")
+        self.assertTrue(kwargs["mandatory"])
+
+    @patch("world.commitments.log_quest_event")
+    def test_rejected_fulfill_commitment_with_precondition_does_not_log(self, mock_log):
+        propose_commitment(self.actor, "hunt_skitters")
+        accept_commitment(self.actor, "hunt_skitters")
+        mock_log.reset_mock()
+
+        fulfill_commitment_with_precondition(self.actor, "hunt_skitters", "tarin_os", False)
+
+        mock_log.assert_not_called()
+
+
 class CommitmentLifecycleTests(TestCase):
     def setUp(self):
         self.actor = create_object("typeclasses.characters.Character", key="Tester")

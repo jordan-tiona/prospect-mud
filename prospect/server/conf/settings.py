@@ -46,6 +46,11 @@ import os
 
 LLM_BASE_URL = os.environ.get("PROSPECT_LLM_BASE_URL", "http://localhost:11434/v1")
 LLM_API_KEY = os.environ.get("PROSPECT_LLM_API_KEY", "ollama")
+# Purely descriptive label for structured logging (world/conversation_log.py) -
+# not read anywhere else; nothing here can detect which backend
+# LLM_BASE_URL actually points at, so this has to be set by hand
+# alongside it.
+LLM_PROVIDER = os.environ.get("PROSPECT_LLM_PROVIDER", "openrouter")
 # "qwen3-8b-mud" is a local derived model (see ops/ollama/README.md),
 # not the stock "qwen3:8b" tag: Ollama's OpenAI-compatible endpoint
 # silently ignores any num_ctx passed in the request body (confirmed
@@ -132,6 +137,14 @@ GLOBAL_SCRIPTS = {
     },
     "invite_registry": {
         "typeclass": "typeclasses.scripts.Script",
+        "persistent": True,
+    },
+    # Idle-time gameplay-event detection (world/idle_check.py,
+    # game-plan.md 6.2) - ticks every 60s to check connected sessions,
+    # not a data counter like the two above.
+    "idle_monitor": {
+        "typeclass": "typeclasses.scripts.IdleMonitor",
+        "interval": 60,
         "persistent": True,
     },
 }

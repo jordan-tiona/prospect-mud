@@ -44,6 +44,9 @@ def log_turn(
     flagged: bool,
     flag_reason: str = "",
     initial_response: Optional[str] = None,
+    usage: Optional[dict] = None,
+    cost_usd: Optional[float] = None,
+    latency_ms: Optional[float] = None,
     path: Optional[Path] = None,
 ) -> None:
     """
@@ -61,6 +64,17 @@ def log_turn(
     was never logged at all - lost entirely, even though the player
     saw it - leaving `npc_response` holding only the reaction and
     `tool_calls` from a different completion than the text next to it.
+
+    `usage`/`cost_usd`/`latency_ms` (game-plan.md 6.2's structured-
+    logging item) cover the *whole turn* as the player experienced it,
+    not just one completion - for a turn with a follow-up reaction
+    call, that's both completions combined (see commands/say.py's
+    `_combine_usage` and the latency measured from the very first
+    model call's dispatch, not reset for the second one). All three
+    are `None` when no model call happened at all (e.g. a dropped
+    turn from one of engage_npc's pre-call safeguard gates never
+    calls log_turn in the first place, but a turn where the model was
+    simply unavailable still does, with these left at their defaults).
     """
     record = {
         "conversation_id": conversation_id,
@@ -77,11 +91,15 @@ def log_turn(
         # Never log the API key, even a dummy local one.
         "model_settings": {
             "base_url": settings.LLM_BASE_URL,
+            "provider": settings.LLM_PROVIDER,
             "reasoning_effort": settings.LLM_REASONING_EFFORT,
         },
         "initial_response": initial_response,
         "npc_response": npc_response,
         "tool_calls": tool_calls,
+        "usage": usage,
+        "cost_usd": cost_usd,
+        "latency_ms": latency_ms,
         "flagged": flagged,
         "flag_reason": flag_reason,
         # Filled in later by a human reviewer, per design-bible 14.7;

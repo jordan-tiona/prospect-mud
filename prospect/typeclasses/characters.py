@@ -10,6 +10,8 @@ creation commands.
 
 from evennia.objects.objects import DefaultCharacter
 
+from world.session_log import log_room_changed, session_id_for
+
 from .objects import ObjectParent
 
 
@@ -35,6 +37,14 @@ class Character(ObjectParent, DefaultCharacter):
     (Given/Daven speaking up unprompted a beat after a new player
     walks in) key off of - see that module for why.
 
+    Also logs a structured `room_changed` gameplay event
+    (world/session_log.py, game-plan.md 6.2) for any Character with an
+    active session - a bare per-command `location` field (commands/
+    command.py's logging mixin) only ever shows where a player was
+    *when they typed something*, not the room they actually moved
+    into if their next command happens much later, or isn't a move at
+    all.
+
     """
 
     def at_post_move(self, source_location, move_type="move", **kwargs):
@@ -43,5 +53,15 @@ class Character(ObjectParent, DefaultCharacter):
         from world.tutorial import maybe_schedule_nudge
 
         maybe_schedule_nudge(self)
+
+        session_id = session_id_for(self)
+        if session_id:
+            log_room_changed(
+                session_id=session_id,
+                actor_key=self.key,
+                actor_dbref=self.dbref,
+                from_location=source_location.key if source_location else "",
+                to_location=self.location.key if self.location else "",
+            )
 
     at_after_move = at_post_move

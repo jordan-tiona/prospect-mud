@@ -624,6 +624,62 @@ class SayCommandTests(TestCase):
         self.assertEqual(kwargs["turn_id"], 1)
 
     @patch("commands.say.chat")
+    def test_ordinary_turn_logs_usage_cost_and_latency(self, mock_chat):
+        reply = _reply("Afternoon.")
+        reply.usage = {"prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120}
+        mock_chat.return_value = reply
+        self._say("hello there")
+
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(kwargs["usage"], reply.usage)
+        self.assertGreater(kwargs["cost_usd"], 0)
+        self.assertIsInstance(kwargs["latency_ms"], float)
+        self.assertGreaterEqual(kwargs["latency_ms"], 0)
+
+    @patch("commands.say.chat")
+    def test_reaction_turn_logs_usage_and_cost_from_both_calls(self, mock_chat):
+        first = _reply(
+            "", tool_calls=[{"id": "call_1", "name": "serve_drink", "arguments": {"drink_type": "hot"}}]
+        )
+        first.usage = {"prompt_tokens": 100, "completion_tokens": 10, "total_tokens": 110}
+        second = _reply("Here you go, careful it's hot.")
+        second.usage = {"prompt_tokens": 150, "completion_tokens": 15, "total_tokens": 165}
+        mock_chat.side_effect = [first, second]
+
+        self._say("hot drink please")
+
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(
+            kwargs["usage"],
+            {"prompt_tokens": 250, "completion_tokens": 25, "total_tokens": 275},
+        )
+        self.assertGreater(kwargs["cost_usd"], 0)
+
+    @patch("commands.say.chat")
+    def test_reaction_error_turn_logs_only_the_first_calls_usage(self, mock_chat):
+        first = _reply(
+            "", tool_calls=[{"id": "call_1", "name": "serve_drink", "arguments": {"drink_type": "hot"}}]
+        )
+        first.usage = {"prompt_tokens": 100, "completion_tokens": 10, "total_tokens": 110}
+        mock_chat.side_effect = [first, LLMUnavailableError("timed out")]
+
+        self._say("hot drink please")
+
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertEqual(kwargs["usage"], first.usage)
+        self.assertGreater(kwargs["cost_usd"], 0)
+
+    @patch("commands.say.chat")
+    def test_llm_unavailable_turn_logs_no_usage_and_zero_cost(self, mock_chat):
+        mock_chat.side_effect = LLMUnavailableError("timed out")
+        self._say("hello?")
+
+        kwargs = self.mock_log_turn.call_args.kwargs
+        self.assertIsNone(kwargs["usage"])
+        self.assertEqual(kwargs["cost_usd"], 0.0)
+        self.assertIsInstance(kwargs["latency_ms"], float)
+
+    @patch("commands.say.chat")
     def test_tool_call_outcomes_are_logged(self, mock_chat):
         mock_chat.return_value = _reply(
             "Here you go!", tool_calls=[{"name": "serve_drink", "arguments": {"drink_type": "hot"}}]
@@ -967,7 +1023,12 @@ class CostSafeguardTests(SayCommandTests):
     @patch("commands.say.time")
     @patch("commands.say.chat")
     def test_call_after_the_cooldown_elapses_is_allowed(self, mock_chat, mock_time):
-        mock_time.time.side_effect = [1000.0, 1010.0, 1010.0]
+        # A plain growing sequence rather than a fixed-length list -
+        # _handle_llm_reply also calls time.time() now (for
+        # latency_ms), and pinning an exact call count here would
+        # make this test break again on the next unrelated timing
+        # read added anywhere in the chain.
+        mock_time.time.side_effect = (1000.0 + i * 10 for i in range(100))
         mock_chat.return_value = _reply("Afternoon.")
         self._say("hello there")
         mock_chat.reset_mock()

@@ -34,6 +34,21 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def session_id_for(character) -> Optional[str]:
+    """
+    The session_id an online Character's account is tracking
+    (typeclasses/accounts.py sets this at login), or None if there
+    isn't one - not currently puppeted, no account at all, or not
+    really logged in. Centralized here so every gameplay-event call
+    site (commands/command.py's logging mixin, typeclasses/
+    characters.py's at_post_move, world/commitments.py's lifecycle
+    functions) derives it the same way instead of repeating the same
+    account/ndb lookup.
+    """
+    account = getattr(character, "account", None)
+    return account.ndb.session_id if account else None
+
+
 def _write(record: dict, path: Optional[Path]) -> None:
     target_path = path or DEFAULT_LOG_PATH
     target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -86,6 +101,120 @@ def log_command(
             "actor_dbref": actor_dbref,
             "location": location,
             "raw_input": raw_input,
+        },
+        path,
+    )
+
+
+def log_unknown_command(
+    *,
+    session_id: str,
+    actor_key: str,
+    actor_dbref: str,
+    location: str,
+    raw_input: str,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    A line that matched no command at all (commands/command.py's
+    CmdNoMatch) - distinct from log_command, which only ever fires for
+    input that *did* resolve to a real command, so a playtest-review
+    pass can find these (game-plan.md's "unknown commands" pain-point
+    signal) without parsing every raw_input for Evennia's own "Huh?"
+    text.
+    """
+    _write(
+        {
+            "event": "unknown_command",
+            "timestamp": _now_iso(),
+            "session_id": session_id,
+            "actor_key": actor_key,
+            "actor_dbref": actor_dbref,
+            "location": location,
+            "raw_input": raw_input,
+        },
+        path,
+    )
+
+
+def log_room_changed(
+    *,
+    session_id: str,
+    actor_key: str,
+    actor_dbref: str,
+    from_location: str,
+    to_location: str,
+    path: Optional[Path] = None,
+) -> None:
+    _write(
+        {
+            "event": "room_changed",
+            "timestamp": _now_iso(),
+            "session_id": session_id,
+            "actor_key": actor_key,
+            "actor_dbref": actor_dbref,
+            "from_location": from_location,
+            "to_location": to_location,
+        },
+        path,
+    )
+
+
+def log_quest_event(
+    *,
+    session_id: Optional[str],
+    actor_key: str,
+    actor_dbref: str,
+    event: str,
+    commitment_type: str,
+    mandatory: bool,
+    commitment_id: Optional[str] = None,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    `event` is one of "quest_started" (accept_commitment),
+    "quest_abandoned" (decline_commitment), or "quest_completed"
+    (fulfill_commitment/fulfill_commitment_with_precondition) - see
+    world/commitments.py, which calls this at each of those three
+    genuine transitions, never on a rejected/duplicate call. Covers
+    every commitment scenario, not just the playtest's `mandatory`
+    ones (CLAUDE.md's "One quest offer per NPC" section) - `mandatory`
+    is carried along so a playtest-review pass can tell a real quest
+    from phase 2B/3 demo content without a separate lookup.
+    """
+    _write(
+        {
+            "event": event,
+            "timestamp": _now_iso(),
+            "session_id": session_id,
+            "actor_key": actor_key,
+            "actor_dbref": actor_dbref,
+            "commitment_type": commitment_type,
+            "mandatory": mandatory,
+            "commitment_id": commitment_id,
+        },
+        path,
+    )
+
+
+def log_idle(
+    *,
+    session_id: str,
+    actor_key: str,
+    actor_dbref: str,
+    location: str,
+    idle_seconds: float,
+    path: Optional[Path] = None,
+) -> None:
+    _write(
+        {
+            "event": "idle",
+            "timestamp": _now_iso(),
+            "session_id": session_id,
+            "actor_key": actor_key,
+            "actor_dbref": actor_dbref,
+            "location": location,
+            "idle_seconds": idle_seconds,
         },
         path,
     )

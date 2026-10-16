@@ -26,6 +26,7 @@ from commands.admin import (
 )
 from commands.attack import CmdAttack
 from commands.chargen import CmdScriptedCreate
+from commands.command import CmdNoMatch
 from commands.get import CmdGet
 from commands.look import CmdLook
 from commands.say import CmdSay
@@ -63,6 +64,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUse())
         self.add(CmdAttack())
         self.add(CmdTannoy())
+        self.add(CmdNoMatch())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

@@ -5,11 +5,12 @@ Commands describe the input the account can do to the game.
 
 """
 
+from evennia.commands.cmdhandler import CMD_NOMATCH
 from evennia.commands.command import Command as BaseCommand
 from evennia.commands.default.muxcommand import MuxCommand as BaseMuxCommand
 from evennia.utils.utils import inherits_from
 
-from world.session_log import log_command
+from world.session_log import log_command, log_unknown_command, session_id_for
 
 # from evennia import default_cmds
 
@@ -50,8 +51,7 @@ class _SessionCommandLoggingMixin:
     def at_pre_cmd(self):
         caller = self.caller
         if inherits_from(caller, "typeclasses.characters.Character"):
-            account = getattr(caller, "account", None)
-            session_id = account.ndb.session_id if account else None
+            session_id = session_id_for(caller)
             if session_id:
                 log_command(
                     session_id=session_id,
@@ -97,3 +97,42 @@ class MuxCommand(_SessionCommandLoggingMixin, BaseMuxCommand):
     """
 
     pass
+
+
+class CmdNoMatch(BaseMuxCommand):
+    """
+    Evennia's system command for a line that matched nothing at all
+    (evennia.commands.cmdhandler.CMD_NOMATCH) - by default, the engine
+    only falls back to this if some cmdset actually registers it
+    (cmdhandler.py: `syscmd = yield cmdset.get(CMD_NOMATCH)`); with
+    none registered, an unmatched line never becomes a Command
+    instance at all, so _SessionCommandLoggingMixin's hook (and this
+    project's structured gameplay-event logging, game-plan.md 6.2's
+    "unknown commands" signal) never sees it. This registers it
+    (default_cmdsets.py's CharacterCmdSet) and logs it as its own
+    `unknown_command` event instead of a generic `command` one -
+    deliberately *not* built on `Command`/`MuxCommand` above, so it
+    doesn't also log a redundant generic `command` event for the same
+    line.
+
+    `self.args` holds the full original line here (cmdhandler.py sets
+    it from the raw string for a nomatch, not just "everything after
+    the command name" like a normal command gets).
+    """
+
+    key = CMD_NOMATCH
+    locks = "cmd:all()"
+
+    def func(self):
+        caller = self.caller
+        if inherits_from(caller, "typeclasses.characters.Character"):
+            session_id = session_id_for(caller)
+            if session_id:
+                log_unknown_command(
+                    session_id=session_id,
+                    actor_key=caller.key,
+                    actor_dbref=caller.dbref,
+                    location=caller.location.key if caller.location else "",
+                    raw_input=self.args or "",
+                )
+        caller.msg("Huh?")

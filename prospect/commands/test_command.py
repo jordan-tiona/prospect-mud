@@ -20,7 +20,7 @@ from unittest.mock import patch
 from django.test import TestCase
 from evennia import create_account, create_object
 
-from commands.command import Command
+from commands.command import Command, CmdNoMatch
 
 _PASSWORD = "zqv-prospect-test-9273"
 
@@ -108,3 +108,67 @@ class SessionCommandLoggingTests(TestCase):
         result = self._make_cmd(self.actor).at_pre_cmd()
 
         self.assertFalse(result)
+
+
+class NoMatchCommandTests(TestCase):
+    """
+    CmdNoMatch (commands/command.py) - the structured `unknown_command`
+    gameplay event (world/session_log.py, game-plan.md 6.2), fired for
+    a line that matched no command at all. Deliberately not built on
+    Command/MuxCommand, so it must be tested separately from
+    SessionCommandLoggingTests above rather than assumed to inherit
+    that behavior.
+    """
+
+    def setUp(self):
+        self.room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=self.room
+        )
+        self.messages = []
+        self.actor.msg = lambda text="", **kw: self.messages.append(text)
+
+    def _make_cmd(self, caller, args="fooble the bar"):
+        cmd = CmdNoMatch()
+        cmd.caller = caller
+        cmd.args = args
+        return cmd
+
+    @patch("commands.command.log_unknown_command")
+    def test_logs_for_a_character_with_a_session_id(self, mock_log_unknown):
+        account = create_account("TesterAccount5", "tester5@example.com", _PASSWORD)
+        self.addCleanup(account.delete)
+        account.ndb.session_id = "session-abc"
+        self.actor.account = account
+
+        self._make_cmd(self.actor).func()
+
+        mock_log_unknown.assert_called_once_with(
+            session_id="session-abc",
+            actor_key="Tester",
+            actor_dbref=self.actor.dbref,
+            location="Test Room",
+            raw_input="fooble the bar",
+        )
+
+    @patch("commands.command.log_unknown_command")
+    def test_still_shows_huh_without_a_session_id(self, mock_log_unknown):
+        self._make_cmd(self.actor).func()
+
+        mock_log_unknown.assert_not_called()
+        self.assertTrue(any("Huh?" in m for m in self.messages))
+
+    @patch("commands.command.log_unknown_command")
+    def test_does_not_log_for_a_non_character_caller(self, mock_log_unknown):
+        account = create_account("TesterAccount6", "tester6@example.com", _PASSWORD)
+        self.addCleanup(account.delete)
+        account.ndb.session_id = "session-xyz"
+        thing = create_object(
+            "typeclasses.objects.Object", key="a non-character thing", location=self.room
+        )
+        thing.account = account
+        thing.msg = lambda text="", **kw: None
+
+        self._make_cmd(thing).func()
+
+        mock_log_unknown.assert_not_called()

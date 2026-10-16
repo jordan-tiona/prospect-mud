@@ -101,3 +101,18 @@ class Script(DefaultScript):
     """
 
     pass
+
+
+class IdleMonitor(Script):
+    """
+    Global ticking script (settings.GLOBAL_SCRIPTS) that periodically
+    checks every connected session for having gone idle long enough
+    to log a structured `idle` gameplay event (world/idle_check.py,
+    game-plan.md 6.2). Its interval/persistent flag come from that
+    settings entry, not hard-coded here.
+    """
+
+    def at_repeat(self):
+        from world.idle_check import check_idle_sessions
+
+        check_idle_sessions()
