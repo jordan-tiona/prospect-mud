@@ -1,9 +1,9 @@
 <!--
 content_id: species_descriptions
 status: Provisional
-approval: Draft
+approval: Approved
 bible_refs: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8
-purpose: short player-facing entries shown during character creation when the player chooses a people (docs/prospect-initial-playtest-design-spec.md Section 3). Each ## heading matches an entry in world/chargen.py's SPECIES_CHOICES exactly, so code can key on it. Drafted by the Lore lane 2026-10-16 at the project owner's request; owner approves.
+purpose: short player-facing entries shown during character creation when the player chooses a people (docs/prospect-initial-playtest-design-spec.md Section 3). Each ## heading matches an entry in world/chargen.py's SPECIES_CHOICES exactly, so code can key on it. Drafted by the Lore lane 2026-10-16 at the project owner's request; approved by the owner the same day (pronunciation notes removed at their request). The owner plans a later worldbuilding session on the peoples' physical details; the Provisional anatomy noted below is the input for that.
 
 Only Established canon is used in the visible text. Where bible 5 marks anatomy as Provisional (Otheryn build, Voldren build, Neshyr sharklike look, Aevyrin beak and flight structures, specific Naevari traits), it is left out of the entry and noted in a comment under it, so the owner can decide whether to promote any of it. Wiring these into the chargen prompt is Dev-lane work.
 -->
@@ -28,19 +28,19 @@ Scaled people with a distinctly lizardlike face and elongated snout, on an other
 
 ## Aevyrin
 
-Feathered, avian-influenced people, lighter in frame than the other ancestral peoples, with expressive plumage or crests. One of the three ancestral peoples of the home system. The name is said with the short "a" of "after".
+Feathered, avian-influenced people, lighter in frame than the other ancestral peoples, with expressive plumage or crests. One of the three ancestral peoples of the home system.
 
 <!-- Left out as unresolved in bible 5.3: beak or birdlike facial anatomy, any flight-related structures, flightlessness. "Lighter in frame" paraphrases 5.3's "distinctive balance, skeletal proportions"; cut it if that reads as more than the bible says. -->
 
 ## Naevari
 
-A long-established people whose ancestry draws on the Kethari, Sylari and Aevyrin alike. Most resemble the furred Kethari in general build, but individuals carry varying inherited traits from all three lines, so no two families look quite the same. They are a people in their own right, not a mixture, and their name is their own. It is said with the short "a" of "after".
+A long-established people whose ancestry draws on the Kethari, Sylari and Aevyrin alike. Most resemble the furred Kethari in general build, but individuals carry varying inherited traits from all three lines, so no two families look quite the same. They are a people in their own right, not a mixture, and their name is their own.
 
 <!-- Left out as visual proposals in bible 5.4: localized scales, feathered crests, differing ear or tail shapes. The origin of their cross-ancestry is unresolved and not mentioned. -->
 
 ## Otheryn
 
-Engineered in the home system for hazardous work in orbit and low gravity, such as construction and spacecraft maintenance, which earned them the old label "Void Walkers". Like the other engineered peoples, their ancestors were once legally property; on Elsewhere they are citizens like anyone else and take up whatever work they choose. The name is said like "other in".
+Engineered in the home system for hazardous work in orbit and low gravity, such as construction and spacecraft maintenance, which earned them the old label "Void Walkers". Like the other engineered peoples, their ancestors were once legally property; on Elsewhere they are citizens like anyone else and take up whatever work they choose.
 
 <!-- Left out as Provisional in bible 5.5: tall or lanky build, long limbs, little or no hair, radiation resilience, possible discomfort in high gravity. If the owner wants one physical sentence here, "tall and long-limbed" is the least committal of those. -->
 
