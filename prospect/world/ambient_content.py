@@ -10,6 +10,10 @@ typeclasses.npcs.NPC.set_ambient_poses) and `## Description` (the
 `look` text). Objects are a display key plus a fixed `## Short
 Description` (the room-listing line, typeclasses.objects.RoomObject's
 `room_line`) and `## Description`.
+
+Either may also have an optional `## Probe Description`: the longer
+text `probe <thing>` shows (commands/probe.py). Without one, `probe`
+shows the `look` text.
 """
 
 import re
@@ -38,6 +42,7 @@ class AmbientNPCContent:
     poses: list  # pose fragments for "<key> is here, <pose>."
     desc: str  # full `look` text
     bible_refs: list = field(default_factory=list)
+    probe_desc: str | None = None  # optional `## Probe Description`: `probe <npc>` text
 
 
 @dataclass
@@ -50,6 +55,7 @@ class AmbientObjectContent:
     short_desc: str  # fixed room-listing sentence (RoomObject.room_line)
     desc: str  # full `look <object>` text
     bible_refs: list = field(default_factory=list)
+    probe_desc: str | None = None  # optional `## Probe Description`: `probe <object>` text
 
 
 def _parse_metadata(comment_text: str) -> dict:
@@ -132,6 +138,7 @@ def parse_ambient_npc_text(ambient_id: str, raw: str) -> AmbientNPCContent:
         poses=poses,
         desc=desc,
         bible_refs=bible_refs,
+        probe_desc=sections.get("Probe Description") or None,
     )
 
 
@@ -184,4 +191,5 @@ def parse_ambient_object_text(object_id: str, raw: str) -> AmbientObjectContent:
         short_desc=short_desc,
         desc=desc,
         bible_refs=bible_refs,
+        probe_desc=sections.get("Probe Description") or None,
     )

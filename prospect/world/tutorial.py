@@ -84,8 +84,9 @@ _ROOM_TANNOYS = {
     "medical_bay": (
         'A tannoy near the ceiling crackles to life: "Reminder to new '
         "arrivals - type SAY followed by your message to talk to someone, "
-        "type a direction (like NORTH or SOUTHWEST) to move there, and type "
-        'LOOK followed by something you see to take a closer look at it."'
+        "type a direction (like NORTH or SOUTHWEST) to move there, type "
+        "LOOK followed by something you see to look at it, and type PROBE "
+        'followed by something you see to study it more closely."'
     ),
 }
 

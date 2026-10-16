@@ -56,6 +56,14 @@ class ObjectParent:
         # glance/full-description split) and calls indent_paragraphs
         # directly - this covers every other entity (objects, NPCs,
         # characters) uniformly.
+        #
+        # `probe=True` (commands/probe.py) shows db.probe_desc, the longer
+        # authored text, when there is one; otherwise the same text as
+        # `look`. Subclasses with their own per-looker text (the pest
+        # log, the civic display, the signpost, the planting bed) don't
+        # call this, so `probe` shows their `look` text.
+        if kwargs.get("probe") and self.db.probe_desc:
+            return indent_paragraphs(self.db.probe_desc)
         return indent_paragraphs(super().get_display_desc(looker, **kwargs))
 
 

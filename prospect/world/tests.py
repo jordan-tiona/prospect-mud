@@ -104,6 +104,18 @@ class ParsePersonaTextTests(SimpleTestCase):
         # sees anything, so desc text never leaks into profile.body.
         self.assertNotIn("A test NPC with a plain look.", profile.body)
 
+    def test_probe_desc_defaults_to_none(self):
+        self.assertIsNone(parse_persona_text("test_npc", VALID_PERSONA_TEXT).probe_desc)
+
+    def test_probe_desc_parsed_and_kept_out_of_body(self):
+        with_probe = VALID_PERSONA_TEXT.replace(
+            "actions: test_action, another_action\n",
+            "actions: test_action, another_action\nprobe_desc: A longer probe text.\n",
+        )
+        profile = parse_persona_text("test_npc", with_probe)
+        self.assertEqual(profile.probe_desc, "A longer probe text.")
+        self.assertNotIn("A longer probe text.", profile.body)
+
 
 class RealPersonaFileTests(SimpleTestCase):
     """Parses the actual authored persona files in content/npcs/."""

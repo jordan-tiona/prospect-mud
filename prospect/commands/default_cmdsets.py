@@ -30,6 +30,7 @@ from commands.command import CmdNoMatch
 from commands.feedback import CmdFeedback
 from commands.get import CmdGet
 from commands.look import CmdLook
+from commands.probe import CmdProbe
 from commands.say import CmdSay
 from commands.scripted_login import CmdScriptedLogin
 from commands.tannoy import CmdTannoy
@@ -55,6 +56,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         #
         self.add(CmdSay())
         self.add(CmdLook())
+        self.add(CmdProbe())
         self.add(CmdGet())
         self.add(CmdForget())
         self.add(CmdResetQuest())
