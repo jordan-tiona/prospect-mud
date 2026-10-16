@@ -48,7 +48,7 @@ class TannoyTests(TestCase):
 
     def test_tannoy_text_for_room_matches_medical_bay(self):
         text = tannoy_text_for_room(self.rooms["medical_bay"])
-        for command in ("SAY", "NORTH", "LOOK"):
+        for command in ("SAY", "NORTH", "LOOK", "PROBE", "TANNOY"):
             self.assertIn(command, text)
 
     def test_tannoy_text_for_room_none_elsewhere(self):
