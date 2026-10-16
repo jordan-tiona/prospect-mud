@@ -7,9 +7,10 @@ prose from content/ (read through world_model, the same loaders check.py and
 export.py use), and problems from check.py itself, so the editor can't
 disagree with them. No game server, database or model is needed.
 
-Writes (milestone 5b) go through store.py and touch only a sector's own files
-(sector.json, plus its gitignored .history/ and .autosave/ folders), or, for
-Export, the manifest via export.py. Prose in content/ is never written. Every
+Writes (milestones 5b-5c) go through store.py and touch only the editor's own
+files: a sector's sector.json, plus its gitignored .history/ and .autosave/
+folders; sectors/_dismissed.json (the tray's dismiss list); or, for Export, the
+manifest via export.py. Prose in content/ is never written. Every
 write request must carry the random token embedded in the page (header
 X-Editor-Token) and a JSON body, so other web pages can't trigger one.
 """
@@ -28,7 +29,7 @@ from urllib.parse import unquote, urlsplit
 import export
 import store
 from check import ERROR, check_sector, check_sector_data
-from world_model import ID_RE, ROOT, load_content, load_kinds, load_sector, sector_ids
+from world_model import ID_RE, ROOT, load_content, load_dismissed, load_kinds, load_sector, sector_ids
 
 STATIC_DIR = Path(__file__).resolve().parent / 'static'
 STATIC_FILES = {  # the only files served; nothing is looked up by path
@@ -70,13 +71,13 @@ def _referenced(root):
 
 
 def unplaced(root):
-    """Content files in a kind's folder that no saved sector uses, with their request: line."""
-    room_kind, kinds = load_kinds(root)
-    folders = sorted({room_kind['content_dir'], *(k['content_dir'] for k in kinds.values())})
+    """Content files in a kind's folder that no saved sector uses: the candidate
+    tray. Each carries its request: line and whether it was dismissed."""
     refs = _referenced(root)
+    dismissed = load_dismissed(root)
     base = Path(root) / 'content'
     result = []
-    for folder in folders:
+    for folder in sorted(store.content_folders(root)):
         for path in sorted((base / folder).glob('*.md')):
             relative = path.relative_to(base).as_posix()
             if relative in refs:
@@ -84,8 +85,17 @@ def unplaced(root):
             view = _file_view(root, relative)
             view['kind_folder'] = folder
             view['request'] = (view.get('fields') or {}).get('request') or None
+            view['dismissed'] = relative in dismissed
             result.append(view)
     return result
+
+
+def tray_view(root):
+    """The tray: unplaced files, the whole dismiss list, and which dismissed
+    paths no longer exist (so their entries can be cleared)."""
+    dismissed = sorted(load_dismissed(root))
+    gone = [p for p in dismissed if not (Path(root) / 'content' / p).is_file()]
+    return {'unplaced': unplaced(root), 'dismissed': dismissed, 'dismissed_missing': gone}
 
 
 def kinds_view(root):
@@ -135,7 +145,7 @@ class Handler(BaseHTTPRequestHandler):
     root = ROOT
     port = DEFAULT_PORT
     token = ''
-    server_version = 'MUDEditor/0.2'
+    server_version = 'MUDEditor/0.3'
 
     def log_message(self, format, *args):  # quieter console: errors only
         if not args or not str(args[1]).startswith(('2', '3')):
@@ -178,7 +188,10 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/api/sectors':
             return self._send(HTTPStatus.OK, {'sectors': sector_ids(self.root)})
         if path == '/api/unplaced':
-            return self._send(HTTPStatus.OK, {'unplaced': unplaced(self.root)})
+            try:
+                return self._send(HTTPStatus.OK, tray_view(self.root))
+            except ValueError as exc:  # a broken _dismissed.json
+                return self._send(HTTPStatus.UNPROCESSABLE_ENTITY, {'error': str(exc)})
         sector_id = self._sector_from_path(path, '/autosave')
         if sector_id:
             return self._send(HTTPStatus.OK, {'sector': store.load_autosave(self.root, sector_id)})
@@ -208,6 +221,8 @@ class Handler(BaseHTTPRequestHandler):
             body = store.parse_body(self.rfile.read(length)) if length else {}
         except (ValueError, store.InvalidSector) as exc:
             return self._send(HTTPStatus.BAD_REQUEST, {'error': str(exc)})
+        if path == '/api/dismiss':
+            return self._dismiss(body)
         for suffix, action in (('/check', self._check), ('/save', self._save), ('/autosave', self._autosave),
                                ('/autosave/discard', self._discard), ('/export', self._export)):
             sector_id = self._sector_from_path(path, suffix)
@@ -251,6 +266,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(HTTPStatus.UNPROCESSABLE_ENTITY, {'exported': False, 'errors': errors})
         return self._send(HTTPStatus.OK, {'exported': True, 'path': Path(path).relative_to(self.root).as_posix(),
                                           'view': sector_view(self.root, sector_id)})
+
+    def _dismiss(self, body):
+        """{paths: [...], dismissed: true|false}: add to or take off the tray's dismiss list."""
+        try:
+            store.set_dismissed(self.root, body.get('paths'), body.get('dismissed') is not False)
+        except store.InvalidSector as exc:
+            return self._send(HTTPStatus.UNPROCESSABLE_ENTITY, {'error': str(exc), 'problems': exc.problems})
+        except ValueError as exc:  # a broken _dismissed.json
+            return self._send(HTTPStatus.UNPROCESSABLE_ENTITY, {'error': str(exc)})
+        return self._send(HTTPStatus.OK, tray_view(self.root))
 
     def _not_allowed(self):
         self._send(HTTPStatus.METHOD_NOT_ALLOWED, {'error': 'use GET or POST'})

@@ -208,6 +208,56 @@
     return doc;
   }
 
+  // ------------------------------------------------------- candidate tray
+
+  /** Content paths the document uses (rooms and entities). */
+  function usedContent(doc) {
+    return new Set([...Object.values(doc.rooms), ...Object.values(doc.entities)].map((x) => x.content).filter(Boolean));
+  }
+
+  /**
+   * Tray candidates for the open document: the server's unplaced files minus
+   * any the unsaved document already uses, plus `released` files the saved
+   * sector used but the unsaved document no longer does.
+   */
+  function trayItems(unplaced, released, doc) {
+    const used = usedContent(doc);
+    const seen = new Set();
+    return [...unplaced, ...released].filter((item) => !used.has(item.path) && !seen.has(item.path) && seen.add(item.path));
+  }
+
+  /**
+   * Group candidates by their request: line. Requests sort first (by ID), stray
+   * files (no request) last; dismissed files are kept apart in each group.
+   */
+  function groupByRequest(items) {
+    const groups = new Map();
+    for (const item of items) {
+      const key = item.request || '';
+      if (!groups.has(key)) groups.set(key, { request: item.request || null, active: [], dismissed: [] });
+      groups.get(key)[item.dismissed ? 'dismissed' : 'active'].push(item);
+    }
+    return [...groups.values()].sort((a, b) => (a.request === null) - (b.request === null)
+      || String(a.request).localeCompare(String(b.request)));
+  }
+
+  /** The ID a candidate gets: its header's ID field, else its file name. */
+  function candidateId(file, idField) {
+    const declared = file.fields && file.fields[idField];
+    return declared || file.path.split('/').pop().replace(/\.md$/, '');
+  }
+
+  /**
+   * Place a candidate file: as a room (kind 'room', at x/y, titled `title` or
+   * its heading) or as an entity of `kind` in `room`. Draft content can be
+   * placed; only export needs approval.
+   */
+  function placeCandidate(doc, file, { kind, idField, title, room, x = 0, y = 0 }) {
+    const id = candidateId(file, idField);
+    if (kind === 'room') return addRoom(doc, { id, title: title || file.heading || id, content: file.path, x, y });
+    return addEntity(doc, { id, kind, room, content: file.path });
+  }
+
   // --------------------------------------------------------------- history
 
   /** Undo/redo over JSON snapshots of the document. */
@@ -244,6 +294,6 @@
   return {
     ID_RE, opposite, shortAliases, parseAliases, clone, pairIndex, idTaken,
     addRoom, setRoom, removeRoom, addExit, setExit, removeExit, exitsOf,
-    addEntity, setEntity, removeEntity, History,
+    addEntity, setEntity, removeEntity, usedContent, trayItems, groupByRequest, candidateId, placeCandidate, History,
   };
 });

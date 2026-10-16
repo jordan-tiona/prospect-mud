@@ -11,7 +11,8 @@ from pathlib import Path
 
 import check
 import export
-from world_model import KINDS_FILE, ROOT, load_sector, manifest_path, parse_content, read_json, write_json
+from world_model import (KINDS_FILE, ROOT, dismissed_path, load_sector, manifest_path, parse_content, read_json,
+                         write_json)
 
 
 def codes(issues, level=None):
@@ -239,6 +240,19 @@ class CheckTests(unittest.TestCase):
         self.write('ambient/objects/spare.md', OBJECT_FILE.format(id='spare', name='a spare'))
         self.assertEqual(codes(self.run_check(), check.WARNING), ['unused_content'])
         self.assertEqual(self.run_check(only=['test']), [])
+
+    def test_candidates_and_dismissed_files_are_not_stray(self):
+        self.write('ambient/objects/candidate.md', OBJECT_FILE.format(id='candidate', name='a candidate')
+                   .replace('approval: Approved', 'approval: Draft\nrequest: LR-OWNER-0001'))
+        self.write('ambient/objects/rejected.md', OBJECT_FILE.format(id='rejected', name='a reject'))
+        self.write('ambient/objects/stray.md', OBJECT_FILE.format(id='stray', name='a stray'))
+        write_json(dismissed_path(self.root), {'dismissed': ['ambient/objects/rejected.md']})
+        unused = [i.where for i in self.run_check() if i.code == 'unused_content']
+        self.assertEqual(unused, ['content/ambient/objects/stray.md'])
+
+    def test_dismissal_of_a_deleted_file_is_noted(self):
+        write_json(dismissed_path(self.root), {'dismissed': ['ambient/objects/gone.md']})
+        self.assertEqual([(i.level, i.code) for i in self.run_check()], [(check.INFO, 'stale_dismissal')])
 
     def test_check_never_writes(self):
         write_json(self.root / 'sectors/test/sector.json', self.sector)

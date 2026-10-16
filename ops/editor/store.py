@@ -1,19 +1,22 @@
-"""Saving sector files from the MUD editor (milestone 5b).
+"""Saving sector files from the MUD editor (milestones 5b-5c).
 
-The only files this module writes are a sector's own:
+The only files this module writes are the editor's own:
     sectors/<id>/sector.json           - on an explicit Save (tracked by git)
     sectors/<id>/.history/*.json       - the previous version, kept on each Save (last HISTORY_KEEP)
     sectors/<id>/.autosave/latest.json - unsaved work, a few seconds after each change
     sectors/<id>/.autosave/auto-*.json - a copy of latest every ROTATE_EVERY seconds (last ROTATE_KEEP)
+    sectors/_dismissed.json            - candidates dismissed from the tray (tracked by git)
 The .history and .autosave folders are gitignored, and check.py, export.py and
 the game never read them. Prose in content/ is never written.
 """
 
 import hashlib
 import json
+import threading
 import time
 
-from world_model import FORMAT_VERSION, ID_RE, dump_json, load_kinds, read_json, sector_path, write_json
+from world_model import (FORMAT_VERSION, ID_RE, content_path, dismissed_path, dump_json, load_dismissed, load_kinds,
+                         read_json, sector_path, write_json)
 
 HISTORY_DIR = '.history'
 AUTOSAVE_DIR = '.autosave'
@@ -249,6 +252,46 @@ def snapshots(root, sector_id):
     found = [('autosave', p) for p in (base / AUTOSAVE_DIR).glob('auto-*.json')]
     found += [('saved', p) for p in (base / HISTORY_DIR).glob('sector-*.json')]
     return sorted(found, key=lambda item: item[1].name.split('-', 1)[1], reverse=True)
+
+
+# ------------------------------------------------------------ dismissed
+
+_dismiss_lock = threading.Lock()
+
+
+def content_folders(root):
+    """The content/ folders the allowlist's kinds (and rooms) read from."""
+    room_kind, kinds = load_kinds(root)
+    return {room_kind['content_dir'], *(k['content_dir'] for k in kinds.values())}
+
+
+def set_dismissed(root, paths, dismissed):
+    """Add `paths` to sectors/_dismissed.json (dismissed=True) or take them off
+    it. Dismissing needs an existing .md file in a kind's folder; restoring
+    accepts any listed path, so an entry for a deleted file can be cleared.
+    Returns the new sorted list. Raises InvalidSector without writing."""
+    if not (isinstance(paths, list) and paths and all(isinstance(p, str) for p in paths)):
+        raise InvalidSector(['paths must be a non-empty list of content paths'])
+    with _dismiss_lock:
+        current = load_dismissed(root)
+        if dismissed:
+            folders = content_folders(root)
+            problems = []
+            for relative in paths:
+                try:
+                    ok = content_path(root, relative).is_file()
+                except ValueError:
+                    ok = False
+                if not ok or not relative.endswith('.md') or relative.rsplit('/', 1)[0] not in folders:
+                    problems.append(f'not a content file the editor can place: {relative}')
+            if problems:
+                raise InvalidSector(problems)
+            updated = current | set(paths)
+        else:
+            updated = current - set(paths)
+        if updated != current:
+            write_json(dismissed_path(root), {'dismissed': sorted(updated), 'format_version': FORMAT_VERSION})
+        return sorted(updated)
 
 
 def parse_body(raw, limit=2_000_000):

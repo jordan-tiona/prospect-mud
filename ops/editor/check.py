@@ -11,9 +11,9 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from world_model import (FORMAT_VERSION, ID_RE, ROOT, DuplicateKeyError, load_content, load_kinds,
-                         load_required_rooms, load_sector, manifest_path, read_json, sector_ids, sector_path,
-                         source_hashes)
+from world_model import (DISMISSED_FILE, FORMAT_VERSION, ID_RE, ROOT, DuplicateKeyError, load_content,
+                         load_dismissed, load_kinds, load_required_rooms, load_sector, manifest_path, read_json,
+                         sector_ids, sector_path, source_hashes)
 
 ERROR, WARNING, INFO = 'error', 'warning', 'info'
 
@@ -255,15 +255,29 @@ def _manifest_issues(root, sector_id, sector, referenced):
 
 
 def _unused_content(root, referenced):
+    """Stray content: files no sector uses that aren't candidates either. A file
+    with a `request:` line waits in the editor's tray, and a dismissed one has
+    been looked at, so neither is warned about (Section 8.1)."""
     room_kind, kinds = load_kinds(root)
     folders = sorted({room_kind['content_dir'], *(k['content_dir'] for k in kinds.values())})
     base = Path(root) / 'content'
+    try:
+        dismissed = load_dismissed(root)
+    except ValueError as exc:
+        return [Issue(ERROR, 'bad_json', DISMISSED_FILE, str(exc))]
     issues = []
     for folder in folders:
         for path in sorted((base / folder).glob('*.md')):
             relative = path.relative_to(base).as_posix()
-            if relative not in referenced:
-                issues.append(Issue(WARNING, 'unused_content', f'content/{relative}', 'not used by any sector'))
+            if relative in referenced or relative in dismissed:
+                continue
+            if load_content(root, relative).fields.get('request'):
+                continue
+            issues.append(Issue(WARNING, 'unused_content', f'content/{relative}', 'not used by any sector'))
+    for relative in sorted(dismissed - referenced):
+        if not (base / relative).is_file():
+            issues.append(Issue(INFO, 'stale_dismissal', DISMISSED_FILE,
+                                f'content/{relative} no longer exists; Restore it in the tray to drop the entry'))
     return issues
 
 

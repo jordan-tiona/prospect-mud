@@ -1,4 +1,4 @@
-"""Tests for the MUD editor's server (milestones 5a-5b) and store.py.
+"""Tests for the MUD editor's server (milestones 5a-5c) and store.py.
 
 Run from the repo root:  python -m unittest discover -s ops/editor
 """
@@ -13,7 +13,7 @@ import unittest.mock
 import serve
 import store
 from test_editor import OBJECT_FILE, ROOM_FILE, CheckTests
-from world_model import ROOT, read_json, sector_path, write_json
+from world_model import ROOT, dismissed_path, read_json, sector_path, write_json
 
 TOKEN = 'test-token'
 
@@ -97,6 +97,39 @@ class ServeTests(_Fixture):
         self.assertEqual(set(unplaced), {'rooms/candidate.md', 'ambient/objects/spare.md'})
         self.assertEqual(unplaced['rooms/candidate.md']['request'], 'LR-OWNER-0001')
         self.assertIsNone(unplaced['ambient/objects/spare.md']['request'])
+
+    def test_dismiss_and_restore_candidates(self):
+        self.write('rooms/candidate.md', ROOM_FILE.format(id='candidate', text='A candidate.')
+                   .replace('approval: Approved', 'approval: Draft\nrequest: LR-OWNER-0001'))
+        self.write('rooms/other.md', ROOM_FILE.format(id='other', text='Another.'))
+        before = self.snapshot()
+        status, tray = self.post('/api/dismiss', {'paths': ['rooms/candidate.md', 'rooms/other.md']})
+        self.assertEqual(status, 200, tray)
+        self.assertEqual({u['path']: u['dismissed'] for u in tray['unplaced']},
+                         {'rooms/candidate.md': True, 'rooms/other.md': True})
+        self.assertEqual(read_json(dismissed_path(self.root)),
+                         {'dismissed': ['rooms/candidate.md', 'rooms/other.md'], 'format_version': 1})
+        status, tray = self.post('/api/dismiss', {'paths': ['rooms/other.md'], 'dismissed': False})
+        self.assertEqual({u['path']: u['dismissed'] for u in tray['unplaced']},
+                         {'rooms/candidate.md': True, 'rooms/other.md': False})
+        after = self.snapshot()
+        touched = {p for p in set(before) | set(after) if before.get(p) != after.get(p)}
+        self.assertEqual(touched, {'sectors/_dismissed.json'})
+        self.assertEqual(self.get_json('/api/sectors'), {'sectors': ['test']})
+
+    def test_dismiss_refuses_what_it_cannot_place(self):
+        self.write('notes/elsewhere.md', 'x')
+        for paths in (['../sectors/test/sector.json'], ['rooms/nope.md'], ['notes/elsewhere.md'], [], 'rooms/room_a.md'):
+            status, data = self.post('/api/dismiss', {'paths': paths})
+            self.assertEqual(status, 422, paths)
+        self.assertFalse(dismissed_path(self.root).exists())
+        self.assertEqual(self.post('/api/dismiss', {'paths': ['rooms/room_a.md']}, token='wrong')[0], 403)
+
+    def test_dismissed_file_that_was_deleted_can_be_cleared(self):
+        write_json(dismissed_path(self.root), {'dismissed': ['rooms/gone.md']})
+        self.assertEqual(self.get_json('/api/unplaced')['dismissed_missing'], ['rooms/gone.md'])
+        status, tray = self.post('/api/dismiss', {'paths': ['rooms/gone.md'], 'dismissed': False})
+        self.assertEqual((status, tray['dismissed_missing']), (200, []))
 
     def test_broken_sector_file_is_reported_not_crashed(self):
         (self.root / 'sectors/test/sector.json').write_text('{"rooms": {"a": {}, "a": {}}}', encoding='utf-8')

@@ -1,4 +1,4 @@
-// MUD editor page (milestones 5a-5b): map, panels and structure editing.
+// MUD editor page (milestones 5a-5c): map, panels, structure editing and the candidate tray.
 // Editing logic lives in core.js; this file is DOM, drawing and talking to serve.py.
 'use strict';
 
@@ -19,7 +19,10 @@ const state = {
   history: new core.History(),
   issues: [],
   problems: [],
-  unplaced: [],
+  unplaced: [], // /api/unplaced: content files no saved sector uses (each with request, dismissed)
+  dismissed: [], // every path on the dismiss list
+  dismissedMissing: [], // dismissed paths whose file has been deleted
+  lastRoom: null, // the room most recently looked at, the default for placing an entity
   selected: { type: 'overview' },
   view: null,
   banner: null, // {kind: 'info'|'warn'|'err', html, transient}
@@ -105,6 +108,40 @@ function selectedRoom() {
   return null;
 }
 
+// Files the saved sector uses but the unsaved document no longer does: back in the tray.
+function released() {
+  const used = core.usedContent(state.doc);
+  return Object.values(state.server.files).filter((f) => f && f.exists && !used.has(f.path)).map((f) => ({
+    ...f, kind_folder: f.path.split('/').slice(0, -1).join('/'), request: f.fields?.request || null, dismissed: state.dismissed.includes(f.path),
+  }));
+}
+
+/** Tray candidates for the open document; dismissed ones only when asked. */
+function candidates({ dismissed = false } = {}) {
+  return core.trayItems(state.unplaced, released(), state.doc).filter((f) => dismissed || !f.dismissed);
+}
+
+function candidateFile(path) {
+  return core.trayItems(state.unplaced, released(), state.doc).find((f) => f.path === path) || null;
+}
+
+function isRoomFile(file) {
+  return file.kind_folder === state.server.room.content_dir;
+}
+
+/** First lines a player would read, for the tray list. */
+function preview(file) {
+  const s = file.sections || {};
+  const text = (s.Glance || s['Short Description'] || s.Description || file.fields?.desc || '').replace(/\s+/g, ' ');
+  return text.length > 150 ? `${text.slice(0, 147)}…` : text;
+}
+
+function applyTray(data) {
+  state.unplaced = data.unplaced;
+  state.dismissed = data.dismissed || [];
+  state.dismissedMissing = data.dismissed_missing || [];
+}
+
 function kindsForFolder(folder) {
   return Object.entries(state.server.kinds).filter(([, k]) => k.content_dir === folder).map(([name]) => name);
 }
@@ -138,7 +175,7 @@ async function load({ resetView = false, force = false } = {}) {
     if (!state.sectors.includes(state.sectorId)) state.sectorId = state.sectors[0] ?? null;
     if (!state.sectorId) throw new Error('No sector files found under sectors/.');
     const view = await getJSON(`/api/sector/${state.sectorId}`);
-    state.unplaced = (await getJSON('/api/unplaced')).unplaced;
+    applyTray(await getJSON('/api/unplaced'));
     $('error').hidden = true;
     if (state.dirty && !force) {
       state.server = { ...view, sector: state.server.sector, files: { ...state.server.files, ...view.files } };
@@ -255,7 +292,7 @@ async function save() {
     flash('err', `Not saved: ${esc((res.data.problems || [res.data.error]).join('; '))}`);
   } else if (res.ok) {
     applyServerView(res.data.view);
-    state.unplaced = (await getJSON('/api/unplaced')).unplaced;
+    applyTray(await getJSON('/api/unplaced'));
     $('autosave-note').textContent = '';
     flash('info', 'Saved.');
   } else {
@@ -277,6 +314,17 @@ async function exportSector() {
   } else {
     flash('err', `Export failed: ${esc(res.data.error || res.status)}`);
   }
+  render();
+}
+
+/** Dismiss candidates from the tray (or restore them). Writes sectors/_dismissed.json at once; no Save needed. */
+async function setDismissed(paths, dismissed) {
+  const res = await api('POST', '/api/dismiss', { paths, dismissed });
+  if (!res.ok) {
+    flash('err', `Couldn't ${dismissed ? 'dismiss' : 'restore'}: ${esc((res.data.problems || [res.data.error]).join('; '))}`);
+    return;
+  }
+  applyTray(res.data);
   render();
 }
 
@@ -313,7 +361,9 @@ function renderBar() {
   pill.textContent = { fresh: 'Manifest up to date', stale: 'Manifest stale', not_exported: 'Not exported' }[m.state];
   pill.className = `pill static ${m.state === 'fresh' ? 'ok' : m.state === 'stale' ? 'warn' : ''}`;
   pill.title = m.state === 'stale' ? `Changed since the last export:\n${m.changed.join('\n')}` : '';
-  $('unplaced-btn').textContent = `Unplaced: ${state.unplaced.length}`;
+  const waiting = candidates().length;
+  $('tray-btn').textContent = `Tray: ${waiting}`;
+  $('tray-btn').className = `pill${state.selected.type === 'tray' || state.selected.type === 'candidate' ? ' on' : ''}`;
 
   $('undo').disabled = !state.history.canUndo;
   $('redo').disabled = !state.history.canRedo;
@@ -515,11 +565,15 @@ function select(selection) {
   if ((selection.type === 'room' && !d.rooms[selection.id]) || (selection.type === 'entity' && !d.entities[selection.id])) {
     selection = { type: 'overview' };
   }
-  const sameItem = selection.type === state.selected.type && selection.id === state.selected.id;
+  const sameItem = selection.type === state.selected.type && selection.id === state.selected.id
+    && selection.path === state.selected.path;
   state.selected = selection;
+  if (selection.type === 'room') state.lastRoom = selection.id;
+  if (selection.type === 'entity') state.lastRoom = d.entities[selection.id].room;
   state.editingExit = null;
   const hash = ['room', 'entity'].includes(selection.type) ? `#${selection.type}=${encodeURIComponent(selection.id)}` : '';
   if (location.hash !== hash) history.replaceState(null, '', hash || location.pathname);
+  renderBar();
   renderMap(false);
   renderPanel(!sameItem);
 }
@@ -532,11 +586,14 @@ function selectionFromHash() {
 function renderPanel(toTop = false) {
   const panel = $('panel');
   const s = state.selected;
+  if ((s.type === 'room' && !state.doc.rooms[s.id]) || (s.type === 'entity' && !state.doc.entities[s.id])) {
+    s.type = 'overview'; // removed (or undone away) while it was open
+  }
   const scroll = panel.scrollTop;
   panel.innerHTML = s.type === 'room' ? roomPanel(s.id)
     : s.type === 'entity' ? entityPanel(s.id)
     : s.type === 'issues' ? issuesPanel()
-    : s.type === 'unplaced' ? unplacedPanel()
+    : s.type === 'tray' ? trayPanel()
     : s.type === 'candidate' ? candidatePanel(s.path)
     : overviewPanel();
   panel.scrollTop = toTop ? 0 : scroll;
@@ -552,7 +609,7 @@ function overviewPanel() {
   const d = state.doc;
   const exits = d.exits.reduce((n, e) => n + (e.return ? 2 : 1), 0);
   const errors = state.issues.filter((i) => i.level === 'error').length;
-  const roomFiles = state.unplaced.filter((u) => u.kind_folder === state.server.room.content_dir);
+  const roomFiles = candidates().filter(isRoomFile);
   return `
     <h2>${esc(d.sector_id)}</h2>
     <p class="muted">Sector overview. Click a room on the map to edit it; drag rooms to move them.</p>
@@ -630,8 +687,8 @@ function roomPanel(id) {
   const here = entitiesIn(id);
   const roomIssues = issuesFor(id);
   const roomDir = state.server.room.content_dir;
-  const matchingProse = state.unplaced.filter((u) => u.kind_folder === roomDir && u.fields?.room_id === id);
-  const placeable = state.unplaced.filter((u) => u.kind_folder !== roomDir && kindsForFolder(u.kind_folder).length);
+  const matchingProse = candidates().filter((u) => u.kind_folder === roomDir && u.fields?.room_id === id);
+  const placeable = candidates().filter((u) => u.kind_folder !== roomDir && kindsForFolder(u.kind_folder).length);
   const canAddExit = state.editingExit === null && Object.keys(state.doc.rooms).some((r) => r !== id && core.pairIndex(state.doc, id, r) === -1);
   return `
     <h2>${esc(room.title || id)}</h2>
@@ -661,7 +718,7 @@ function roomPanel(id) {
         <label>Content <select name="content">${options(placeable.map((f) => [f.path, `${f.heading || f.path} — ${f.kind_folder} (${f.approval || 'no approval'})`]), placeable[0].path)}</select></label>
         <label>Kind <select name="kind">${options(kindsForFolder(placeable[0].kind_folder).map((k) => [k, k]), '')}</select></label>
         <div class="actions"><button type="submit" class="primary">Place</button></div>
-        <p class="muted small">The ID comes from the content file. The candidate tray (milestone 5c) will group these by request.</p>
+        <p class="muted small">The ID comes from the content file. The ${go('tray', '', 'tray')} groups candidates by request.</p>
       </form></details>` : ''}
     <h3>Notes</h3>
     <textarea data-field="room-notes" rows="3" placeholder="Editor-only notes (never reach the game)">${esc(room.notes || '')}</textarea>
@@ -711,26 +768,86 @@ function entityPanel(id) {
     <p class="muted small">The content file stays; it shows up under Unplaced.</p>`;
 }
 
-function unplacedPanel() {
-  if (!state.unplaced.length) {
-    return '<h2>Unplaced content</h2><p class="muted">Every content file is placed in a sector.</p>';
-  }
-  const groups = {};
-  for (const item of state.unplaced) (groups[item.request || ''] ||= []).push(item);
-  const keys = Object.keys(groups).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b));
-  return `<h2>Unplaced content</h2>
-    <p class="muted">Content files no saved sector uses, grouped by their <code>request:</code> line. Place things from a room's panel; the candidate tray comes in milestone 5c.</p>
-    ${keys.map((k) => `<h3>${esc(k || 'No request')}</h3><ul class="list">${groups[k].map((item) => `<li>${go('candidate', encodeURIComponent(item.path), item.heading || item.path)}<span class="kind">${esc(item.kind_folder)}</span>${approvalChip(item)}</li>`).join('')}</ul>`).join('')}`;
+function trayRow(item) {
+  const room = isRoomFile(item);
+  const placeBtn = room
+    ? `<button type="button" class="link" data-action="place-room" data-path="${esc(item.path)}" title="Add as a room near the middle of the map">Place</button>`
+    : `<button type="button" class="link" data-go="candidate:${esc(encodeURIComponent(item.path))}" title="Choose a room and kind">Place…</button>`;
+  return `<li class="cand">
+      <div class="cand-head">${go('candidate', encodeURIComponent(item.path), item.heading || item.path)}
+        <span class="kind">${esc(item.kind_folder)}</span>${approvalChip(item)}
+        <span class="spacer"></span>${placeBtn}
+        <button type="button" class="link danger" data-action="dismiss" data-path="${esc(item.path)}">Dismiss</button></div>
+      ${preview(item) ? `<div class="cand-preview">${esc(preview(item))}</div>` : ''}
+    </li>`;
+}
+
+function trayPanel() {
+  const groups = core.groupByRequest(candidates({ dismissed: true }));
+  const active = groups.filter((g) => g.active.length);
+  const dismissed = groups.flatMap((g) => g.dismissed);
+  const intro = `<h2>Candidate tray</h2>
+    <p class="muted">Content files no sector uses yet, grouped by their <code>request:</code> line. Placing adds one to this
+    sector (Draft is fine; only export needs approval) and takes effect when you Save. Dismissing takes it out of the tray
+    straight away (it goes in <code>sectors/_dismissed.json</code>); the file itself is never touched.</p>`;
+  const body = active.length ? active.map((g) => `
+    <div class="tray-group">
+      <h3>${esc(g.request || 'No request (stray files)')} <span class="kind">${g.active.length} waiting</span>
+        ${g.request && g.active.length > 1 ? `<button type="button" class="link danger" data-action="dismiss-group" data-request="${esc(g.request)}">Dismiss all ${g.active.length}</button>` : ''}</h3>
+      <ul class="list">${g.active.map(trayRow).join('')}</ul>
+    </div>`).join('') : '<p class="muted">Nothing waiting: every content file is placed or dismissed.</p>';
+  const gone = state.dismissedMissing;
+  const restore = dismissed.length || gone.length ? `
+    <details class="add"><summary>Dismissed (${dismissed.length + gone.length})</summary>
+      <ul class="list">${dismissed.map((item) => `<li>${go('candidate', encodeURIComponent(item.path), item.heading || item.path)}
+        <span class="kind">${esc(item.request || item.kind_folder)}</span><span class="spacer"></span>
+        <button type="button" class="link" data-action="restore" data-path="${esc(item.path)}">Restore</button></li>`).join('')}
+      ${gone.map((path) => `<li><span class="path">${esc(path)}</span><span class="badge-chip">file deleted</span><span class="spacer"></span>
+        <button type="button" class="link" data-action="restore" data-path="${esc(path)}">Clear</button></li>`).join('')}</ul>
+    </details>` : '';
+  return intro + body + restore;
 }
 
 function candidatePanel(path) {
-  const item = state.unplaced.find((u) => u.path === path);
-  if (!item) return unplacedPanel();
+  const item = candidateFile(path);
+  if (!item) return trayPanel();
+  const room = isRoomFile(item);
+  const kinds = room ? [] : kindsForFolder(item.kind_folder);
+  const idField = room ? state.server.room.id_field : state.server.kinds[kinds[0]]?.id_field;
+  const id = core.candidateId(item, idField);
+  const taken = core.idTaken(state.doc, id);
+  const roomIds = Object.keys(state.doc.rooms);
+  const here = state.doc.rooms[state.lastRoom] ? state.lastRoom : roomIds[0];
+  let place;
+  if (item.dismissed) {
+    place = '<p class="muted">Dismissed. Restore it to place it.</p><button type="button" data-action="restore" data-path="' + esc(item.path) + '">Restore to the tray</button>';
+  } else if (taken) {
+    place = `<p class="issue error">The ID <code>${esc(id)}</code> is already used in this sector, so this can't be placed. Lore chose the file name; ask for a rename, or dismiss it.</p>`;
+  } else if (room) {
+    place = `<form class="form" data-form="place-candidate" data-path="${esc(item.path)}">
+        <label>Title <input name="title" value="${esc(item.heading || id)}" required></label>
+        <div class="actions"><button type="submit" class="primary">Place as a room</button></div>
+        <p class="muted small">The heading is only a suggestion; the title is yours. Then connect it with exits.</p>
+      </form>`;
+  } else if (!kinds.length) {
+    place = '<p class="muted">No entity kind reads from this folder, so it can\'t be placed (a Dev-lane allowlist change).</p>';
+  } else if (!roomIds.length) {
+    place = '<p class="muted">Add a room first.</p>';
+  } else {
+    place = `<form class="form" data-form="place-candidate" data-path="${esc(item.path)}">
+        <label>Room <select name="room">${options(roomIds.map((r) => [r, `${roomTitle(r)} (${r})`]), here)}</select></label>
+        <label>Kind <select name="kind">${options(kinds.map((k) => [k, k]), kinds[0])}</select></label>
+        <div class="actions"><button type="submit" class="primary">Place</button></div>
+      </form>`;
+  }
   return `
-    <p>${go('unplaced', '', '← Unplaced content')}</p>
+    <p>${go('tray', '', '← Tray')}</p>
     <h2>${esc(item.heading || item.path)}</h2>
-    <div class="badges">${approvalChip(item)}${item.request ? `<span class="badge-chip">${esc(item.request)}</span>` : ''}</div>
+    <div class="badges">${approvalChip(item)}${item.request ? `<span class="badge-chip">${esc(item.request)}</span>` : ''}<span class="badge-chip">${esc(room ? 'room' : item.kind_folder)} · ${esc(id)}</span></div>
     <div class="path">content/${esc(item.path)}</div>
+    <h3>Place</h3>
+    ${place}
+    ${item.dismissed ? '' : `<p class="small"><button type="button" class="link danger" data-action="dismiss" data-path="${esc(item.path)}">Dismiss from the tray</button></p>`}
     ${sectionsHTML(item, item.kind_folder === 'npcs' ? 'talk_npc' : '')}`;
 }
 
@@ -768,6 +885,14 @@ function setupPanelInput() {
         break;
       }
       case 'unlink-prose': edit((doc) => core.setRoom(doc, id, { content: '' })); break;
+      case 'place-room': placeRoomCandidate(act.dataset.path); break;
+      case 'dismiss': setDismissed([act.dataset.path], true); break;
+      case 'restore': setDismissed([act.dataset.path], false); break;
+      case 'dismiss-group': {
+        const paths = candidates().filter((f) => f.request === act.dataset.request).map((f) => f.path);
+        if (confirm(`Dismiss all ${paths.length} remaining candidate(s) for ${act.dataset.request}? (Restore brings them back.)`)) setDismissed(paths, true);
+        break;
+      }
       case 'remove-room': {
         const n = core.exitsOf(state.doc, id).length;
         if (confirm(`Remove ${roomTitle(id)}${n ? ` and its ${n} exit(s)` : ''} from the sector? (Undo brings it back until you save.)`)
@@ -842,9 +967,22 @@ function setupPanelInput() {
         const { out, back } = exitFromForm(form);
         state.editingExit = null;
         if (!edit((doc) => core.setExit(doc, index, id, { out, back }))) { state.editingExit = index; }
+      } else if (form.dataset.form === 'place-candidate') {
+        const f = new FormData(form);
+        const file = candidateFile(form.dataset.path);
+        if (!file) throw new Error('That file is no longer in the tray.');
+        if (isRoomFile(file)) {
+          placeRoomCandidate(file.path, f.get('title'));
+        } else {
+          const kind = f.get('kind');
+          const newId = core.candidateId(file, state.server.kinds[kind].id_field);
+          if (edit((doc) => core.placeCandidate(doc, file, { kind, idField: state.server.kinds[kind].id_field, room: f.get('room') }))) {
+            select({ type: 'entity', id: newId });
+          }
+        }
       } else if (form.dataset.form === 'place-entity') {
         const f = new FormData(form);
-        const file = state.unplaced.find((u) => u.path === f.get('content'));
+        const file = candidateFile(f.get('content'));
         const kind = f.get('kind');
         const spec = state.server.kinds[kind];
         const newId = file?.fields?.[spec?.id_field];
@@ -876,15 +1014,27 @@ function freeSpot(x, y) {
   return { x: Math.round(x / SNAP) * SNAP, y: Math.round(y / SNAP) * SNAP };
 }
 
+/** Add a room candidate at a free spot near the middle of the view, then show it. */
+function placeRoomCandidate(path, title) {
+  const file = candidateFile(path);
+  if (!file) return;
+  const idField = state.server.room.id_field;
+  const v = state.view;
+  const { x, y } = freeSpot(v.x + v.w / 2 - BOX_W / 2, v.y + v.h / 2 - BOX_H / 2);
+  if (edit((doc) => core.placeCandidate(doc, file, { kind: 'room', idField, title, x, y }))) {
+    select({ type: 'room', id: core.candidateId(file, idField) });
+  }
+}
+
 function prefillRoomFromProse(form) {
-  const file = state.unplaced.find((u) => u.path === form.elements.content.value);
+  const file = candidateFile(form.elements.content.value);
   if (!file) return;
   form.elements.id.value = file.fields?.room_id || '';
   if (file.heading && !form.elements.title.value) form.elements.title.value = file.heading;
 }
 
 function fillKinds(form) {
-  const file = state.unplaced.find((u) => u.path === form.elements.content.value);
+  const file = candidateFile(form.elements.content.value);
   const kinds = file ? kindsForFolder(file.kind_folder) : [];
   form.elements.kind.innerHTML = options(kinds.map((k) => [k, k]), kinds[0]);
 }
@@ -899,7 +1049,7 @@ function init() {
     load({ force: true });
   });
   $('issues-btn').addEventListener('click', () => select({ type: 'issues' }));
-  $('unplaced-btn').addEventListener('click', () => select({ type: 'unplaced' }));
+  $('tray-btn').addEventListener('click', () => select({ type: 'tray' }));
   $('undo').addEventListener('click', undo);
   $('redo').addEventListener('click', redo);
   $('save').addEventListener('click', save);
