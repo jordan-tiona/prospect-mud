@@ -205,3 +205,5 @@ What changes:
 - **What runtime-created objects are tagged with.** Parcels use `parcel_commitment` and skitters use `skitter_entity`, so the build never treats them as its own or as orphans. Ambient and talk NPCs are `DefaultObject`, not characters, so a removed NPC can still be pruned. The never-prune rule only protects player characters.
 
 **One edge case for Tools:** if a *room* is skipped because two rooms carry its tag, exits and entities placed in that room still get planned. `_apply` then raises `KeyError` on `rooms[desired.location]` partway through a real build, after earlier steps have already been written. Skip, and report as conflicts, any exit or entity whose room or destination was skipped, the same way an ambiguous exit is handled.
+
+**Fixed (Tools, 2026-10-16):** exits and entities that depend on a skipped room are now skipped and reported as conflicts. As a second layer, before any write `build()` checks that every room a planned step needs either exists or is created by this plan. If not, it raises `SectorBuildError` and writes nothing. Both behaviours are tested in `test_build_sector.py`.

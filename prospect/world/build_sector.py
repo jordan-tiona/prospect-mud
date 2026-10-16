@@ -282,16 +282,30 @@ def _plan(rooms, exits, entities, report):
             report.held.append(f"{desired.label} is held by {obj.location.key} - left there")
         steps.append(_Step(desired, obj, changes))
 
+    skipped_rooms = set()
+
+    def depends_on_skipped_room(desired):
+        """An exit or entity in (or leading to) a skipped room can't be built either."""
+        missing = {desired.location, desired.destination} & skipped_rooms
+        if missing:
+            report.conflicts.append(
+                f"{desired.label}: depends on skipped room {', '.join(sorted(missing))} - skipped"
+            )
+        return bool(missing)
+
     for desired in rooms:
         matches = _tagged(desired.object_id, desired.tag_category)
         if len(matches) > 1:
             report.conflicts.append(f"{desired.label}: {len(matches)} rooms carry this tag - skipped")
+            skipped_rooms.add(desired.object_id)
             continue
         room_objects[desired.object_id] = matches[0] if matches else None
         plan(desired, room_objects[desired.object_id])
 
     wanted_exit_ids = {d.object_id for d in exits}
     for desired in exits:
+        if depends_on_skipped_room(desired):
+            continue
         matches = _tagged(desired.object_id, EXIT_TAG_CATEGORY)
         if len(matches) > 1:
             report.conflicts.append(f"{desired.label}: {len(matches)} exits carry this tag - skipped")
@@ -320,6 +334,8 @@ def _plan(rooms, exits, entities, report):
         plan(desired, candidates[0] if candidates else None)
 
     for desired in entities:
+        if depends_on_skipped_room(desired):
+            continue
         matches = _tagged(desired.object_id, desired.tag_category)
         if len(matches) > 1:
             report.conflicts.append(f"{desired.label}: {len(matches)} objects carry this tag - skipped")
@@ -459,6 +475,18 @@ def build(sector_id, *, kinds=None, dry_run=False, prune=False, force_live=False
             report.unchanged.append(step.desired.label)
         if step.obj is not None:
             report.objects[step.desired.object_id] = step.obj
+
+    # Every room a step needs must exist already or be created by this plan -
+    # checked before any write, so a planning bug can never leave a half-applied
+    # build behind.
+    available = {room_id for room_id, obj in room_objects.items() if obj is not None}
+    available |= {step.desired.object_id for step in steps if step.desired.label.startswith("room ")}
+    unresolved = sorted(
+        {room_id for step in steps for room_id in (step.desired.location, step.desired.destination)
+         if room_id is not None and room_id not in available}
+    )
+    if unresolved:
+        raise SectorBuildError(f"Plan needs rooms it can't build: {', '.join(unresolved)}. Nothing was written.")
 
     if dry_run:
         print(report.summary())

@@ -156,6 +156,24 @@ class BuildSectorTests(TestCase):
         self.assertEqual(report.pruned, [])
         self.assertEqual(len(report.blocked), 2)
 
+    def test_room_with_a_duplicate_tag_skips_everything_in_it_without_writing_any_of_it(self):
+        # Dev review (docs/build-sector-proposal.md Section 9): this used to
+        # raise KeyError partway through a real build.
+        for _ in range(2):
+            create_object("typeclasses.rooms.Room", key="Room A?").tags.add("t_room_a", category=ROOMS)
+        report = self.build()
+        self.assertEqual(sorted(report.created), ["room t_room_b"])
+        self.assertEqual(len(report.conflicts), 5)  # the room, both exits, both entities in it
+        self.assertEqual(len(search_tag(key="t_thing", category=AMBIENT)), 0)
+        self.assertEqual(self.room("t_room_b").exits, [])
+
+    def test_unresolvable_room_refuses_before_writing(self):
+        del self.manifest["rooms"]["t_room_a"]  # an export would never allow this; build_sector must not crash on it
+        before = ObjectDB.objects.count()
+        with self.assertRaises(SectorBuildError):
+            self.build()
+        self.assertEqual(ObjectDB.objects.count(), before)
+
     def test_values_the_manifest_drops_are_removed(self):
         self.build()
         entity = self.manifest["entities"]["t_thing"]
