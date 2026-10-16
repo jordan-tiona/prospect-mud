@@ -426,7 +426,7 @@ def _create_weapon_for(actor) -> None:
     weapon.db.damage = 1
 
 
-def _validate_report_skitter_kills(npc, actor, arguments: dict) -> ActionResult:
+def _validate_report_skitter_kills_to_tarin(npc, actor, arguments: dict) -> ActionResult:
     from world.skitters import REQUIRED_KILLS, kills_for
 
     npc_id = npc.db.npc_id
@@ -439,6 +439,49 @@ def _validate_report_skitter_kills(npc, actor, arguments: dict) -> ActionResult:
     if not result.ok:
         return ActionResult(False, "", reason=result.reason)
     return ActionResult(True, scenario.fulfill_narration.format(npc=npc.key, actor=actor.key))
+
+
+def _validate_log_dead_skitters_with_iri(npc, actor, arguments: dict) -> ActionResult:
+    """
+    The repeatable post-quest loop (project owner, 2026-10-16): logs
+    every skitter the engine actually saw this player kill since their
+    last report. The amount is never an argument - the model can't
+    supply or inflate it, and a player's own claim of how many they got
+    plays no part (CLAUDE.md hard rule 6).
+    """
+    from world.skitters import LEDGER_NPC_ID, bank_kills, banked_kills_for, has_finished_hunt
+
+    npc_id = npc.db.npc_id
+    if npc_id != LEDGER_NPC_ID:
+        return ActionResult(False, "", reason=f"{npc_id!r} doesn't keep the skitter log")
+    # Rejection reasons are worded as direct instructions, per
+    # docs/npc-action-prompt-guidelines.md #20: the follow-up reaction
+    # call sees this exact string, and that's what actually steers it.
+    if not has_finished_hunt(actor):
+        return ActionResult(
+            False,
+            "",
+            reason=(
+                "nothing to log yet - they haven't finished helping Tarin with the skitters; "
+                "tell them that comes first"
+            ),
+        )
+    newly_logged = bank_kills(actor)
+    if not newly_logged:
+        return ActionResult(
+            False,
+            "",
+            reason=(
+                "no new kills to log since their last report - tell them honestly there's "
+                "nothing new on record, without guessing at any number"
+            ),
+        )
+    plural = "" if newly_logged == 1 else "s"
+    return ActionResult(
+        True,
+        f"{npc.key} logs {newly_logged} more skitter{plural} for {actor.key}. "
+        f"Total on record: {banked_kills_for(actor)}.",
+    )
 
 
 def _validate_remember_fact(npc, actor, arguments: dict) -> ActionResult:
@@ -672,7 +715,8 @@ _ACTION_VALIDATORS = {
     "report_parcel_delivery": _validate_report_parcel_delivery,
     "remember_fact": _validate_remember_fact,
     "confirm_bed_tended": _validate_confirm_bed_tended,
-    "report_skitter_kills": _validate_report_skitter_kills,
+    "report_skitter_kills_to_tarin": _validate_report_skitter_kills_to_tarin,
+    "log_dead_skitters_with_iri": _validate_log_dead_skitters_with_iri,
 }
 
 
@@ -1013,10 +1057,10 @@ ACTION_SCHEMAS = {
             },
         },
     },
-    "report_skitter_kills": {
+    "report_skitter_kills_to_tarin": {
         "type": "function",
         "function": {
-            "name": "report_skitter_kills",
+            "name": "report_skitter_kills_to_tarin",
             "description": (
                 "Check whether the player has actually cleared enough skitters, and close the "
                 "matter out if so. Call it the moment they tell you they've been hunting them or "
@@ -1031,6 +1075,31 @@ ACTION_SCHEMAS = {
                         "description": (
                             "Always true - this action takes no real argument, it just confirms "
                             "you're checking now."
+                        ),
+                    }
+                },
+                "required": ["confirmed"],
+            },
+        },
+    },
+    "log_dead_skitters_with_iri": {
+        "type": "function",
+        "function": {
+            "name": "log_dead_skitters_with_iri",
+            "description": (
+                "Log the skitters this player has killed since their last report into the "
+                "office's pest log. Call it the moment they tell you they've killed more "
+                "skitters, or ask you to log or record them. You don't decide or ask how many - "
+                "the engine counts the real kills and tells you the result."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": (
+                            "Always true - this action takes no real argument, it just confirms "
+                            "you're logging now."
                         ),
                     }
                 },

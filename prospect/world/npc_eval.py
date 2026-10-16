@@ -41,6 +41,7 @@ from world.commitments import (
 from world.llm_client import chat
 from world.npc_profile import parse_persona
 from world.prompt_builder import build_system_prompt
+from world.skitters import skitter_record_context_for
 
 DEFAULT_TRIALS = 5
 
@@ -146,6 +147,17 @@ def _setup_tarin_hunt_report_ready(actor):
     propose_commitment(actor, "hunt_skitters")
     accept_commitment(actor, "hunt_skitters")
     for _ in range(3):
+        record_kill(actor)
+
+
+def _setup_iri_skitter_log_ready(actor):
+    """Post-quest loop: Tarin's quest already fulfilled, two new kills
+    since then that haven't been logged with Iri yet."""
+    from world.skitters import record_kill
+
+    _setup_tarin_hunt_report_ready(actor)
+    fulfill_commitment_with_precondition(actor, "hunt_skitters", "tarin_os", True)
+    for _ in range(2):
         record_kill(actor)
 
 
@@ -445,7 +457,25 @@ SCENARIOS = [
         npc_id="tarin_os",
         setup=_setup_tarin_hunt_report_ready,
         player_message="I've cleared three of them, like you asked.",
-        expect_calls={"report_skitter_kills"},
+        expect_calls={"report_skitter_kills_to_tarin"},
+    ),
+    EvalScenario(
+        name="iri_logs_more_dead_skitters",
+        npc_id="iri_vael",
+        setup=_setup_iri_skitter_log_ready,
+        player_message="I killed some more skitters.",
+        expect_calls={"log_dead_skitters_with_iri"},
+    ),
+    EvalScenario(
+        name="iri_skitter_total_question_does_not_log",
+        npc_id="iri_vael",
+        setup=_setup_iri_skitter_log_ready,
+        player_message="How many skitters do I have on record?",
+        expect_no_calls={"log_dead_skitters_with_iri"},
+        notes=(
+            "Asking for the total is answered from the injected per-turn context, "
+            "not by logging - the count should only move when they report kills."
+        ),
     ),
     EvalScenario(
         name="tarin_hunt_skitters_question_is_not_acceptance",
@@ -550,6 +580,9 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
         commitment_ctx = commitment_context_for(scenario.npc_id, profile.actions, actor)
         if commitment_ctx:
             messages.append({"role": "system", "content": commitment_ctx})
+        skitter_ctx = skitter_record_context_for(profile.actions, actor)
+        if skitter_ctx:
+            messages.append({"role": "system", "content": skitter_ctx})
         messages += scenario.history
         messages.append({"role": "user", "content": scenario.player_message})
 

@@ -117,6 +117,31 @@ class RevisionDisplayObject(RoomObject):
         return indent_paragraphs(text)
 
 
+class SkitterLedgerObject(RoomObject):
+    """
+    The Civic Office's skitter log (project owner, 2026-10-16): the
+    post-quest loop's visible scoreboard. Same per-looker pattern as
+    RevisionDisplayObject - always visible to everyone, but `look`/`read`
+    shows each player their own logged total
+    (world.skitters.banked_kills_for), which only goes up when Iri logs
+    a report. `db.desc` is the static part; the count line is appended.
+    """
+
+    def get_display_desc(self, looker, **kwargs):
+        from world.skitters import banked_kills_for
+
+        base = self.db.desc or ""
+        if not hasattr(looker, "attributes"):
+            return indent_paragraphs(base)
+        count = banked_kills_for(looker)
+        if count:
+            plural = "" if count == 1 else "s"
+            line = f"Under your name: {count} skitter{plural} logged."
+        else:
+            line = "There's nothing logged under your name yet."
+        return indent_paragraphs(f"{base}\n\n{line}" if base else line)
+
+
 class SignpostObject(RoomObject):
     """
     Old Quarter Square's signpost (docs/prospect-initial-playtest-

@@ -60,3 +60,18 @@ class LookAliasTests(TestCase):
     def test_look_the_object_without_at_also_strips_article(self):
         self.actor.execute_cmd("look the notice board")
         self.assertTrue(any("notice board" in m for m in self.messages))
+
+    def test_read_object(self):
+        # Confirmed live, 2026-10-16: a player reached for "read" on a
+        # readable room object and got nothing, since only look/its
+        # other aliases were registered.
+        self.actor.execute_cmd("read notice board")
+        self.assertTrue(any("notice board" in m for m in self.messages))
+
+    def test_read_the_object_strips_article(self):
+        self.actor.execute_cmd("read the notice board")
+        self.assertTrue(any("notice board" in m for m in self.messages))
+
+    def test_plain_read_shows_room(self):
+        self.actor.execute_cmd("read")
+        self.assertTrue(any("Test Room" in m for m in self.messages))

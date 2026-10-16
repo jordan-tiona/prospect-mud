@@ -25,7 +25,7 @@ from world.npc_memory import known_npc_ids_with_memory_for, reset_memory
 from world.noticeboard import reset_expected_revision
 from world.reputation import reset_reputation
 from world.rumors import reset_rumor
-from world.skitters import reset_kills
+from world.skitters import reset_banked_kills, reset_kills
 
 from .command import Command
 
@@ -189,6 +189,7 @@ class CmdResetCommitment(Command):
         # already fixed for.
         previous_bed_tended = reset_bed_tended(target)
         previous_skitter_kills = reset_kills(target)
+        previous_logged_skitters = reset_banked_kills(target)
 
         # Phase 2E: the parcel-rumor knowledge and reputation credit
         # are both downstream of deliver_parcel - coordinated here
@@ -214,6 +215,7 @@ class CmdResetCommitment(Command):
             or previous_revision is not None
             or previous_bed_tended
             or previous_skitter_kills
+            or previous_logged_skitters
             or rumor_cleared
             or previous_mara_reputation
         ):
@@ -226,6 +228,8 @@ class CmdResetCommitment(Command):
                 caller.msg("Cleared their tended-planting-bed flag.")
             if previous_skitter_kills:
                 caller.msg(f"Cleared their skitter kill count (was {previous_skitter_kills}).")
+            if previous_logged_skitters:
+                caller.msg(f"Cleared their logged skitter total (was {previous_logged_skitters}).")
             if rumor_cleared or previous_mara_reputation:
                 caller.msg("Cleared their parcel-delivery rumor knowledge and Mara's reputation credit.")
         else:

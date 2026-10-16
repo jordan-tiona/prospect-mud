@@ -124,12 +124,15 @@ class TrimHistoryTests(TestCase):
 
 
 @override_settings(LLM_COOLDOWN_SECONDS=0)
-class SayCommandTests(TestCase):
+class _SayTestBase(TestCase):
     """
-    LLM_COOLDOWN_SECONDS is forced to 0 for this whole class: most of
-    these tests say several lines in a row to exercise addressing/
-    history/logging behavior, not the cooldown gate itself (that gate
-    has its own dedicated tests in CostSafeguardTests below).
+    Shared fixture for every say-command test class below. Holds no
+    tests itself, so subclasses don't re-run each other's tests (which
+    subclassing a concrete test class would do).
+
+    LLM_COOLDOWN_SECONDS is forced to 0: most tests say several lines in
+    a row to exercise addressing/history/logging behavior, not the
+    cooldown gate itself (CostSafeguardTests overrides it per test).
     """
 
     def setUp(self):
@@ -166,6 +169,8 @@ class SayCommandTests(TestCase):
         other.msg = lambda text="", **kw: None
         return other
 
+
+class SayCommandTests(_SayTestBase):
     # -- addressing: lone player, lone NPC -----------------------------
 
     @patch("commands.say.chat")
@@ -965,15 +970,13 @@ class SayCommandTests(TestCase):
         self.assertEqual(first_kwargs["conversation_id"], second_kwargs["conversation_id"])
 
 
-@override_settings(LLM_COOLDOWN_SECONDS=0)
-class CostSafeguardTests(SayCommandTests):
+class CostSafeguardTests(_SayTestBase):
     """
     The pre-model-call gates added for game-plan.md 6.2: input length
-    cap, per-player cooldown, and same-message dedup. Reuses
-    SayCommandTests.setUp (built rooms/NPCs/actor). Each test below
-    overrides LLM_COOLDOWN_SECONDS back to whatever it actually needs
-    to exercise, since the class default of 0 (inherited from
-    SayCommandTests) would otherwise mask the cooldown gate entirely.
+    cap, per-player cooldown, same-message dedup, and the token
+    budgets. Each test overrides LLM_COOLDOWN_SECONDS back to whatever
+    it actually needs to exercise, since the base class default of 0
+    would otherwise mask the cooldown gate entirely.
     """
 
     @override_settings(LLM_MAX_INPUT_CHARS=10)
@@ -1105,3 +1108,79 @@ class CostSafeguardTests(SayCommandTests):
         self._say("to Mara, got a minute?")
 
         mock_chat.assert_called_once()
+
+
+class SkitterLogTests(_SayTestBase):
+    """
+    The post-quest skitter loop through the real say pipeline: Iri gets
+    the logged total as per-turn context, and log_dead_skitters_with_iri
+    is a FORCE_REACTION action, so the player only ever sees the
+    reaction text - never the first-pass text written before the engine
+    decided (docs/engineering-pitfalls.md #8).
+    """
+
+    def setUp(self):
+        super().setUp()
+        npcs = build_npcs()
+        self.iri = npcs["iri_vael"]
+        civic_office = build_rooms()["civic_office"]
+        self.actor.move_to(civic_office, quiet=True)
+
+    def _finish_hunt(self):
+        from world.commitments import accept_commitment, fulfill_commitment_with_precondition, propose_commitment
+        from world.skitters import record_kill
+
+        propose_commitment(self.actor, "hunt_skitters")
+        accept_commitment(self.actor, "hunt_skitters")
+        for _ in range(3):
+            record_kill(self.actor)
+        fulfill_commitment_with_precondition(self.actor, "hunt_skitters", "tarin_os", True)
+
+    @patch("commands.say.chat")
+    def test_iri_gets_the_logged_total_as_context(self, mock_chat):
+        from world.skitters import bank_kills
+
+        self._finish_hunt()
+        bank_kills(self.actor)
+        mock_chat.return_value = _reply("Hello!")
+        self._say("to Iri, hi")
+
+        messages = mock_chat.call_args.args[0]
+        self.assertTrue(any("3 skitters logged" in m.get("content", "") for m in messages))
+
+    @patch("commands.say.chat")
+    def test_rejected_log_never_shows_the_first_pass_text(self, mock_chat):
+        # Nothing new to log: the first-pass text claims a success the
+        # engine then denies. Only the reaction may reach the player.
+        from world.skitters import bank_kills
+
+        self._finish_hunt()
+        bank_kills(self.actor)
+        mock_chat.side_effect = [
+            _reply(
+                "Great, I've logged five more for you!",
+                tool_calls=[{"id": "call_1", "name": "log_dead_skitters_with_iri", "arguments": {"confirmed": True}}],
+            ),
+            _reply("Hm, nothing new on record since last time."),
+        ]
+        self._say("to Iri, I killed some more skitters")
+
+        self.assertFalse(any("logged five more" in m for m in self.messages))
+        self.assertTrue(any("nothing new on record" in m for m in self.messages))
+
+    @patch("commands.say.chat")
+    def test_successful_log_banks_the_kills(self, mock_chat):
+        from world.skitters import banked_kills_for
+
+        self._finish_hunt()
+        mock_chat.side_effect = [
+            _reply(
+                "",
+                tool_calls=[{"id": "call_1", "name": "log_dead_skitters_with_iri", "arguments": {"confirmed": True}}],
+            ),
+            _reply("Three, all logged."),
+        ]
+        self._say("to Iri, put me down for some skitter kills")
+
+        self.assertEqual(banked_kills_for(self.actor), 3)
+        self.assertTrue(any("Total on record: 3" in m for m in self.messages))
