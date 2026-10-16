@@ -18,6 +18,7 @@ from evennia import default_cmds
 
 from commands.admin import (
     CmdForget,
+    CmdGenerateInvite,
     CmdMemoryDebug,
     CmdResetCommitment,
     CmdResetMemory,
@@ -58,6 +59,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdResetCommitment())
         self.add(CmdResetMemory())
         self.add(CmdMemoryDebug())
+        self.add(CmdGenerateInvite())
         self.add(CmdUse())
         self.add(CmdAttack())
         self.add(CmdTannoy())

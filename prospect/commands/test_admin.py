@@ -461,3 +461,39 @@ class MemoryDebugCommandTests(TestCase):
         self.actor.permissions.remove("Builder")
         self.actor.execute_cmd("memorydebug")
         self.assertFalse(self.actor.attributes.get("memory_debug_enabled"))
+
+
+class GenerateInviteCommandTests(TestCase):
+    def setUp(self):
+        room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=room
+        )
+        self.actor.permissions.add("Builder")
+        self.messages = []
+        self.actor.msg = lambda text="", **kw: self.messages.append(text)
+
+    def test_generates_the_requested_number_of_codes(self):
+        self.actor.execute_cmd("geninvite 3")
+
+        shown = "\n".join(self.messages)
+        lines = [line for line in shown.splitlines() if line.strip() and ":" not in line]
+        # One header line plus 3 code lines.
+        self.assertTrue(any("New invite code" in m for m in self.messages))
+        self.assertEqual(len(lines), 3)
+
+    def test_rejects_a_non_numeric_count(self):
+        self.actor.execute_cmd("geninvite none")
+
+        self.assertTrue(any("Usage:" in m for m in self.messages))
+
+    def test_rejects_a_missing_count(self):
+        self.actor.execute_cmd("geninvite")
+
+        self.assertTrue(any("Usage:" in m for m in self.messages))
+
+    def test_requires_builder_permission(self):
+        self.actor.permissions.remove("Builder")
+        self.actor.execute_cmd("geninvite 1")
+
+        self.assertFalse(any("New invite code" in m for m in self.messages))

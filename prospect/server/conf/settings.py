@@ -112,11 +112,25 @@ LLM_OUTPUT_COST_PER_1M_TOKENS = float(os.environ.get("PROSPECT_LLM_OUTPUT_COST_P
 # error level when tripped; nothing else is notified yet.
 LLM_DAILY_SPEND_LIMIT_USD = float(os.environ.get("PROSPECT_LLM_DAILY_SPEND_LIMIT_USD", "2.00"))
 
-# A pure data counter with no in-game presence (evennia.GLOBAL_SCRIPTS
+# Invite-only account registration (game-plan.md 6.2's last
+# safeguards-audit item) - see world/invites.py and
+# commands/chargen.py's CmdScriptedCreate. On by default since the
+# whole point is a closed beta; existing tests that don't care about
+# this gate turn it off explicitly (see commands/test_chargen.py).
+INVITE_ONLY_REGISTRATION = (
+    os.environ.get("PROSPECT_INVITE_ONLY_REGISTRATION", "true").lower() == "true"
+)
+
+# Pure data counters with no in-game presence (evennia.GLOBAL_SCRIPTS
 # singleton pattern) - the daily spend circuit breaker's server-wide
-# total has no single player or NPC object of its own to live on.
+# total and the invite-code registry both have no single player or
+# NPC object of their own to live on.
 GLOBAL_SCRIPTS = {
     "llm_spend_tracker": {
+        "typeclass": "typeclasses.scripts.Script",
+        "persistent": True,
+    },
+    "invite_registry": {
         "typeclass": "typeclasses.scripts.Script",
         "persistent": True,
     },

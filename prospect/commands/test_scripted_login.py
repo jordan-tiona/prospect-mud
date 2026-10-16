@@ -19,6 +19,7 @@ from evennia.utils import class_from_module
 
 from commands.scripted_login import CmdScriptedLogin
 from world.build_rooms import build as build_rooms
+from world.invites import generate_codes
 
 _next_fake_ip = itertools.count(1)
 
@@ -111,12 +112,18 @@ class ScriptedLoginTests(TestCase):
         self.session.sessionhandler.login.assert_called_once_with(self.session, account)
 
     def test_blank_name_creates_a_new_character(self):
+        # INVITE_ONLY_REGISTRATION is on by default (world/invites.py)
+        # - this hand-off into CmdScriptedCreate goes through its gate
+        # too, same as creating directly (commands/test_chargen.py's
+        # own dedicated InviteGateTests covers the gate itself).
+        code = generate_codes(1)[0]
         gen = self.cmd.func()
         try:
             _drive(
                 gen,
                 [
                     "",  # blank -> hands off into character creation
+                    code,
                     "NewPlayer1",
                     "female",
                     "Kethari",

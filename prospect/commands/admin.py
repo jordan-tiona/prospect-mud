@@ -20,6 +20,7 @@ from world.conversation_log import (
     log_rumor_reset,
 )
 from world.garden import reset_bed_tended
+from world.invites import generate_codes
 from world.npc_memory import known_npc_ids_with_memory_for, reset_memory
 from world.noticeboard import reset_expected_revision
 from world.reputation import reset_reputation
@@ -311,3 +312,28 @@ class CmdMemoryDebug(Command):
         target.attributes.add("memory_debug_enabled", enabled)
         state = "on" if enabled else "off"
         caller.msg(f"Memory debug messages are now {state} for {target.key}.")
+
+
+class CmdGenerateInvite(Command):
+    """
+    Generate single-use invite codes for the closed-beta registration
+    gate (world/invites.py, game-plan.md 6.2) - give one of these to
+    each new playtester; commands/chargen.py's CmdScriptedCreate asks
+    for it before account creation can begin.
+
+    Usage:
+      geninvite <count>
+    """
+
+    key = "geninvite"
+    locks = "cmd:perm(Builder)"
+    help_category = "Building"
+
+    def func(self):
+        raw_count = self.args.strip()
+        if not raw_count.isdigit() or int(raw_count) < 1:
+            self.caller.msg("Usage: geninvite <count> (a positive whole number)")
+            return
+
+        codes = generate_codes(int(raw_count))
+        self.caller.msg("New invite code(s):\n" + "\n".join(codes))

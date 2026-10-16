@@ -21,10 +21,11 @@ Run with:
 import itertools
 from unittest.mock import Mock
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from commands.chargen import CmdScriptedCreate
 from world.build_rooms import build as build_rooms
+from world.invites import generate_codes
 
 # Account.create() checks Evennia's module-level CREATION_THROTTLE,
 # keyed by IP and not reset between test methods (it isn't DB-backed,
@@ -67,7 +68,15 @@ def _character_from(account):
     return account.db._last_puppet or account.characters.all()[0]
 
 
+@override_settings(INVITE_ONLY_REGISTRATION=False)
 class ScriptedCreateTests(TestCase):
+    """
+    INVITE_ONLY_REGISTRATION is forced off for this whole class: these
+    tests exercise the "First Awakening" script itself, not the
+    invite-code gate in front of it (that gate has its own dedicated
+    tests in InviteGateTests below).
+    """
+
     def setUp(self):
         self.rooms = build_rooms()
         self.session = _FakeSession()
@@ -168,3 +177,67 @@ class ScriptedCreateTests(TestCase):
         character = _character_from(account)
         self.assertEqual(character.db.sex, "female")
         self.assertEqual(character.db.species, "Naevari")
+
+
+@override_settings(INVITE_ONLY_REGISTRATION=True)
+class InviteGateTests(TestCase):
+    def setUp(self):
+        self.rooms = build_rooms()
+        self.session = _FakeSession()
+        self.cmd = CmdScriptedCreate()
+        self.cmd.caller = self.session
+
+    def _finish_with(self, *, invite_code, name="Tester5"):
+        gen = self.cmd.func()
+        try:
+            _drive(
+                gen,
+                [
+                    invite_code,
+                    name,
+                    "female",
+                    "Kethari",
+                    "confirm",
+                    "ScriptedPass123!",
+                    "ScriptedPass123!",
+                ],
+            )
+        except StopIteration:
+            pass
+
+    def test_valid_unused_code_lets_creation_proceed(self):
+        code = generate_codes(1)[0]
+
+        self._finish_with(invite_code=code)
+
+        self.session.sessionhandler.login.assert_called_once()
+
+    def test_invalid_code_blocks_creation_and_reprompts(self):
+        gen = self.cmd.func()
+        value = gen.send(None)  # the invite-code prompt
+        value = gen.send("not-a-real-code")
+
+        self.assertIn("isn't valid", self.session.transcript)
+        # Still waiting on the same prompt, not past the gate -
+        # confirmed by the next yield being another string prompt
+        # rather than the cinematic's first (numeric, pause) yield.
+        self.assertIsInstance(value, str)
+
+    def test_code_is_single_use(self):
+        code = generate_codes(1)[0]
+        self._finish_with(invite_code=code, name="Tester6")
+
+        second_cmd = CmdScriptedCreate()
+        second_cmd.caller = _FakeSession()
+        gen = second_cmd.func()
+        value = gen.send(None)
+        value = gen.send(code)
+
+        self.assertIn("isn't valid", second_cmd.caller.transcript)
+
+    def test_code_check_is_case_and_whitespace_insensitive(self):
+        code = generate_codes(1)[0]
+
+        self._finish_with(invite_code=f"  {code.lower()}  ")
+
+        self.session.sessionhandler.login.assert_called_once()

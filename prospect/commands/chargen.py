@@ -65,6 +65,7 @@ from django.conf import settings
 from evennia.utils import class_from_module, utils
 
 from world.chargen import SPECIES_CHOICES, apply_identity, place_in_medical_bay, validate_sex, validate_species
+from world.invites import consume_code
 
 COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
 
@@ -134,6 +135,9 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
     def func(self):
         session = self.caller
 
+        if settings.INVITE_ONLY_REGISTRATION:
+            yield from self._ask_invite_code(session)
+
         yield from self._scene_1(session)
         yield from self._scene_2(session)
 
@@ -194,6 +198,16 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
         yield from self._scene_5(session, name)
 
         session.sessionhandler.login(session, account)
+
+    # -- Invite gate (plain administrative check, not part of the ------
+    # -- authored "First Awakening" script - see world/invites.py) -----
+
+    def _ask_invite_code(self, session):
+        while True:
+            raw = yield "This playtest is invite-only. Please enter your invite code:"
+            if consume_code(raw, used_by=session.address):
+                return
+            session.msg("|RThat code isn't valid, or has already been used.|n")
 
     # -- Scene 1: the edge of consciousness -----------------------------
 
