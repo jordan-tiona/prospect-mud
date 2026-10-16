@@ -15,6 +15,6 @@ The square is surrounded by aging storefronts and residential buildings, their f
 
 A small café occupies one of the surrounding storefronts. Other entrances and passages lead into neighboring buildings, while the murmur of conversation and the occasional rattle of a delivery cart carry across the square.
 
-A scatter of weathered benches lines the square's low planting beds, their seats polished smooth by years of use; someone has kept the beds tended despite everything else showing its age.
+A scatter of weathered benches lines the square's low planting beds, their seats polished smooth by years of use. The beds themselves have been let go, overgrown and showing their neglect as plainly as everything else here shows its age.
 
 Above the uneven roofline, distant neighborhoods curve upward along the opposite side of Elsewhere's cylindrical interior. The enormous artificial light running along the central axis illuminates the scene, a familiar sight to those who've spent their lives here.

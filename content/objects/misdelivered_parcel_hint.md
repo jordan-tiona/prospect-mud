@@ -1,9 +1,9 @@
 <!--
 object_id: misdelivered_parcel_hint
 status: Provisional
-approval: Draft
+approval: Approved
 moved_from: prospect/world/build_quest_props.py QUEST_PROPS (verbatim, Tools lane, 2026-10-16)
-TODO(lore): moved verbatim from code; review per docs/lore-requests.md LR-TOOLS-0001, then set approval: Approved or rewrite.
+Lore review (LR-TOOLS-0001, 2026-10-16): text kept as moved. Owner approved 2026-10-16; nothing to copy back to code.
 -->
 
 # a small parcel
