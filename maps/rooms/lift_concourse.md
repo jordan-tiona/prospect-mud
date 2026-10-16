@@ -6,7 +6,8 @@
 
 ## Exits
 
-- **Down:** [[maps/rooms/old_quarter_square|Old Quarter Square]]
+- **Southwest:** [[maps/rooms/old_quarter_square|Old Quarter Square]]
+- **Up:** [[maps/rooms/medical_bay|Medical Bay]]
 
 ## Ambient NPCs
 
@@ -20,4 +21,4 @@
 
 [[maps/Elsewhere Map.canvas|Elsewhere Map]] · [[maps/README|Map guide]]
 
-Generated from builder definitions and approved ambient content. This is a source-data reference, not a live game snapshot or new setting canon.
+Generated from the sector file and approved ambient content. This is a source-data reference, not a live game snapshot or new setting canon.

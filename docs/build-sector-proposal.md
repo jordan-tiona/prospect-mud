@@ -124,7 +124,25 @@ Original plan for Step A: Nothing in the game calls it yet. Tests, using Evennia
 
 **Step B: export Elsewhere (owner). Done 2026-10-16.** This needs LR-TOOLS-0001 and LR-TOOLS-0002 resolved, so that export stops refusing. The first real `prospect/world/data/sectors/elsewhere.json` gets committed.
 
-**Step C: switch over (Dev-reviewed change, after B).**
+**Step C: switch over (Dev-reviewed change, after B). Code done 2026-10-16. The live rebuild is the owner's step, see below.** As built:
+- The eight `world/build_*.py` scripts are wrappers over `build_sector.build_for_wrapper(kinds)`. They keep every constant other code imports and their old return shapes. Like the old scripts, they have **no live-server guard**, because `world/npc_eval.py` and the tests call them. They also **skip the orphan scan**: they never prune, and the scan was most of a no-change run's cost. Use `build_sector.build()` directly for a real rebuild.
+- `give_directions` matches names against the room titles in the NPC's sector manifest (`_npc_sector`). For duplicate titles, the first match wins for now; a `TODO(dev)` marks the closest-match design.
+- The ambient parsers no longer require `room:`. `ops/generate_obsidian.py` now reads the sector file.
+- Retired: `ops/editor/import_legacy.py` (it was one-off) and the drift tests that compared content with the in-code copies, which no longer exist. `test_sector_manifest.py` now checks that the wrappers build exactly the committed manifest. `test_build_sector.py` checks that a full build after the wrappers changes nothing.
+- **One test changed meaning:** `test_build_skitter_ledger.test_rebuild_renames_an_existing_object`. The old ledger script cleared *every* alias on each run. Under 3.4, an alias added some other way is now kept, and only aliases the build set itself are removed. **For Dev to confirm.**
+- The suite is about 6s slower (17 → 23s parallel), because new objects carry an extra tag and a managed record. The build batches tag lookups and creation to keep that down.
+- **Trial on a copy of the live database (2026-10-16):** dry run, then a real run, then a second run. Results: 0 created, 0 orphans, 0 conflicts. All 16 untagged exits adopted. The only non-bookkeeping change was the square noticeboard's `desc` ("Corner Cafe" → "Corner Café"), meaning the live world hadn't been rebuilt since that content edit. The second run found all 45 objects unchanged.
+
+**Live switch (owner):** merge `tools` to master, then from the main checkout:
+```
+evennia stop
+evennia shell -c "from world.build_sector import build; build('elsewhere', dry_run=True)"
+evennia shell -c "from world.build_sector import build; build('elsewhere')"
+evennia start
+```
+The dry run should match the trial above.
+
+Original plan for Step C:
 - Each old builder's `build()` becomes a thin wrapper: `build_sector.build("elsewhere", kinds={...})`. Its hard-coded lists (`ROOMS`, `SPOKES`, `CHAINS`, `NPCS`, `AMBIENT_*_IDS`, `ROOM_IDS`, `QUEST_PROPS`, and the in-code prose and room lines) are deleted. Constants and return shapes stay, e.g. `build_npcs.build()` still returns `{npc_id: npc}`.
 - `actions._find_neighborhood_room` reads titles from the manifest (Section 5). Fix its "six known rooms" docstring, and raise `_find_exit_path`'s `max_depth=4` once a sector is wider than four hops.
 - Ambient content parsers stop requiring a `room:` metadata field, since placement comes from the sector now. `ops/generate_obsidian.py` is that field's only other reader; it's retired once the editor's viewer exists (owner decision), or taught to read placements from the sector file if Step C lands first.
@@ -205,3 +223,5 @@ What changes:
 - **What runtime-created objects are tagged with.** Parcels use `parcel_commitment` and skitters use `skitter_entity`, so the build never treats them as its own or as orphans. Ambient and talk NPCs are `DefaultObject`, not characters, so a removed NPC can still be pruned. The never-prune rule only protects player characters.
 
 **One edge case for Tools:** if a *room* is skipped because two rooms carry its tag, exits and entities placed in that room still get planned. `_apply` then raises `KeyError` on `rooms[desired.location]` partway through a real build, after earlier steps have already been written. Skip, and report as conflicts, any exit or entity whose room or destination was skipped, the same way an ambiguous exit is handled.
+
+**Fixed (Tools, 2026-10-16):** exits and entities that depend on a skipped room are now skipped and reported as conflicts. As a second layer, before any write `build()` checks that every room a planned step needs either exists or is created by this plan. If not, it raises `SectorBuildError` and writes nothing. Both behaviours are tested in `test_build_sector.py`.

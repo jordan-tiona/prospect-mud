@@ -17,11 +17,12 @@ Run with the server stopped (from the checkout the live game runs in):
     evennia shell -c "from world.build_sector import build; build('elsewhere')"
 """
 
+import copy
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from evennia import create_object, search_tag
+from evennia import create_object
 from evennia.objects.models import ObjectDB
 
 from world.entity_kinds import EXIT_TYPECLASS, KINDS, REQUIRED_ROOM_IDS, ROOM_KIND
@@ -93,11 +94,21 @@ class BuildReport:
 # ---------------------------------------------------------------- manifest
 
 
+_manifest_cache = {}  # path -> (mtime_ns, manifest)
+
+
 def load_manifest(sector_id):
+    """The exported manifest, re-read only when the file changes. Callers get
+    their own copy, so nothing can mutate the cached one."""
     path = MANIFEST_DIR / f"{sector_id}.json"
     if not path.is_file():
         raise SectorBuildError(f"No manifest at {path}. Export the sector first (ops/editor/export.py).")
-    return json.loads(path.read_text(encoding="utf-8"))
+    mtime = path.stat().st_mtime_ns
+    cached = _manifest_cache.get(path)
+    if cached is None or cached[0] != mtime:
+        cached = (mtime, json.loads(path.read_text(encoding="utf-8")))
+        _manifest_cache[path] = cached
+    return copy.deepcopy(cached[1])
 
 
 def _desired_from_manifest(manifest, kinds):
@@ -151,8 +162,24 @@ def _desired_from_manifest(manifest, kinds):
 # ------------------------------------------------------------- comparison
 
 
-def _tagged(object_id, category):
-    return list(search_tag(key=object_id, category=category))
+class _TagIndex:
+    """Objects by (tag key, category), loaded with one query per category
+    rather than one search_tag() per object (most of a build's cost)."""
+
+    def __init__(self):
+        self._by_category = {}
+
+    def get(self, object_id, category):
+        if category not in self._by_category:
+            rows = ObjectDB.db_tags.through.objects.filter(
+                tag__db_category=category, tag__db_tagtype__isnull=True
+            ).values_list("tag__db_key", "objectdb_id")
+            objects = {obj.id: obj for obj in ObjectDB.objects.filter(id__in={oid for _key, oid in rows})}
+            index = {}
+            for key, oid in rows:
+                index.setdefault(key, []).append(objects[oid])
+            self._by_category[category] = index
+        return list(self._by_category[category].get(object_id, []))
 
 
 def _held(obj):
@@ -257,6 +284,25 @@ def _apply(obj, desired, rooms):
     obj.attributes.add(MANAGED_ATTRIBUTE, _desired_managed(desired))
 
 
+def _create(desired, rooms):
+    """A new object with everything _apply() would set, in one create_object
+    call (tags, attributes and aliases batched)."""
+    obj = create_object(
+        desired.typeclass,
+        key=desired.key,
+        location=rooms[desired.location] if desired.location else None,
+        destination=rooms[desired.destination] if desired.destination else None,
+        aliases=list(desired.aliases) or None,
+        tags=[(desired.object_id, desired.tag_category), (desired.sector_id, SECTOR_TAG_CATEGORY)],
+        attributes=[*desired.attributes.items(), (MANAGED_ATTRIBUTE, _desired_managed(desired))],
+    )
+    if desired.locks:
+        obj.locks.add(desired.locks)
+    if desired.poses is not None:
+        obj.set_ambient_poses(desired.poses)
+    return obj
+
+
 # ------------------------------------------------------------------ plan
 
 
@@ -268,6 +314,7 @@ class _Step:
 
 
 def _plan(rooms, exits, entities, report):
+    tagged = _TagIndex().get
     room_objects = {}
     steps = []
     claimed = set()  # ids of existing objects this build owns
@@ -282,17 +329,31 @@ def _plan(rooms, exits, entities, report):
             report.held.append(f"{desired.label} is held by {obj.location.key} - left there")
         steps.append(_Step(desired, obj, changes))
 
+    skipped_rooms = set()
+
+    def depends_on_skipped_room(desired):
+        """An exit or entity in (or leading to) a skipped room can't be built either."""
+        missing = {desired.location, desired.destination} & skipped_rooms
+        if missing:
+            report.conflicts.append(
+                f"{desired.label}: depends on skipped room {', '.join(sorted(missing))} - skipped"
+            )
+        return bool(missing)
+
     for desired in rooms:
-        matches = _tagged(desired.object_id, desired.tag_category)
+        matches = tagged(desired.object_id, desired.tag_category)
         if len(matches) > 1:
             report.conflicts.append(f"{desired.label}: {len(matches)} rooms carry this tag - skipped")
+            skipped_rooms.add(desired.object_id)
             continue
         room_objects[desired.object_id] = matches[0] if matches else None
         plan(desired, room_objects[desired.object_id])
 
     wanted_exit_ids = {d.object_id for d in exits}
     for desired in exits:
-        matches = _tagged(desired.object_id, EXIT_TAG_CATEGORY)
+        if depends_on_skipped_room(desired):
+            continue
+        matches = tagged(desired.object_id, EXIT_TAG_CATEGORY)
         if len(matches) > 1:
             report.conflicts.append(f"{desired.label}: {len(matches)} exits carry this tag - skipped")
             continue
@@ -320,7 +381,9 @@ def _plan(rooms, exits, entities, report):
         plan(desired, candidates[0] if candidates else None)
 
     for desired in entities:
-        matches = _tagged(desired.object_id, desired.tag_category)
+        if depends_on_skipped_room(desired):
+            continue
+        matches = tagged(desired.object_id, desired.tag_category)
         if len(matches) > 1:
             report.conflicts.append(f"{desired.label}: {len(matches)} objects carry this tag - skipped")
             continue
@@ -416,6 +479,34 @@ def _prune(orphans, sector_id, report):
         obj.delete()
 
 
+# ------------------------------------------------- old build_*.py wrappers
+
+DEFAULT_SECTOR = "elsewhere"
+
+
+def build_for_wrapper(kinds, sector_id=DEFAULT_SECTOR):
+    """What the old world/build_*.py build() functions now call (Step C).
+    Builds rooms, exits and the given entity kinds, and returns
+    {id: object} for those kinds - or for the rooms, when kinds is empty.
+
+    No live-server guard, exactly like the old scripts: game code
+    (world/npc_eval.py) and about 25 test modules call these to set up a
+    world. Use build() directly from an evennia shell for a real rebuild.
+    """
+    manifest = load_manifest(sector_id)
+    report = build(sector_id, kinds=set(kinds), force_live=True, manifest=manifest, find_orphans=False)
+    if kinds:
+        ids = [i for i, e in manifest["entities"].items() if e["kind"] in kinds]
+    else:
+        ids = list(manifest["rooms"])
+    return {object_id: report.objects[object_id] for object_id in ids if object_id in report.objects}
+
+
+def room_titles(sector_id=DEFAULT_SECTOR):
+    """[(room_id, title)] in manifest order - e.g. for give_directions' name matching."""
+    return [(room_id, room["title"]) for room_id, room in load_manifest(sector_id)["rooms"].items()]
+
+
 # ----------------------------------------------------------------- build
 
 
@@ -423,7 +514,8 @@ def _server_is_running():
     return SERVER_PID.is_file()
 
 
-def build(sector_id, *, kinds=None, dry_run=False, prune=False, force_live=False, manifest=None):
+def build(sector_id, *, kinds=None, dry_run=False, prune=False, force_live=False, manifest=None,
+          find_orphans=True):
     """Build or update a sector from its manifest. Returns a BuildReport.
 
     kinds:      limit entities to these kind names (rooms and exits always build).
@@ -431,6 +523,8 @@ def build(sector_id, *, kinds=None, dry_run=False, prune=False, force_live=False
     prune:      delete orphans (reported either way), within the safety rules.
     force_live: allow writing while server/server.pid exists. Don't.
     manifest:   a manifest dict instead of the exported file (tests).
+    find_orphans: scan the database for orphans (the wrappers skip it: they
+                never prune, and it's most of a no-change run's cost).
     """
     manifest = manifest if manifest is not None else load_manifest(sector_id)
     if manifest.get("format_version") != FORMAT_VERSION:
@@ -447,7 +541,9 @@ def build(sector_id, *, kinds=None, dry_run=False, prune=False, force_live=False
     report = BuildReport(sector_id=sector_id, dry_run=dry_run)
     rooms, exits, entities = _desired_from_manifest(manifest, kinds)
     steps, room_objects, claimed = _plan(rooms, exits, entities, report)
-    orphans = _find_orphans(manifest, claimed, room_objects, kinds)
+    if prune and not find_orphans:
+        raise SectorBuildError("prune needs find_orphans.")
+    orphans = _find_orphans(manifest, claimed, room_objects, kinds) if find_orphans else []
     report.orphans = [_label(obj) for obj in orphans]
 
     for step in steps:
@@ -460,6 +556,18 @@ def build(sector_id, *, kinds=None, dry_run=False, prune=False, force_live=False
         if step.obj is not None:
             report.objects[step.desired.object_id] = step.obj
 
+    # Every room a step needs must exist already or be created by this plan -
+    # checked before any write, so a planning bug can never leave a half-applied
+    # build behind.
+    available = {room_id for room_id, obj in room_objects.items() if obj is not None}
+    available |= {step.desired.object_id for step in steps if step.desired.label.startswith("room ")}
+    unresolved = sorted(
+        {room_id for step in steps for room_id in (step.desired.location, step.desired.destination)
+         if room_id is not None and room_id not in available}
+    )
+    if unresolved:
+        raise SectorBuildError(f"Plan needs rooms it can't build: {', '.join(unresolved)}. Nothing was written.")
+
     if dry_run:
         print(report.summary())
         return report
@@ -470,16 +578,11 @@ def build(sector_id, *, kinds=None, dry_run=False, prune=False, force_live=False
     for step in steps:
         desired, obj = step.desired, step.obj
         if obj is None:
-            obj = create_object(
-                desired.typeclass,
-                key=desired.key,
-                location=built_rooms.get(desired.location) if desired.location else None,
-                destination=built_rooms.get(desired.destination) if desired.destination else None,
-            )
+            obj = _create(desired, built_rooms)
+        elif step.changes:
+            _apply(obj, desired, built_rooms)
         if desired.label.startswith("room "):
             built_rooms[desired.object_id] = obj
-        if step.changes:
-            _apply(obj, desired, built_rooms)
         report.objects[desired.object_id] = obj
 
     if prune and report.conflicts:

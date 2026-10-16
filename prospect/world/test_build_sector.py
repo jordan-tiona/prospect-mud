@@ -2,9 +2,8 @@
 Tests for world/build_sector.py (docs/build-sector-proposal.md, Step A):
 building from a small fixture manifest, idempotency, dry runs, typeclass
 swaps, exit adoption and re-keying, managed-value removal, held items,
-orphans and the prune safety rules - plus the old-vs-new check that
-running build_sector over a world the old scripts built changes nothing
-but bookkeeping.
+orphans and the prune safety rules - plus a check that the per-kind
+world/build_*.py wrappers together leave nothing for a full build to do.
 
 Run with:
     evennia test world.test_build_sector
@@ -156,6 +155,24 @@ class BuildSectorTests(TestCase):
         self.assertEqual(report.pruned, [])
         self.assertEqual(len(report.blocked), 2)
 
+    def test_room_with_a_duplicate_tag_skips_everything_in_it_without_writing_any_of_it(self):
+        # Dev review (docs/build-sector-proposal.md Section 9): this used to
+        # raise KeyError partway through a real build.
+        for _ in range(2):
+            create_object("typeclasses.rooms.Room", key="Room A?").tags.add("t_room_a", category=ROOMS)
+        report = self.build()
+        self.assertEqual(sorted(report.created), ["room t_room_b"])
+        self.assertEqual(len(report.conflicts), 5)  # the room, both exits, both entities in it
+        self.assertEqual(len(search_tag(key="t_thing", category=AMBIENT)), 0)
+        self.assertEqual(self.room("t_room_b").exits, [])
+
+    def test_unresolvable_room_refuses_before_writing(self):
+        del self.manifest["rooms"]["t_room_a"]  # an export would never allow this; build_sector must not crash on it
+        before = ObjectDB.objects.count()
+        with self.assertRaises(SectorBuildError):
+            self.build()
+        self.assertEqual(ObjectDB.objects.count(), before)
+
     def test_values_the_manifest_drops_are_removed(self):
         self.build()
         entity = self.manifest["entities"]["t_thing"]
@@ -271,18 +288,16 @@ class BuildSectorTests(TestCase):
             build_sector.build("elsewhere", manifest=self.manifest)
 
 
-class ElsewhereOldVsNewTests(TestCase):
-    """build_sector over a world the old scripts built: nothing created, nothing
-    orphaned, and only bookkeeping updates (sector tags, exit tags, managed records)."""
-
-    BOOKKEEPING = {"tag", "sector tag", "managed record"}
+class ElsewhereWrappersVsFullBuildTests(TestCase):
+    """The per-kind wrappers (world/build_*.py) together leave nothing for a
+    full build to do: no creates, no updates, no orphans. Before Step C this
+    compared the old hand-written scripts the same way, and passed."""
 
     @classmethod
     def setUpTestData(cls):
-        from world.test_sector_manifest import build_legacy_world, sector_export, ROOT
+        from world.test_sector_manifest import build_with_wrappers
 
-        build_legacy_world()
-        cls.manifest = sector_export.build_manifest(ROOT, "elsewhere")
+        build_with_wrappers()
 
     def setUp(self):
         patcher = mock.patch.object(build_sector, "_server_is_running", return_value=False)
@@ -292,13 +307,6 @@ class ElsewhereOldVsNewTests(TestCase):
         print_patcher.start()
         self.addCleanup(print_patcher.stop)
 
-    def test_takes_over_the_old_world_without_changing_it(self):
-        report = build_sector.build("elsewhere", manifest=self.manifest)
-        self.assertEqual(report.created, [])
-        self.assertEqual(report.orphans, [])
-        self.assertEqual(report.conflicts, [])
-        self.assertEqual(report.held, [])
-        for label, fields in report.updated.items():
-            self.assertLessEqual(set(fields), self.BOOKKEEPING, label)
-        again = build_sector.build("elsewhere", manifest=self.manifest)
-        self.assertEqual((again.created, again.updated, again.orphans), ([], {}, []))
+    def test_full_build_after_the_wrappers_changes_nothing(self):
+        report = build_sector.build("elsewhere")
+        self.assertEqual((report.created, report.updated, report.orphans, report.conflicts), ([], {}, [], []))

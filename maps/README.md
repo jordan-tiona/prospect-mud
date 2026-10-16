@@ -10,16 +10,15 @@ From the project directory, run:
 .\.venv\Scripts\python.exe ops\generate_obsidian.py
 ```
 
-Refresh after changing builder definitions, entity placements, or ambient approval status. This is a manual refresh; it does not watch files in the background. No running server or model is required.
+Refresh after changing the sector file, entity placements, or ambient approval status. This is a manual refresh; it does not watch files in the background. No running server or model is required.
 
 ## Sources and boundaries
 
-- Room names and exits: `prospect/world/build_rooms.py` (`ROOMS`, `HUB`, `SPOKES`).
-- Talk-capable NPC names and placements: `prospect/world/build_npcs.py` (`NPCS`).
-- Ambient entities: the explicit lists in `prospect/world/build_ambient.py`, with names, rooms, and approval read from their content files. Only listed, approved entities appear; unused drafts do not become map objects.
-- The generator reads literal assignments without importing or executing game builders. If these definitions stop being literal data or the topology changes beyond the current hub-and-spoke builder, update the generator to match.
+- Rooms, titles, exits and placements: the MUD editor's sector file, `sectors/elsewhere/sector.json` (see `docs/mud-editor-sector-format.md`). New rooms start at the editor's map position; boxes already on the Canvas keep yours.
+- Names come from each entity's content file heading. Ambient NPCs and objects appear only when their content is Approved; talk-capable NPCs always appear. Quest props and other objects aren't shown.
+- The generator reads the sector file without importing or running game code.
 
-This represents the builders' intended layout, **not the running database**. In-game edits, moved NPCs, or older exits left by an earlier build are not reflected. This reference does not establish new setting canon.
+This represents the sector file's layout, **not the running database**. In-game edits, or anything not yet rebuilt from an export, isn't reflected. This reference does not establish new setting canon. Obsidian is being retired once the MUD editor's viewer exists.
 
 ## Generated and editable files
 
@@ -27,6 +26,6 @@ This represents the builders' intended layout, **not the running database**. In-
 - `maps/Elsewhere Map.canvas`: generated room boxes and connections. You may rearrange or resize the boxes; regeneration preserves positions, sizes, colors, and connection attachment sides for matching IDs. Text, connections, and extra cards are rebuilt, so keep personal annotations in separate notes or a separate Canvas.
 - `maps/README.md`: this manually maintained guide.
 
-The generator writes only under `maps/`. It never modifies authored content, builder code, NPC prompts, or the game database. Unknown hand-authored notes in `maps/rooms/` are preserved; a name collision stops generation before writing.
+The generator writes only under `maps/`. It never modifies authored content, the sector file, NPC prompts, or the game database. Unknown hand-authored notes in `maps/rooms/` are preserved; a name collision stops generation before writing.
 
 The navigation notes also provide room-to-room links for Obsidian's Graph view. Filter the graph with `path:maps/rooms` for the room navigation layer.

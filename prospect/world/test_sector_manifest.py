@@ -1,21 +1,16 @@
 """
-MUD editor migration guarantee (docs/mud-editor-sector-format.md
-Section 7): the Elsewhere sector's export manifest must describe exactly
-what today's world/build_*.py scripts build - every room, exit and
+Elsewhere sector builds match their manifest: every room, exit and
 placed entity, with the same typeclass, tag, key, aliases, location,
 attributes and locks, and nothing extra on either side.
 
-The manifest is resolved with ops/editor/export.py's build_manifest(),
-which skips the approval gate (export itself refuses while content is
-still Draft) - this test is about structure and text, not approval.
-Text is only compared for Approved content: a Lore revision awaiting
-approval is expected to differ from the old scripts' copy, which the
-game keeps showing until the approved text is copied across. Structure
-(typeclass, tag, location, aliases, locks) is compared for everything.
+- WrappersMatchCommittedManifestTests: the world/build_*.py wrappers
+  (MUD Editor Step C) against the committed export.
+- BuildSectorMatchesManifestTests: world.build_sector from an empty
+  database against a fresh build_manifest() (which skips the approval
+  gate, so text is compared only for Approved content).
 
-Once world.build_sector replaces the old scripts, this becomes the
-"old vs new builder" comparison; until then it compares the manifest
-against the old scripts' actual database output.
+Before Step C, the first class compared the old hand-written build
+scripts against the manifest; it passed before they were replaced.
 
 Run with:
     evennia test world.test_sector_manifest
@@ -50,18 +45,27 @@ def _one(tag, category):
 
 
 class _WorldMatchesManifest:
-    """Assertions shared by both builds below; subclasses build the world in setUpTestData."""
+    """Assertions shared by both builds below; subclasses build the world in
+    setUpTestData. With use_committed_manifest, compare against the committed
+    export (everything in it was Approved when exported); otherwise against a
+    fresh build_manifest(), comparing text only for currently Approved content."""
+
+    use_committed_manifest = False
 
     def setUp(self):
-        self.manifest = sector_export.build_manifest(ROOT, "elsewhere")
+        sector = load_sector(ROOT, "elsewhere")
+        if self.use_committed_manifest:
+            self.manifest = build_sector.load_manifest("elsewhere")
+            self.approved = set(self.manifest["rooms"]) | set(self.manifest["entities"])
+        else:
+            self.manifest = sector_export.build_manifest(ROOT, "elsewhere")
+            self.approved = {
+                object_id
+                for object_id, item in {**sector["rooms"], **sector["entities"]}.items()
+                if load_content(ROOT, item["content"]).fields.get("approval") == "Approved"
+            }
         self.rooms = self.manifest["rooms"]
         self.room_tag_category = next(iter(self.rooms.values()))["tag_category"]
-        sector = load_sector(ROOT, "elsewhere")
-        self.approved = {
-            object_id
-            for object_id, item in {**sector["rooms"], **sector["entities"]}.items()
-            if load_content(ROOT, item["content"]).fields.get("approval") == "Approved"
-        }
 
     def _room_tag(self, obj):
         return obj.tags.get(category=self.room_tag_category, return_list=True)[0]
@@ -116,8 +120,8 @@ class _WorldMatchesManifest:
                 self.assertEqual(built, expected)
 
 
-def build_legacy_world():
-    """Everything the old world/build_*.py scripts build (skitters aside)."""
+def build_with_wrappers():
+    """Everything the world/build_*.py wrappers build (skitters aside)."""
     build_rooms.build()
     build_npcs.build()
     build_ambient.apply_all_room_content()
@@ -129,17 +133,18 @@ def build_legacy_world():
     build_skitter_ledger.build()
 
 
-class SectorManifestMatchesLegacyBuildTests(_WorldMatchesManifest, TestCase):
-    """The old scripts' output matches the manifest."""
+class WrappersMatchCommittedManifestTests(_WorldMatchesManifest, TestCase):
+    """The world/build_*.py wrappers together build exactly the committed manifest."""
+
+    use_committed_manifest = True
 
     @classmethod
     def setUpTestData(cls):
-        build_legacy_world()
+        build_with_wrappers()
 
 
 class BuildSectorMatchesManifestTests(_WorldMatchesManifest, TestCase):
-    """world.build_sector, from an empty database, builds what the manifest says -
-    with the class above, the same world the old scripts build."""
+    """world.build_sector, from an empty database, builds what a fresh export says."""
 
     @classmethod
     def setUpTestData(cls):

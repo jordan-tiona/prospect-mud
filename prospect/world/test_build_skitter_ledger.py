@@ -72,7 +72,10 @@ class BuildSkitterLedgerTests(TestCase):
     def test_rebuild_renames_an_existing_object(self):
         ledger = build()
         ledger.key = "a ledger"
-        ledger.aliases.add("ledger")
+        ledger.aliases.add("ledger")  # set some other way than the build, e.g. by hand
         build()
         self.assertEqual(ledger.key, "a pest log")
-        self.assertEqual(sorted(ledger.aliases.all()), ["log", "screen"])
+        # Since Step C the build removes only aliases it set itself; anything
+        # added another way stays (docs/build-sector-proposal.md 3.4, Dev-
+        # approved). The old script cleared every alias on each run.
+        self.assertEqual(sorted(ledger.aliases.all()), ["ledger", "log", "screen"])
