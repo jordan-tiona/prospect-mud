@@ -19,12 +19,18 @@ from world.build_rooms import BUILD_TAG_CATEGORY as ROOM_TAG_CATEGORY
 LEDGER_TAG_CATEGORY = "skitter_ledger_prop"
 LEDGER_PROP_ID = "civic_office_skitter_ledger"
 
-# TODO(lore): placeholder wording (docs/lore-requests.md LR-0001). The
-# authored copy lives in content/objects/civic_office_skitter_ledger.md;
-# this must match it until build_sector() replaces this script - copy
-# changes across, never edit only here.
-ROOM_LINE = "A ledger of pest reports lies open on a side table."
-DESC = "A plain ledger for logging reported skitter kills, one line per name."
+# Copy of content/objects/civic_office_skitter_ledger.md (owner-approved,
+# LR-0001) and the aliases in sectors/elsewhere/sector.json; this must
+# match them until build_sector() replaces this script - copy changes
+# across, never edit only here.
+KEY = "a pest log"
+ALIASES = ["log", "screen"]
+ROOM_LINE = "A small screen at the end of the counter shows the office's pest log."
+DESC = (
+    "The office's pest log, kept on a small screen at the end of the counter: a running list of names, "
+    "each with the number of skitters that person has reported putting down. Iri Vael enters the reports "
+    "as people bring them in."
+)
 
 
 def _get_room(room_tag):
@@ -45,9 +51,13 @@ def build():
         if ledger.location != room:
             ledger.move_to(room, quiet=True)
     else:
-        ledger = create_object("typeclasses.objects.SkitterLedgerObject", key="a ledger", location=room)
+        ledger = create_object("typeclasses.objects.SkitterLedgerObject", key=KEY, location=room)
         ledger.tags.add(LEDGER_PROP_ID, category=LEDGER_TAG_CATEGORY)
 
+    # Set on every run, so a rebuild renames an existing object too.
+    ledger.key = KEY
+    ledger.aliases.clear()
+    ledger.aliases.add(ALIASES)
     ledger.db.room_line = ROOM_LINE
     ledger.db.desc = DESC
     print(f"Skitter ledger ready: {ledger.key} ({ledger.dbref}) in {room.key}")

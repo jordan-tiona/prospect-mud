@@ -124,9 +124,8 @@ class MovedProseTests(unittest.TestCase):
                            data['ROOM_LINE'])
 
     def test_skitter_ledger(self):
-        data = literals(WORLD / 'build_skitter_ledger.py', ('LEDGER_PROP_ID', 'ROOM_LINE', 'DESC'))
-        self.assert_object(data['LEDGER_PROP_ID'], import_legacy.single_prop_key(ROOT, 'build_skitter_ledger.py'),
-                           data['ROOM_LINE'], data['DESC'])
+        data = literals(WORLD / 'build_skitter_ledger.py', ('LEDGER_PROP_ID', 'KEY', 'ROOM_LINE', 'DESC'))
+        self.assert_object(data['LEDGER_PROP_ID'], data['KEY'], data['ROOM_LINE'], data['DESC'])
 
     def test_signpost(self):
         data = literals(WORLD / 'build_signpost.py', ('SIGNPOST_PROP_ID', 'ROOM_LINE', 'SPOKE_LINES'))

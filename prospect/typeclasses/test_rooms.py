@@ -154,7 +154,7 @@ class RoomAppearanceTests(TestCase):
             "typeclasses.npcs.TalkativeNPC", key="Iri Vael", location=self.room
         )
         npc.db.npc_id = "iri_vael"
-        npc.db.ambient_pose = "flipping through a thick ledger"
+        npc.db.ambient_pose = "standing by the counter"
         # Iri is also the holder of her own tend_planting_bed hint
         # (Quest 2) - clear that one (by offering it, not fulfilling
         # it) so this isolates the static-pose fallback itself, not
@@ -162,7 +162,7 @@ class RoomAppearanceTests(TestCase):
         propose_commitment(self.looker, "tend_planting_bed")
         self.assertEqual(
             self.room.get_display_things(self.looker),
-            "    |cIri Vael is here, flipping through a thick ledger.|n",
+            "    |cIri Vael is here, standing by the counter.|n",
         )
 
     # -- room objects (fixtures) ----------------------------------------------

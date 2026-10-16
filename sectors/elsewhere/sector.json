@@ -6,6 +6,10 @@
       "room": "corner_cafe"
     },
     "civic_office_skitter_ledger": {
+      "aliases": [
+        "log",
+        "screen"
+      ],
       "content": "objects/civic_office_skitter_ledger.md",
       "kind": "skitter_ledger",
       "room": "civic_office"

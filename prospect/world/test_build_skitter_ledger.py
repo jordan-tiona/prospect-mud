@@ -60,9 +60,19 @@ class BuildSkitterLedgerTests(TestCase):
 
     def test_read_shows_the_count(self):
         # The "read" alias (commands/look.py) is how a player is most
-        # likely to reach for a ledger.
+        # likely to reach for a log; check the key and each alias reach it.
         build()
-        messages = []
-        self.actor.msg = lambda text="", **kw: messages.append(text[0] if isinstance(text, tuple) else text)
-        self.actor.execute_cmd("read ledger")
-        self.assertTrue(any("nothing logged under your name" in m for m in messages))
+        for target in ("pest log", "log", "screen"):
+            with self.subTest(target):
+                messages = []
+                self.actor.msg = lambda text="", **kw: messages.append(text[0] if isinstance(text, tuple) else text)
+                self.actor.execute_cmd(f"read {target}")
+                self.assertTrue(any("nothing logged under your name" in m for m in messages))
+
+    def test_rebuild_renames_an_existing_object(self):
+        ledger = build()
+        ledger.key = "a ledger"
+        ledger.aliases.add("ledger")
+        build()
+        self.assertEqual(ledger.key, "a pest log")
+        self.assertEqual(sorted(ledger.aliases.all()), ["log", "screen"])
