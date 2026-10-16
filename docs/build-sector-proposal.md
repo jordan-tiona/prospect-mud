@@ -116,7 +116,7 @@ As with every database-writing script, it's run only with the server stopped. If
 - `dry_run` writes nothing
 - **old vs new:** build Elsewhere with the old scripts, snapshot it, then run `build_sector` over that same database. It must report zero creates and zero orphans, and only the expected updates: adding sector tags and managed-field records. Separately, building from an empty database must produce the same snapshot as the old scripts. That extends the existing `test_sector_manifest.py`.
 
-**Step B: export Elsewhere (owner).** This needs LR-TOOLS-0001 and LR-TOOLS-0002 resolved, so that export stops refusing. The first real `prospect/world/data/sectors/elsewhere.json` gets committed.
+**Step B: export Elsewhere (owner). Done 2026-10-16.** This needs LR-TOOLS-0001 and LR-TOOLS-0002 resolved, so that export stops refusing. The first real `prospect/world/data/sectors/elsewhere.json` gets committed.
 
 **Step C: switch over (Dev-reviewed change, after B).**
 - Each old builder's `build()` becomes a thin wrapper: `build_sector.build("elsewhere", kinds={...})`. Its hard-coded lists (`ROOMS`, `SPOKES`, `CHAINS`, `NPCS`, `AMBIENT_*_IDS`, `ROOM_IDS`, `QUEST_PROPS`, and the in-code prose and room lines) are deleted. Constants and return shapes stay, e.g. `build_npcs.build()` still returns `{npc_id: npc}`.

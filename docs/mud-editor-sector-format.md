@@ -1,6 +1,6 @@
 # MUD Editor: sector format and export manifest
 
-**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Implemented so far (milestones 2-3): `sectors/elsewhere/sector.json` imported from today's builders, `ops/editor/check.py` and `ops/editor/export.py`. Elsewhere can't be exported yet because its content is still awaiting approval (LR-TOOLS-0001, LR-TOOLS-0002). `build_sector()` and the editor UI aren't built yet. Changes to the build pipeline (Section 7) also need a Dev-lane review before code lands.
+**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Implemented so far (milestones 2-3): `sectors/elsewhere/sector.json` imported from today's builders, `ops/editor/check.py` and `ops/editor/export.py`. Elsewhere was first exported on 2026-10-16 (`prospect/world/data/sectors/elsewhere.json`), which is Step B of `docs/build-sector-proposal.md`. Nothing in the game reads the manifest until `build_sector()` lands. `build_sector()` and the editor UI aren't built yet. Changes to the build pipeline (Section 7) also need a Dev-lane review before code lands.
 
 **Background:** bible §18, "Planned content-authoring tool". This spec is the data model for that tool. It does not approve any lore and doesn't change how prose is authored.
 

@@ -1,0 +1,526 @@
+{
+  "entities": {
+    "civic_information_display": {
+      "aliases": [],
+      "attributes": {
+        "room_line": "A small civic information display cycles through local notices."
+      },
+      "key": "a civic information display",
+      "kind": "revision_display",
+      "room": "corner_cafe",
+      "tag_category": "noticeboard_prop",
+      "typeclass": "typeclasses.objects.RevisionDisplayObject"
+    },
+    "civic_office_skitter_ledger": {
+      "aliases": [
+        "log",
+        "screen"
+      ],
+      "attributes": {
+        "desc": "The office's pest log, kept on a small screen at the end of the counter: a running list of names, each with the number of skitters that person has reported putting down. Iri Vael enters the reports as people bring them in.",
+        "room_line": "A small screen at the end of the counter shows the office's pest log."
+      },
+      "key": "a pest log",
+      "kind": "skitter_ledger",
+      "room": "civic_office",
+      "tag_category": "skitter_ledger_prop",
+      "typeclass": "typeclasses.objects.SkitterLedgerObject"
+    },
+    "civic_services_board": {
+      "aliases": [],
+      "attributes": {
+        "desc": "Neatly arranged notices explain where residents can bring general inquiries, public-service questions, and maintenance concerns. Among the practical information is a brief reminder of Elsewhere's founding commitment to equal citizenship for all seven peoples. The board is kept tidy, though one corner is crowded with overlapping notices.",
+        "room_line": "A public information board beside the counter carries notices about neighborhood services."
+      },
+      "key": "Public services board",
+      "kind": "ambient_object",
+      "room": "civic_office",
+      "tag_category": "phase1_ambient",
+      "typeclass": "typeclasses.objects.RoomObject"
+    },
+    "concourse_arrival_directory": {
+      "aliases": [],
+      "attributes": {
+        "desc": "A durable directory panel identifies Old Quarter Square as the way into the neighborhood. Below it are listings for the Corner Café, Maintenance Workshop, Residential Courtyard, and Civic Office, all reached from the square. The panel is scuffed at hand height from frequent use.",
+        "room_line": "An arrival directory stands near the lift doors, listing destinations in the Old Quarter."
+      },
+      "key": "Arrival directory",
+      "kind": "ambient_object",
+      "room": "lift_concourse",
+      "tag_category": "phase1_ambient",
+      "typeclass": "typeclasses.objects.RoomObject"
+    },
+    "concourse_otheryn_courier": {
+      "aliases": [],
+      "attributes": {
+        "desc": "A worn carrying strap crosses the courier's work jacket, and a few scuffs mark the stacked containers beside them. They compare the contents of a handheld display with the labels on the containers, occasionally adjusting the strap on their shoulder. For the moment, their attention is firmly on the delivery."
+      },
+      "key": "An Otheryn courier",
+      "kind": "ambient_npc",
+      "poses": [
+        "checking the labels on a stack of delivery containers",
+        "comparing a handheld display with the containers beside them",
+        "adjusting a worn carrying strap across their shoulder"
+      ],
+      "room": "lift_concourse",
+      "tag_category": "phase1_ambient",
+      "typeclass": "typeclasses.npcs.NPC"
+    },
+    "courtyard_neshyr_neighbor": {
+      "aliases": [],
+      "attributes": {
+        "desc": "A Neshyr resident tends the plants beside the courtyard path, pausing now and then to clear away a leaf or inspect a stem. Their everyday clothes are smudged at the knees from working near the soil. They seem comfortable making an unhurried job of it."
+      },
+      "key": "A Neshyr neighbor",
+      "kind": "ambient_npc",
+      "poses": [
+        "checking the soil around a row of small plants",
+        "gathering a few fallen leaves from the path",
+        "tending one of the courtyard's planting beds"
+      ],
+      "room": "residential_courtyard",
+      "tag_category": "phase1_ambient",
+      "typeclass": "typeclasses.npcs.NPC"
+    },
+    "daven_varek": {
+      "aliases": [
+        "Daven"
+      ],
+      "attributes": {
+        "desc": "Daven Varek is a Kethari with a relaxed, attentive manner and a well-worn set of everyday clothes. He looks like someone used to speaking with strangers, though there's nothing rehearsed about the way he listens.",
+        "npc_id": "daven_varek"
+      },
+      "key": "Daven Varek",
+      "kind": "talk_npc",
+      "room": "daven_office",
+      "tag_category": "phase1_npcs",
+      "typeclass": "typeclasses.npcs.TalkativeNPC"
+    },
+    "faulty_heating_module_hint": {
+      "aliases": [],
+      "attributes": {
+        "desc": "A removable temperature-control module, worked free of the café's heating unit. It looks like the kind of ordinary part Tarin Os at the Maintenance Workshop would know how to deal with.",
+        "room_line": "A small temperature-control module sits pulled loose from the heating unit, clearly not seated right."
+      },
+      "key": "a faulty heating module",
+      "kind": "quest_prop",
+      "locks": "view:module_exchange_hint_visible();search:module_exchange_hint_visible();get:false()",
+      "room": "corner_cafe",
+      "tag_category": "quest_prop",
+      "typeclass": "typeclasses.objects.CommitmentHintObject"
+    },
+    "gardening_kit": {
+      "aliases": [
+        "kit",
+        "gardening kits"
+      ],
+      "attributes": {
+        "desc": "A worn gardening kit from the courtyard's communal equipment locker: a hand trowel, a pair of shears, and a few lengths of twine, left out where anyone who needs them can take them.",
+        "room_line": "A gardening kit sits here, free for anyone to use."
+      },
+      "key": "a gardening kit",
+      "kind": "gardening_kit",
+      "room": "residential_courtyard",
+      "tag_category": "garden_prop",
+      "typeclass": "typeclasses.objects.GardeningKit"
+    },
+    "given_marr": {
+      "aliases": [
+        "Given"
+      ],
+      "attributes": {
+        "desc": "Given Marr is a Neshyr medical technician in plain work clothes, his attention moving easily between his patient and the nearby monitors. His manner is unhurried, as though answering another confused question is a perfectly ordinary part of the shift.",
+        "npc_id": "given_marr"
+      },
+      "key": "Given Marr",
+      "kind": "talk_npc",
+      "room": "medical_bay",
+      "tag_category": "phase1_npcs",
+      "typeclass": "typeclasses.npcs.TalkativeNPC"
+    },
+    "iri_vael": {
+      "aliases": [
+        "Iri"
+      ],
+      "attributes": {
+        "npc_id": "iri_vael"
+      },
+      "key": "Iri Vael",
+      "kind": "talk_npc",
+      "room": "civic_office",
+      "tag_category": "phase1_npcs",
+      "typeclass": "typeclasses.npcs.TalkativeNPC"
+    },
+    "mara_voss": {
+      "aliases": [
+        "Mara"
+      ],
+      "attributes": {
+        "npc_id": "mara_voss"
+      },
+      "key": "Mara Voss",
+      "kind": "talk_npc",
+      "room": "corner_cafe",
+      "tag_category": "phase1_npcs",
+      "typeclass": "typeclasses.npcs.TalkativeNPC"
+    },
+    "misdelivered_parcel_hint": {
+      "aliases": [],
+      "attributes": {
+        "desc": "A small, plainly wrapped parcel. The shipping label reads: \"Tarin Os, Maintenance Workshop.\" It was clearly meant to go there, not here.",
+        "room_line": "A small parcel sits on the counter, unopened."
+      },
+      "key": "a small parcel",
+      "kind": "quest_prop",
+      "locks": "view:commitment_hint_visible(deliver_parcel);search:commitment_hint_visible(deliver_parcel);get:false()",
+      "room": "corner_cafe",
+      "tag_category": "quest_prop",
+      "typeclass": "typeclasses.objects.CommitmentHintObject"
+    },
+    "old_quarter_square_signpost": {
+      "aliases": [],
+      "attributes": {
+        "room_line": "A signpost stands near the square's edge, listing the streets leading off it.",
+        "spoke_lines": [
+          "North: the Corner Café.",
+          "South: the Residential Courtyard.",
+          "East: the Maintenance Workshop.",
+          "West: the Civic Office.",
+          "Northeast: the Lift Concourse."
+        ]
+      },
+      "key": "a signpost",
+      "kind": "signpost",
+      "room": "old_quarter_square",
+      "tag_category": "signpost_prop",
+      "typeclass": "typeclasses.objects.SignpostObject"
+    },
+    "planting_bed": {
+      "aliases": [
+        "bed",
+        "planting beds",
+        "beds"
+      ],
+      "attributes": {
+        "desc": "The square's planting bed: a shallow trough of soil, overgrown with weeds and badly in need of tending.",
+        "room_line": "A planting bed sits here, overgrown and badly needing attention."
+      },
+      "key": "a planting bed",
+      "kind": "planting_bed",
+      "room": "old_quarter_square",
+      "tag_category": "garden_prop",
+      "typeclass": "typeclasses.objects.PlantingBed"
+    },
+    "square_elderly_kethari": {
+      "aliases": [],
+      "attributes": {
+        "desc": "Gray has crept into the fur around the Kethari's muzzle and ears. A slim reading tablet rests in their lap, held at an easy angle, while their ears occasionally turn toward the sounds of the square. They seem content to read and let the bustle carry on around them."
+      },
+      "key": "An elderly Kethari",
+      "kind": "ambient_npc",
+      "poses": [
+        "reading quietly from a tablet resting in their lap",
+        "glancing up from their tablet at people crossing the square",
+        "turning an ear toward the sounds of the square"
+      ],
+      "room": "old_quarter_square",
+      "tag_category": "phase1_ambient",
+      "typeclass": "typeclasses.npcs.NPC"
+    },
+    "square_noticeboard": {
+      "aliases": [],
+      "attributes": {
+        "desc": "Community notices and small advertisements are arranged behind a scratched transparent cover. Some are neatly printed; others have been written by hand. The frame has been repainted more than once, and the edges of older postings show beneath the newer ones. Nothing on the board suggests that the square's residents lack things to discuss.\n\n--------------------------\n\nNorth: Corner Café\n\nSouth: Residential Courtyard\n\nEast: Maintenance Workshop\n\nWest: Civic Office\n\nUp: Lift Concourse",
+        "room_line": "A glass-fronted notice board hangs beside one of the passages leading into the square."
+      },
+      "key": "Public notice board",
+      "kind": "ambient_object",
+      "room": "old_quarter_square",
+      "tag_category": "phase1_ambient",
+      "typeclass": "typeclasses.objects.RoomObject"
+    },
+    "tarin_os": {
+      "aliases": [
+        "Tarin"
+      ],
+      "attributes": {
+        "npc_id": "tarin_os"
+      },
+      "key": "Tarin Os",
+      "kind": "talk_npc",
+      "room": "maintenance_workshop",
+      "tag_category": "phase1_npcs",
+      "typeclass": "typeclasses.npcs.TalkativeNPC"
+    },
+    "veska_renn": {
+      "aliases": [
+        "Veska"
+      ],
+      "attributes": {
+        "npc_id": "veska_renn"
+      },
+      "key": "Veska Renn",
+      "kind": "talk_npc",
+      "room": "civic_office",
+      "tag_category": "phase1_npcs",
+      "typeclass": "typeclasses.npcs.TalkativeNPC"
+    },
+    "workshop_parts_tray": {
+      "aliases": [],
+      "attributes": {
+        "desc": "Shallow compartments hold small fasteners, tagged metal fittings, and a few sealed electronic modules. The labels are compact and practical, written for someone who already knows the equipment. A clear space beside the tray suggests the pieces are being sorted for a job in progress.",
+        "room_line": "A shallow tray of labeled spare parts rests on the edge of a workbench."
+      },
+      "key": "Parts tray",
+      "kind": "ambient_object",
+      "room": "maintenance_workshop",
+      "tag_category": "phase1_ambient",
+      "typeclass": "typeclasses.objects.RoomObject"
+    }
+  },
+  "exits": [
+    {
+      "aliases": [
+        "ne"
+      ],
+      "from": "old_quarter_square",
+      "id": "old_quarter_square__northeast",
+      "key": "northeast",
+      "to": "lift_concourse"
+    },
+    {
+      "aliases": [
+        "sw"
+      ],
+      "from": "lift_concourse",
+      "id": "lift_concourse__southwest",
+      "key": "southwest",
+      "to": "old_quarter_square"
+    },
+    {
+      "aliases": [
+        "n"
+      ],
+      "from": "old_quarter_square",
+      "id": "old_quarter_square__north",
+      "key": "north",
+      "to": "corner_cafe"
+    },
+    {
+      "aliases": [
+        "s"
+      ],
+      "from": "corner_cafe",
+      "id": "corner_cafe__south",
+      "key": "south",
+      "to": "old_quarter_square"
+    },
+    {
+      "aliases": [
+        "e"
+      ],
+      "from": "old_quarter_square",
+      "id": "old_quarter_square__east",
+      "key": "east",
+      "to": "maintenance_workshop"
+    },
+    {
+      "aliases": [
+        "w"
+      ],
+      "from": "maintenance_workshop",
+      "id": "maintenance_workshop__west",
+      "key": "west",
+      "to": "old_quarter_square"
+    },
+    {
+      "aliases": [
+        "s"
+      ],
+      "from": "old_quarter_square",
+      "id": "old_quarter_square__south",
+      "key": "south",
+      "to": "residential_courtyard"
+    },
+    {
+      "aliases": [
+        "n"
+      ],
+      "from": "residential_courtyard",
+      "id": "residential_courtyard__north",
+      "key": "north",
+      "to": "old_quarter_square"
+    },
+    {
+      "aliases": [
+        "w"
+      ],
+      "from": "old_quarter_square",
+      "id": "old_quarter_square__west",
+      "key": "west",
+      "to": "civic_office"
+    },
+    {
+      "aliases": [
+        "e"
+      ],
+      "from": "civic_office",
+      "id": "civic_office__east",
+      "key": "east",
+      "to": "old_quarter_square"
+    },
+    {
+      "aliases": [
+        "sw"
+      ],
+      "from": "old_quarter_square",
+      "id": "old_quarter_square__southwest",
+      "key": "southwest",
+      "to": "old_quarter_street"
+    },
+    {
+      "aliases": [
+        "ne"
+      ],
+      "from": "old_quarter_street",
+      "id": "old_quarter_street__northeast",
+      "key": "northeast",
+      "to": "old_quarter_square"
+    },
+    {
+      "aliases": [
+        "u"
+      ],
+      "from": "lift_concourse",
+      "id": "lift_concourse__up",
+      "key": "up",
+      "to": "medical_bay"
+    },
+    {
+      "aliases": [
+        "d"
+      ],
+      "from": "medical_bay",
+      "id": "medical_bay__down",
+      "key": "down",
+      "to": "lift_concourse"
+    },
+    {
+      "aliases": [
+        "n"
+      ],
+      "from": "old_quarter_street",
+      "id": "old_quarter_street__north",
+      "key": "north",
+      "to": "daven_office"
+    },
+    {
+      "aliases": [
+        "s"
+      ],
+      "from": "daven_office",
+      "id": "daven_office__south",
+      "key": "south",
+      "to": "old_quarter_street"
+    }
+  ],
+  "format_version": 1,
+  "rooms": {
+    "civic_office": {
+      "desc": "The office is plainly furnished, with a public counter, several seats for waiting visitors, and notices arranged where they can be read without crowding the staff. Light falls evenly across the room, picking out the worn edges of the counter and the scuffed floor beneath the chairs.\n\nMost conversations are brief and matter-of-fact. Someone asks for information; someone else checks a document or explains where a request should go. Beyond the counter, the work area is busy without being especially noisy.\n\nThere's little ceremony to the place. Elsewhere's government is part of everyday life here, encountered in questions about public services and shared concerns rather than in speeches. Iri Vael volunteers here.",
+      "glance": "Quiet voices and the rustle of papers fill a bright public office. A short row of waiting seats faces the service counter, where residents bring the ordinary questions and problems of neighborhood life.",
+      "tag_category": "phase1_neighborhood",
+      "title": "Civic Office",
+      "typeclass": "typeclasses.rooms.Room"
+    },
+    "corner_cafe": {
+      "desc": "The Corner Café is small enough that the counter is visible from almost every seat. The tables don't quite match, and the edges of a few chairs have been rubbed smooth by frequent use. Cups and neatly stacked dishes occupy shelves behind the counter.\n\nA window looks out onto Old Quarter Square. People at the tables talk over drinks, read, or simply watch the movement outside. There's a little noise from the equipment behind the counter, but it rarely rises above the conversation.\n\nThe room feels more useful than fashionable: somewhere to sit for a few minutes, meet a neighbor, or stay longer than intended. Mara Voss runs the place.",
+      "glance": "The smell of something freshly brewed meets you at the door. Cups clink behind a low counter, and the conversation around a handful of occupied tables settles into a comfortable, uneven murmur.",
+      "tag_category": "phase1_neighborhood",
+      "title": "Corner Café",
+      "typeclass": "typeclasses.rooms.Room"
+    },
+    "daven_office": {
+      "desc": "Daven's office is a small room with a desk, a couple of chairs for visitors, and a low shelf crowded with information sheets about the surrounding neighborhood. The furniture is sturdy rather than new. A few corners of the desk have been worn smooth by use.\n\nNotes and service information are arranged within easy reach of the person behind the desk. There's enough space to sit and talk without feeling hurried, though the room has plainly been organized for practical conversations rather than long meetings.\n\nThe doorway opens back toward the street. It feels like an ordinary place to ask for help: somewhere a newcomer can walk in with a question, leave with a suggestion, and return when another question comes up.",
+      "glance": "A small desk faces two mismatched visitor chairs. Papers and local information sheets share space along its edge, and the room has the comfortable, slightly busy feel of an office that sees regular visitors.",
+      "tag_category": "phase1_neighborhood",
+      "title": "Daven's Office",
+      "typeclass": "typeclasses.rooms.Room"
+    },
+    "lift_concourse": {
+      "desc": "The concourse is a broad, practical space at the foot of the lifts that connect Elsewhere's inhabited surface to the central axis. Its floor is scuffed by years of traffic, and brighter replacement panels interrupt the older wall coverings. A steady hum comes from machinery behind the lift doors.\n\nArrivals pause to check their belongings or consult a directory, while others pass through without slowing. The air carries a faint smell of warm machinery beneath the ordinary scents of a busy public passage.\n\nAn open passage leads toward Old Quarter Square, where the tighter streets and older buildings begin. This is a place people pass through on their way somewhere else, though there's almost always someone waiting.",
+      "glance": "A low mechanical hum fills the concourse as passengers emerge from the lifts. Footsteps and rolling cases echo off the hard floor, mingling with voices calling greetings or working out where to go next.",
+      "tag_category": "phase1_neighborhood",
+      "title": "Lift Concourse",
+      "typeclass": "typeclasses.rooms.Room"
+    },
+    "maintenance_workshop": {
+      "desc": "Workbenches line the walls, crowded with tools, tagged components, and pieces of equipment in various stages of repair. A few cabinets stand open, their shelves more orderly than the benches. Old scuffs and newer patches mark the floor near the heavier workstations.\n\nThe workshop serves the aging infrastructure of the Old Quarter. Nothing here is arranged for visitors, although a clear strip of floor leaves room to move between the benches. A steady mechanical hum comes from a test unit, interrupted now and then by a brief click or rattle.\n\nTarin Os works here. Most of what fills the room would make immediate sense to him; to anyone else, it takes a closer look to tell which parts belong together.",
+      "glance": "A small motor whines on a test bench, rising briefly above the clink of metal tools. The air smells faintly of warm machinery, and most of the available work surfaces are occupied by equipment awaiting attention.",
+      "tag_category": "phase1_neighborhood",
+      "title": "Maintenance Workshop",
+      "typeclass": "typeclasses.rooms.Room"
+    },
+    "medical_bay": {
+      "desc": "The medical bay is a practical, softly lit room with recovery couches arranged near a bank of monitoring equipment. A few enclosed cryogenic units stand along one wall, their surfaces marked with small status lights. The air is cool and clean, carrying a faint antiseptic smell.\n\nMost of the equipment operates quietly. A display changes as readings are checked, and a low mechanical hum comes from behind a wall panel. There is space beside the couches for a technician to work without crowding a patient who has just awakened.\n\nA doorway leads out toward the public arrival area. Nothing about the room seems arranged to impress anyone; it is simply a place meant to get people safely back on their feet.",
+      "glance": "A soft electronic pulse sounds beside the recovery couches. Muted light falls across clean surfaces and a row of enclosed cryogenic units, while quiet equipment hums somewhere behind the walls.",
+      "tag_category": "phase1_neighborhood",
+      "title": "Medical Bay",
+      "typeclass": "typeclasses.rooms.Room"
+    },
+    "old_quarter_square": {
+      "desc": "The square is surrounded by aging storefronts and residential buildings, their facades showing generations of repairs and additions. Newer construction juts above older structures, and the paving beneath your feet has been worn smooth by years of foot traffic.\n\nA small café occupies one of the surrounding storefronts. Other entrances and passages lead into neighboring buildings, while the murmur of conversation and the occasional rattle of a delivery cart carry across the square.\n\nA scatter of weathered benches lines the square's low planting beds, their seats polished smooth by years of use. The beds themselves have been let go, overgrown and showing their neglect as plainly as everything else here shows its age.\n\nAbove the uneven roofline, distant neighborhoods curve upward along the opposite side of Elsewhere's cylindrical interior. The enormous artificial light running along the central axis illuminates the scene, a familiar sight to those who've spent their lives here.",
+      "glance": "A modest square opens between the Old Quarter's closely packed buildings. Worn paving, scattered benches, and planted beds fill the space, while Elsewhere's immense cylindrical interior curves into view above the rooftops.",
+      "tag_category": "phase1_neighborhood",
+      "title": "Old Quarter Square",
+      "typeclass": "typeclasses.rooms.Room"
+    },
+    "old_quarter_street": {
+      "desc": "The street narrows as it leaves Old Quarter Square, passing buildings whose ground floors have been altered for different uses over the years. Some windows are shaded; others look onto small shops or the entrances to apartments. Repairs of different ages interrupt the wall panels and paving.\n\nThere is less foot traffic here than in the square, though voices occasionally drift from an open doorway. The buildings stand close enough that the axial light is visible only in pieces above the roofs.\n\nOne of the quieter entrances has a simple nameplate for **Daven Varek**. There is nothing grand about it, and the street continues to feel like an ordinary part of the Old Quarter rather than a special route for new arrivals.",
+      "glance": "The open noise of the square fades along a narrower street lined with patched storefronts and residential doors. Footsteps carry between the close buildings, and a modest nameplate marks an office farther along.",
+      "tag_category": "phase1_neighborhood",
+      "title": "Old Quarter Street",
+      "typeclass": "typeclasses.rooms.Room"
+    },
+    "residential_courtyard": {
+      "desc": "The courtyard is a shared space between closely built residential blocks. A narrow path crosses worn paving, passing low planting beds and a few seats tucked against the walls. Some windows stand open; others are shaded or crowded with small household things.\n\nHere, the Old Quarter feels less hurried. The sounds of the square are still present, but softened by the surrounding buildings. Every so often a door opens onto the courtyard, or voices carry briefly from an upper level before fading again.\n\nRepairs and alterations have left the walls uneven in color and finish. None of it seems arranged to impress visitors. It's simply a place where people live, with a little room between their doors.",
+      "glance": "The noise of the square falls away in a courtyard enclosed by apartment walls. Leaves stir above a narrow path, and a faint exchange of voices drifts down from the surrounding windows.",
+      "tag_category": "phase1_neighborhood",
+      "title": "Residential Courtyard",
+      "typeclass": "typeclasses.rooms.Room"
+    }
+  },
+  "sector_id": "elsewhere",
+  "sources": {
+    "content/ambient/npcs/concourse_otheryn_courier.md": "3dce83ecc1c4998d0e8b814526ecebe12eb9071e290a069d934d90cb65f8fe01",
+    "content/ambient/npcs/courtyard_neshyr_neighbor.md": "f3a341e7f6b889a936340077a0b97caf694591117d9d4b2fe248d0a1f62ef946",
+    "content/ambient/npcs/square_elderly_kethari.md": "d228eca91b685f53c82aa29caf06a889c0a9822a5c85a76c142d2777e34a1f49",
+    "content/ambient/objects/civic_services_board.md": "d1751d34f571441cf2f78df33d2332bd886c3826d81b22807be711d42244275f",
+    "content/ambient/objects/concourse_arrival_directory.md": "27ee9d1dd8bfeac27f41caa4dfa4425ddb3fe3effe36fbe4fa4b056e2f2f29f4",
+    "content/ambient/objects/square_noticeboard.md": "717f81e41bed9d30c629162b5990f637fc04a408c84e3b143bc2ac0986501a7e",
+    "content/ambient/objects/workshop_parts_tray.md": "765b022208203357627f64ed29cf054bfa9277eb8207f41a11ef861f1bc4d335",
+    "content/npcs/daven_varek.md": "14edcdd32dd343c2dc3678efd25126481d726ea65957bd2d9d9187e04bb7672b",
+    "content/npcs/given_marr.md": "d389d9ec951c7e87be53f5940f26071b61cc398430440ad58caadc2b120ea8b1",
+    "content/npcs/iri_vael.md": "3616af6f5b1ef5418ffa0b8631d9e174e83deee7ed58fe072ab8845a049b0631",
+    "content/npcs/mara_voss.md": "61c7e9900e52bd6bfa8be9a764725366490fd843bfea67478af0e75851aed509",
+    "content/npcs/tarin_os.md": "f04b7e422e45046b4ca6ef172b51d82d8e9cefb7b0547db89c1e780997398685",
+    "content/npcs/veska_renn.md": "241d94289091ef2b998341028c9aa3236d7382555583679f29ec6e2900edcd2a",
+    "content/objects/civic_information_display.md": "a4a42210f3684cab3b4952a236266945d454765e6fbfee4f114a61a023f8286c",
+    "content/objects/civic_office_skitter_ledger.md": "325776d41f0ddcb573556c303a53846fd6fcf2592adb7675f6b30ca2a31aeb98",
+    "content/objects/faulty_heating_module_hint.md": "840cb5ea2976da98374e21a7a5cc4a2be7fa008f09375d120c13b94f61030c88",
+    "content/objects/gardening_kit.md": "430060e7f73e3857ecaa938631cb66b90e8a7917cb1727fb2dca4b36d587a741",
+    "content/objects/misdelivered_parcel_hint.md": "9f1954aa26548f4e1c1d4bf636b68f28b57c801b31b0c8b1bbbc1ddb1d9ec6dc",
+    "content/objects/old_quarter_square_signpost.md": "a2c80680cbc1a981d540c8fc46c524958a20a564279f56b0859820d2229dabac",
+    "content/objects/planting_bed.md": "31389ee7940bf1389e082e79439832bae8d2741a6f2fa747004b634fbd5a5ea2",
+    "content/rooms/civic_office.md": "7f026752051cc065fcd172d1242bb4bd0c1309dbb8c125dd9357b23bb8f76ca8",
+    "content/rooms/corner_cafe.md": "7cbd654f0dfa2189c6c25d51838f12a00f3289a42c26ca37d28238631cbe5b37",
+    "content/rooms/daven_office.md": "a2abaabc1d1ab4070d3269c285739de9c0d3f97ac373a3dc71a77e664d4b2988",
+    "content/rooms/lift_concourse.md": "3e162ba165ba5e1b36c95ad59be116989dccffd56f45fcf459401b57981d9a47",
+    "content/rooms/maintenance_workshop.md": "91c5fc386316ac18c743c020366a4b9a230322dc0b27724b11c5a9a9cdad22e2",
+    "content/rooms/medical_bay.md": "a5beb37190f4768a20ddc1fa96e3549ff097faad716b00121c87f15e75b277da",
+    "content/rooms/old_quarter_square.md": "ffe14d1602989346e6e39538427f41b0b66d97451ac1572a41ba78781267b9f4",
+    "content/rooms/old_quarter_street.md": "bb124de63b81d54211ce0dc05225d455f99a96e4bd69c552d1865db5966d4efa",
+    "content/rooms/residential_courtyard.md": "4836c593f5608ec0735167b5ea988eb93120d906bd93a51d5563266df8145b2e",
+    "sectors/elsewhere/sector.json": "52044c8a7da27776b8ddd6b347b1bd6e3541c02b074aa1469919126061950bb9"
+  }
+}
