@@ -254,6 +254,24 @@ class CheckTests(unittest.TestCase):
         write_json(dismissed_path(self.root), {'dismissed': ['ambient/objects/gone.md']})
         self.assertEqual([(i.level, i.code) for i in self.run_check()], [(check.INFO, 'stale_dismissal')])
 
+    def test_prose_still_using_a_former_room_title(self):
+        self.sector['rooms']['room_b']['title'] = 'The Annex'
+        self.sector['rooms']['room_b']['editor'] = {'former_titles': ['Room B']}
+        self.write('rooms/room_a.md', ROOM_FILE.format(id='room_a', text='Room B is north. <!-- Room B in a comment -->'))
+        found = [i for i in self.run_check() if i.code == 'old_title']
+        self.assertEqual([(i.level, i.where) for i in found], [(check.WARNING, 'room room_b')])
+        self.assertIn('content/rooms/room_a.md', found[0].message)
+        # Only in a comment, or only inside a current title that contains it: no warning.
+        self.write('rooms/room_a.md', ROOM_FILE.format(id='room_a', text='North. <!-- Room B -->'))
+        self.assertNotIn('old_title', codes(self.run_check()))
+        self.sector['rooms']['room_a']['title'] = 'Old Annex'
+        self.sector['rooms']['room_b']['editor'] = {'former_titles': ['Annex']}
+        self.write('rooms/room_a.md', ROOM_FILE.format(id='room_a', text='Old Annex is here.'))
+        self.assertNotIn('old_title', codes(self.run_check()))
+        # A title another room has now isn't stale.
+        self.sector['rooms']['room_b']['editor'] = {'former_titles': ['Old Annex']}
+        self.assertNotIn('old_title', codes(self.run_check()))
+
     def test_check_never_writes(self):
         write_json(self.root / 'sectors/test/sector.json', self.sector)
         before = {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()}

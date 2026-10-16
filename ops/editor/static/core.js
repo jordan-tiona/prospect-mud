@@ -78,7 +78,14 @@
     const room = doc.rooms[id] || fail(`No room "${id}".`);
     if ('title' in fields) {
       if (!String(fields.title || '').trim()) fail('A room needs a title.');
-      room.title = String(fields.title).trim();
+      const title = String(fields.title).trim();
+      // Remember the old title, so check can find prose that still uses it.
+      const same = (a, b) => a.toLowerCase() === b.toLowerCase();
+      const former = (room.editor?.former_titles || []).filter((t) => !same(t, title));
+      if (room.title && !same(room.title, title) && !former.some((t) => same(t, room.title))) former.push(room.title);
+      room.title = title;
+      room.editor = { ...(room.editor || {}), former_titles: former };
+      if (!former.length) delete room.editor.former_titles;
     }
     if ('content' in fields) {
       if (fields.content) room.content = fields.content;
@@ -89,6 +96,15 @@
       else delete room.notes;
     }
     if ('position' in fields) room.editor = { ...(room.editor || {}), x: Math.round(fields.position.x), y: Math.round(fields.position.y) };
+    return doc;
+  }
+
+  /** Stop tracking an old title (the prose is fine as it is, or was updated). */
+  function forgetFormerTitle(doc, id, title) {
+    const room = doc.rooms[id] || fail(`No room "${id}".`);
+    const former = (room.editor?.former_titles || []).filter((t) => t !== title);
+    if (former.length) room.editor.former_titles = former;
+    else if (room.editor) delete room.editor.former_titles;
     return doc;
   }
 
@@ -293,7 +309,7 @@
 
   return {
     ID_RE, opposite, shortAliases, parseAliases, clone, pairIndex, idTaken,
-    addRoom, setRoom, removeRoom, addExit, setExit, removeExit, exitsOf,
+    addRoom, setRoom, forgetFormerTitle, removeRoom, addExit, setExit, removeExit, exitsOf,
     addEntity, setEntity, removeEntity, usedContent, trayItems, groupByRequest, candidateId, placeCandidate, History,
   };
 });
