@@ -47,7 +47,9 @@ class TannoyTests(TestCase):
         self.character.msg = lambda text="", **kw: self.sent.append(text)
 
     def test_tannoy_text_for_room_matches_medical_bay(self):
-        self.assertIn("SAY", tannoy_text_for_room(self.rooms["medical_bay"]))
+        text = tannoy_text_for_room(self.rooms["medical_bay"])
+        for command in ("SAY", "NORTH", "LOOK"):
+            self.assertIn(command, text)
 
     def test_tannoy_text_for_room_none_elsewhere(self):
         self.assertIsNone(tannoy_text_for_room(self.rooms["old_quarter_square"]))
