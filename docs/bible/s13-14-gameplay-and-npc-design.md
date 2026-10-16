@@ -167,7 +167,7 @@ These are proposed acceptance questions, not executed tests or a finalized evalu
 
 ### 14.6 Proposed three-character prototype cast
 
-**Status:** These are **lightweight example profiles** developed for the first test, not established historical NPCs. Their names, exact places of work, biographies and details remain revisable. They are not designed to have autonomous schedules, elaborate personal histories or guaranteed relationships with one another.
+**Status:** These are **lightweight example profiles** developed for the first test, not established historical NPCs. Their names, exact places of work, biographies and details remain revisable. They are not designed to have autonomous schedules or elaborate personal histories; their only established relationship is the neighborly acquaintance recorded in the shared baseline below.
 
 #### Mara Voss — Voldren café proprietor
 
@@ -188,13 +188,13 @@ These are proposed acceptance questions, not executed tests or a finalized evalu
 
 #### Iri Vael — Naevari student and community volunteer
 
-- **Primary setting:** Civic Office, Residential Courtyard or adjacent public space.
+- **Primary setting:** Civic Office (project owner, 2026-10-16: one room only; the earlier "Residential Courtyard or adjacent public space" option is withdrawn).
 - **Personality:** Curious, enthusiastic, thoughtful and sometimes impulsive.
 - **Background:** Iri is a young university student raised in a newer Elsewhere district. She volunteers in the Old Quarter and is interested in the habitat's history, civic institutions and inhabitants.
 - **Outlook:** She cares about equal rights and civic participation, yet has limited practical experience. Some opinions are still forming, and her academic familiarity exceeds her experience with engineering or business.
 - **Conversation:** Informal and interested in other people's views. Sometimes overconfident about topics she has recently studied, but capable of recognizing uncertainty or reconsidering a point. She should not lecture every visitor about politics or turn every exchange into a debate.
 
-**Shared baseline:** These three are ordinary members of their respective peoples and residents of Elsewhere. They understand commonplace facts (seven peoples, orbital habitation, Prospect, Haven and the Bloom) without regularly reciting them. Their personal knowledge remains narrower than the design bible, and their outlooks do not define their species. Any association or past conversation between them is **not yet established**.
+**Shared baseline:** These three are ordinary members of their respective peoples and residents of Elsewhere. They understand commonplace facts (seven peoples, orbital habitation, Prospect, Haven and the Bloom) without regularly reciting them. Their personal knowledge remains narrower than the design bible, and their outlooks do not define their species. **Established (project owner, 2026-10-16):** the Old Quarter cast know one another as neighbors do - by name, people, role and workplace. This covers these three plus Veska Renn, Daven Varek and Given Marr (§13.8): each persona carries a short "people you know" list naming the other five. Nothing beyond that acquaintance - friendship, history, shared past conversation, knowledge of one another's current business - is established, and personas must not imply it.
 
 **Proposed implementation guidance:** Turn this shared baseline into a short **common-knowledge sheet** (a few hundred words, plain in-world language, no status labels) describing what any ordinary Elsewhere resident knows, plus a one-line version of the translation convention (Section 2). The common-knowledge sheet plus each NPC's profile and action list forms that NPC's prompt; the bible remains the authoring reference and is never placed in a prompt whole.
 
