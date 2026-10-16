@@ -68,7 +68,7 @@ COMMITMENT_ACTIONS = {
     "confirm_bed_tended",
     # Quest 3 ("Unwelcome Guests"): Tarin's own fulfilling action for
     # hunt_skitters, same role as confirm_bed_tended above.
-    "report_skitter_kills",
+    "report_skitter_kills_to_tarin",
 }
 
 
@@ -284,7 +284,7 @@ SCENARIOS = {
     # required threshold - no clerk role, same shape as
     # tend_planting_bed. The completing fact is a count, not a single
     # boolean, but fulfill_commitment_with_precondition only needs a
-    # bool, so world/actions.py's report_skitter_kills validator is the
+    # bool, so world/actions.py's report_skitter_kills_to_tarin validator is the
     # one place that compares the count against the threshold.
     "hunt_skitters": ScenarioConfig(
         commitment_type="hunt_skitters",

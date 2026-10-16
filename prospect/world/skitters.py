@@ -66,18 +66,98 @@ def reset_kills(actor) -> int:
     command to report) - mirrors world/noticeboard.py's
     reset_expected_revision. Without this, resetting the hunt_skitters
     commitment alone would leave an old kill count in place, letting
-    report_skitter_kills succeed immediately without actually
+    report_skitter_kills_to_tarin succeed immediately without actually
     re-hunting anything."""
     previous = int(actor.attributes.get(KILLS_KEY, default=0))
     actor.attributes.remove(KILLS_KEY)
     return previous
 
 
+# Post-quest repeatable loop (project owner, 2026-10-16): once Tarin's
+# hunt_skitters quest is fulfilled, a player can keep hunting, but the
+# number that actually counts - shown on the Civic Office's ledger
+# (typeclasses.objects.SkitterLedgerObject) and fed to Iri and Tarin as
+# context - only goes up when the player reports to Iri
+# (world/actions.py's log_dead_skitters_with_iri). Raw kills above are
+# what the engine actually saw happen; "banked" is how many of those
+# have been logged. The difference is what Iri can log next - always
+# the engine's own count, never a number the player claims.
+BANKED_KILLS_KEY = "skitter_kills_banked"
+LEDGER_NPC_ID = "iri_vael"
+
+
+def banked_kills_for(actor) -> int:
+    return int(actor.attributes.get(BANKED_KILLS_KEY, default=0))
+
+
+def unbanked_kills_for(actor) -> int:
+    return max(kills_for(actor) - banked_kills_for(actor), 0)
+
+
+def bank_kills(actor) -> int:
+    """Move every unlogged kill into the logged total. Returns how many
+    were just logged (0 if there was nothing new)."""
+    newly_banked = unbanked_kills_for(actor)
+    if newly_banked:
+        actor.attributes.add(BANKED_KILLS_KEY, banked_kills_for(actor) + newly_banked)
+    return newly_banked
+
+
+def reset_banked_kills(actor) -> int:
+    """Builder-only reset, alongside reset_kills - per docs/engineering-
+    pitfalls.md #3, a reset has to clear every piece of state the
+    feature owns, or a retest starts with a stale logged total that no
+    longer matches the (now zeroed) raw kill count."""
+    previous = banked_kills_for(actor)
+    actor.attributes.remove(BANKED_KILLS_KEY)
+    return previous
+
+
 def is_hunting(actor) -> bool:
-    """True iff this player has an open 'hunt_skitters' commitment -
-    the single source of truth both the targeting lock and the attack
-    command use, so there's nothing separate to fall out of sync."""
-    return get_state_summary(actor, HUNT_COMMITMENT_TYPE).startswith("open")
+    """True iff this player has accepted the 'hunt_skitters' commitment
+    - open *or* already fulfilled. The single source of truth both the
+    targeting lock and the attack command use, so there's nothing
+    separate to fall out of sync. Fulfilled counts too (project owner,
+    2026-10-16): finishing Tarin's quest doesn't take skitters away -
+    they stay huntable as the repeatable post-quest loop, logged with
+    Iri instead."""
+    state = get_state_summary(actor, HUNT_COMMITMENT_TYPE)
+    return state.startswith("open") or state.startswith("fulfilled")
+
+
+def has_finished_hunt(actor) -> bool:
+    return get_state_summary(actor, HUNT_COMMITMENT_TYPE).startswith("fulfilled")
+
+
+def skitter_record_context_for(npc_actions: list, actor) -> str | None:
+    """
+    A fresh per-turn system message for the two NPCs involved in the
+    post-quest loop, same injection pattern as world/actions.py's
+    quest_context_for. Only the *logged* total is ever given - never the
+    raw or unlogged count, since neither NPC could plausibly know how
+    many skitters a player has killed until it's actually been reported
+    (Iri finds out how many were new only from her own action's result).
+    """
+    actions = set(npc_actions)
+    if "log_dead_skitters_with_iri" in actions:
+        if not has_finished_hunt(actor):
+            return (
+                "Engine state for this player's skitter reports: none on record, and nothing "
+                "they can log with you yet - they haven't finished helping Tarin with the "
+                "skitters."
+            )
+        return (
+            "Engine state for this player's skitter reports: the office's pest log shows "
+            f"{banked_kills_for(actor)} skitters logged for them so far."
+        )
+    if "report_skitter_kills_to_tarin" in actions and has_finished_hunt(actor):
+        return (
+            "Engine state: the Civic Office's pest log shows this player has logged "
+            f"{banked_kills_for(actor)} skitters so far. Let that "
+            "color how you talk to them about the pests - a handful is a handful, dozens is "
+            "real help - but don't recite the number unless they ask."
+        )
+    return None
 
 
 def _eligible_rooms():

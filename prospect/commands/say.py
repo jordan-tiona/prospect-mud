@@ -54,6 +54,7 @@ from world.llm_client import LLMUnavailableError, chat
 from world.npc_addressing import present_talkative_npcs, resolve_addressee
 from world.npc_memory import memory_context_for
 from world.reputation import reputation_context_for
+from world.skitters import skitter_record_context_for
 from world.npc_profile import parse_persona
 from world.output_check import is_flagged
 from world.prompt_builder import build_system_prompt
@@ -111,7 +112,11 @@ FORCE_REACTION_ACTIONS = {
     # (the actual kill count) - per docs/engineering-pitfalls.md #8's
     # "any new action with a real rejectable precondition should go in
     # FORCE_REACTION_ACTIONS by default."
-    "report_skitter_kills",
+    "report_skitter_kills_to_tarin",
+    # Post-quest loop: rejectable (quest not finished yet, or nothing new
+    # since the last report), and its result carries the only number the
+    # NPC is allowed to state.
+    "log_dead_skitters_with_iri",
 }
 
 
@@ -682,6 +687,9 @@ def engage_npc(target, caller, message):
     reputation_context = reputation_context_for(profile.npc_id, caller)
     if reputation_context:
         messages.append({"role": "system", "content": reputation_context})
+    skitter_record_context = skitter_record_context_for(profile.actions, caller)
+    if skitter_record_context:
+        messages.append({"role": "system", "content": skitter_record_context})
     messages += history + [_player_turn(message)]
 
     log_context = {

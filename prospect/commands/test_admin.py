@@ -308,6 +308,20 @@ class ResetCommitmentCommandTests(TestCase):
 
         self.assertFalse(any("skitter kill count" in m for m in self.messages))
 
+    def test_reset_clears_the_logged_skitter_total_too(self):
+        # docs/engineering-pitfalls.md #3: a reset has to clear every
+        # piece of state the feature owns, or a retest starts with a
+        # stale logged total next to a zeroed raw count.
+        from world.skitters import bank_kills, banked_kills_for, record_kill
+
+        record_kill(self.actor)
+        bank_kills(self.actor)
+
+        self.actor.execute_cmd("resetcommitment")
+
+        self.assertEqual(banked_kills_for(self.actor), 0)
+        self.assertTrue(any("logged skitter total (was 1)" in m for m in self.messages))
+
     def test_requires_builder_permission(self):
         self.actor.permissions.remove("Builder")
         propose_commitment(self.actor, self.COMMITMENT_TYPE)

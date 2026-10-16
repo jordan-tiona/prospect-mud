@@ -750,9 +750,9 @@ class HuntSkittersWiringTests(TestCase):
     TYPE = "hunt_skitters"
 
     def setUp(self):
-        from world.actions import _validate_report_skitter_kills
+        from world.actions import _validate_report_skitter_kills_to_tarin
 
-        self._validate_report_skitter_kills = _validate_report_skitter_kills
+        self._validate_report_skitter_kills_to_tarin = _validate_report_skitter_kills_to_tarin
         rooms = build_rooms()
         npcs = build_npcs()
         self.tarin = npcs["tarin_os"]
@@ -772,7 +772,7 @@ class HuntSkittersWiringTests(TestCase):
 
     def test_report_before_enough_kills_is_dropped(self):
         self._accept()
-        result = self._validate_report_skitter_kills(self.tarin, self.actor, {"confirmed": True})
+        result = self._validate_report_skitter_kills_to_tarin(self.tarin, self.actor, {"confirmed": True})
         self.assertFalse(result.applied)
 
     def test_report_after_enough_kills_succeeds(self):
@@ -781,7 +781,7 @@ class HuntSkittersWiringTests(TestCase):
         self._accept()
         for _ in range(3):
             record_kill(self.actor)
-        result = self._validate_report_skitter_kills(self.tarin, self.actor, {"confirmed": True})
+        result = self._validate_report_skitter_kills_to_tarin(self.tarin, self.actor, {"confirmed": True})
         self.assertTrue(result.applied)
 
     def test_wrong_npc_cannot_report(self):
@@ -790,7 +790,7 @@ class HuntSkittersWiringTests(TestCase):
         self._accept()
         for _ in range(3):
             record_kill(self.actor)
-        result = self._validate_report_skitter_kills(self.mara, self.actor, {"confirmed": True})
+        result = self._validate_report_skitter_kills_to_tarin(self.mara, self.actor, {"confirmed": True})
         self.assertFalse(result.applied)
 
     def test_claiming_without_actually_enough_kills_never_fulfills(self):
@@ -799,9 +799,96 @@ class HuntSkittersWiringTests(TestCase):
 
         self._accept()
         record_kill(self.actor)
-        self._validate_report_skitter_kills(self.tarin, self.actor, {"confirmed": True})
+        self._validate_report_skitter_kills_to_tarin(self.tarin, self.actor, {"confirmed": True})
         self.assertEqual(get_state_summary(self.actor, self.TYPE), "open")
 
-    def test_report_skitter_kills_schema_requires_an_argument(self):
-        schema = ACTION_SCHEMAS["report_skitter_kills"]["function"]
+    def test_report_skitter_kills_to_tarin_schema_requires_an_argument(self):
+        schema = ACTION_SCHEMAS["report_skitter_kills_to_tarin"]["function"]
+        self.assertTrue(schema["parameters"]["required"])
+
+
+class LogDeadSkittersWithIriTests(TestCase):
+    """
+    The repeatable post-quest loop (project owner, 2026-10-16): once
+    Tarin's hunt_skitters quest is fulfilled, new kills only count once
+    Iri logs them. Goes through validate_and_apply, so the persona
+    grant check is exercised too.
+    """
+
+    def setUp(self):
+        rooms = build_rooms()
+        npcs = build_npcs()
+        self.iri = npcs["iri_vael"]
+        self.tarin = npcs["tarin_os"]
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=rooms["civic_office"]
+        )
+
+    def _finish_hunt(self):
+        from world.skitters import record_kill
+
+        _validate_propose_commitment(self.tarin, self.actor, {"commitment_type": "hunt_skitters"})
+        _validate_accept_commitment(self.tarin, self.actor, {"commitment_type": "hunt_skitters"})
+        for _ in range(3):
+            record_kill(self.actor)
+        validate_and_apply(self.tarin, self.actor, "report_skitter_kills_to_tarin", {"confirmed": True})
+
+    def _log(self, npc=None):
+        return validate_and_apply(npc or self.iri, self.actor, "log_dead_skitters_with_iri", {"confirmed": True})
+
+    def test_dropped_before_tarins_quest_is_finished(self):
+        from world.skitters import banked_kills_for, record_kill
+
+        record_kill(self.actor)
+        result = self._log()
+        self.assertFalse(result.applied)
+        self.assertIn("Tarin", result.reason)
+        self.assertEqual(banked_kills_for(self.actor), 0)
+
+    def test_logs_every_kill_on_first_report_after_the_quest(self):
+        from world.skitters import banked_kills_for
+
+        self._finish_hunt()
+        result = self._log()
+        self.assertTrue(result.applied)
+        # The quest's own three kills count toward the first log too.
+        self.assertEqual(banked_kills_for(self.actor), 3)
+        self.assertIn("Total on record: 3", result.narration)
+
+    def test_only_new_kills_are_logged_on_a_later_report(self):
+        from world.skitters import banked_kills_for, record_kill
+
+        self._finish_hunt()
+        self._log()
+        record_kill(self.actor)
+        record_kill(self.actor)
+        result = self._log()
+        self.assertTrue(result.applied)
+        self.assertIn("logs 2 more skitters", result.narration)
+        self.assertEqual(banked_kills_for(self.actor), 5)
+
+    def test_dropped_when_nothing_new_since_the_last_report(self):
+        self._finish_hunt()
+        self._log()
+        result = self._log()
+        self.assertFalse(result.applied)
+        self.assertIn("nothing new", result.reason)
+
+    def test_tarin_cannot_log_kills(self):
+        # Not in his persona's grant at all, so validate_and_apply drops
+        # it before the role check even runs.
+        self._finish_hunt()
+        result = self._log(npc=self.tarin)
+        self.assertFalse(result.applied)
+
+    def test_role_check_rejects_any_npc_but_iri(self):
+        # The validator's own check, independent of persona grants.
+        from world.actions import _validate_log_dead_skitters_with_iri
+
+        self._finish_hunt()
+        result = _validate_log_dead_skitters_with_iri(self.tarin, self.actor, {"confirmed": True})
+        self.assertFalse(result.applied)
+
+    def test_schema_requires_an_argument(self):
+        schema = ACTION_SCHEMAS["log_dead_skitters_with_iri"]["function"]
         self.assertTrue(schema["parameters"]["required"])
