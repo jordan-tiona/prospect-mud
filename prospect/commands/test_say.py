@@ -29,6 +29,7 @@ from world.actions import get_quest_state
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
 from world.llm_client import LLMReply, LLMUnavailableError
+from world.npc_profile import parse_persona
 
 
 def _reply(text, tool_calls=None):
@@ -621,7 +622,7 @@ class SayCommandTests(_SayTestBase):
         self.assertEqual(kwargs["player_message"], "Hello there.")
         self.assertEqual(kwargs["npc_response"], "Afternoon.")
         self.assertEqual(kwargs["model"], "test-model")
-        self.assertEqual(kwargs["prompt_version"], "39")
+        self.assertEqual(kwargs["prompt_version"], parse_persona("mara_voss").prompt_version)
         self.assertEqual(kwargs["flagged"], False)
         self.assertEqual(kwargs["tool_calls"], [])
         self.assertIn("prompt_messages", kwargs)

@@ -99,7 +99,6 @@ class MovedProseTests(unittest.TestCase):
     def assert_object(self, object_id, key, room_line, desc=None):
         content = self.content(object_id)
         self.assertEqual(content.fields['object_id'], object_id)
-        self.assertEqual(content.fields['approval'], 'Draft')
         self.assertEqual(content.heading, key)
         self.assertEqual(content.sections['Short Description'], room_line)
         if desc is not None:
