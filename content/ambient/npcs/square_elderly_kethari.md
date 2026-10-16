@@ -4,7 +4,6 @@ room: old_quarter_square
 status: Provisional
 approval: Approved
 bible_refs: 5.1, 11.2.6, 13.5
-probe_description: Draft (LR-DEV-0001, 2026-10-16); pending owner approval
 -->
 
 # An elderly Kethari

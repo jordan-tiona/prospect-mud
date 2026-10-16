@@ -4,7 +4,6 @@ room: old_quarter_square
 status: Provisional
 approval: Approved
 bible_refs: 11.2.3, 11.2.6
-probe_description: Draft (LR-DEV-0001, 2026-10-16); pending owner approval
 -->
 
 # Public notice board

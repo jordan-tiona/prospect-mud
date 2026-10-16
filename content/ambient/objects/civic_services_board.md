@@ -4,7 +4,6 @@ room: civic_office
 status: Provisional
 approval: Approved
 bible_refs: 11.2.5, 11.2.6, 13.6
-probe_description: Draft (LR-DEV-0001, 2026-10-16); pending owner approval
 -->
 
 # Public services board
