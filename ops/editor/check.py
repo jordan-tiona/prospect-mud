@@ -156,7 +156,14 @@ def check_sector(root, sector_id):
         return [Issue(ERROR, 'duplicate_id', where, str(exc))], set()
     except ValueError as exc:
         return [Issue(ERROR, 'bad_json', where, str(exc))], set()
+    return check_sector_data(root, sector_id, sector)
 
+
+def check_sector_data(root, sector_id, sector, manifest=True):
+    """check_sector() for a sector dict that may not be saved yet (the editor's
+    live check). manifest=False skips the staleness comparison, which only
+    means something for the saved file."""
+    where = f'sectors/{sector_id}/sector.json'
     room_kind, kinds = load_kinds(root)
     issues, referenced = [], set()
     if sector.get('format_version') != FORMAT_VERSION:
@@ -215,7 +222,8 @@ def check_sector(root, sector_id):
             referenced.add(entity['content'])
 
     issues += _exit_issues(sector, rooms)
-    issues += _manifest_issues(root, sector_id, sector, referenced)
+    if manifest:
+        issues += _manifest_issues(root, sector_id, sector, referenced)
     return issues, referenced
 
 

@@ -8,6 +8,7 @@ the editor. The only writer is write_json(), used for sector/manifest files.
 import ast
 import hashlib
 import json
+import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -42,12 +43,19 @@ def read_json(path):
     return json.loads(Path(path).read_text(encoding='utf-8-sig'), object_pairs_hook=_no_duplicates)
 
 
+def dump_json(data):
+    """Deterministic JSON text: 2-space indent, sorted keys, trailing newline."""
+    return json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + '\n'
+
+
 def write_json(path, data):
-    """Deterministic JSON: 2-space indent, sorted keys, UTF-8, trailing newline."""
+    """Write dump_json(data) as UTF-8 atomically: a temp file in the same folder,
+    then a replace, so a crash mid-write never leaves a half-written file."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + '\n'
-    path.write_text(text, encoding='utf-8', newline='\n')
+    temp = path.with_name(f'.{path.name}.tmp')
+    temp.write_text(dump_json(data), encoding='utf-8', newline='\n')
+    os.replace(temp, path)
 
 
 def literals(path, names):
