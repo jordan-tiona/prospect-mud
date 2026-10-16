@@ -64,5 +64,5 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Needed for: `content/ambient/objects/square_noticeboard.md`, shown live on `look noticeboard` in Old Quarter Square.
 - What's needed: Its `## Description` ends with a `--------------------------` separator and five direction lines ("North: Corner Café", "South: Residential Courtyard", "East: Maintenance Workshop", "West: Civic Office", "Up: Lift Concourse"). They look like leftover drafting notes, and players see them. "Up" is also wrong now: the Lift Concourse is northeast of the square. Remove everything from the separator down, keeping the paragraph above it, and per spec 8.1 don't mention directions in the description. Then re-approve. Players see the change after the next export and rebuild.
 - Blocking: no
-- Status: open
-- Resolution:
+- Status: approved (2026-10-16)
+- Resolution: Removed the separator and the five direction lines from `content/ambient/objects/square_noticeboard.md`'s `## Description`; the paragraph above them is unchanged. No new prose was written, so the file stays `approval: Approved` on the strength of its existing approval. Directions in the square come from the exits and the signpost (`content/objects/old_quarter_square_signpost.md`), not this board. Reaches players after the next export and rebuild.
