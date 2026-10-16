@@ -11,8 +11,9 @@ import unittest
 from pathlib import Path
 
 import check
+import export
 import import_legacy
-from world_model import KINDS_FILE, ROOT, literals, load_content, parse_content, write_json
+from world_model import KINDS_FILE, ROOT, literals, load_content, manifest_path, parse_content, read_json, write_json
 
 WORLD = ROOT / 'prospect/world'
 
@@ -144,6 +145,7 @@ approval: Approved
 
 OBJECT_FILE = """<!--
 object_id: {id}
+room: room_a
 status: Provisional
 approval: Approved
 -->
@@ -194,8 +196,9 @@ class CheckTests(unittest.TestCase):
         path.write_text(text, encoding='utf-8')
 
     def run_check(self, only=None):
+        """Issues, minus the 'not exported yet' note every unexported fixture gets."""
         write_json(self.root / 'sectors/test/sector.json', self.sector)
-        return check.check(self.root, only)
+        return [i for i in check.check(self.root, only) if i.code != 'not_exported']
 
     def test_valid_sector_is_clean(self):
         self.assertEqual(self.run_check(), [])
@@ -303,7 +306,104 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(before, {p: p.read_bytes() for p in self.root.rglob('*') if p.is_file()})
 
 
+class ExportTests(CheckTests.__base__):
+    setUp = CheckTests.setUp
+    write = CheckTests.write
+
+    def export(self):
+        write_json(self.root / 'sectors/test/sector.json', self.sector)
+        return export.export(self.root, 'test')
+
+    def snapshot(self):
+        return {p.relative_to(self.root).as_posix(): p.read_bytes() for p in self.root.rglob('*') if p.is_file()}
+
+    def test_exports_resolved_manifest(self):
+        issues, path = self.export()
+        self.assertEqual(path, manifest_path(self.root, 'test'))
+        manifest = read_json(path)
+        self.assertEqual(manifest['rooms']['room_a'], {
+            'title': 'Room A', 'typeclass': 'typeclasses.rooms.Room', 'tag_category': 'phase1_neighborhood',
+            'desc': 'A plain room.', 'glance': None})
+        self.assertEqual(manifest['exits'], [
+            {'id': 'room_a__north', 'from': 'room_a', 'to': 'room_b', 'key': 'north', 'aliases': ['n']},
+            {'id': 'room_b__south', 'from': 'room_b', 'to': 'room_a', 'key': 'south', 'aliases': ['s']}])
+        self.assertEqual(manifest['entities']['thing'], {
+            'kind': 'ambient_object', 'typeclass': 'typeclasses.objects.RoomObject',
+            'tag_category': 'phase1_ambient', 'room': 'room_a', 'key': 'a thing', 'aliases': [],
+            'attributes': {'room_line': 'A thing is here.', 'desc': 'It is a thing.'}})
+        self.assertEqual(sorted(manifest['sources']), [
+            'content/ambient/objects/thing.md', 'content/rooms/room_a.md', 'content/rooms/room_b.md',
+            'sectors/test/sector.json'])
+        self.assertNotIn('editor', path.read_text(encoding='utf-8'))
+
+    def test_one_way_exit_exports_one_direction(self):
+        self.sector['exits'][0]['return'] = None
+        _issues, path = self.export()
+        self.assertEqual([e['id'] for e in read_json(path)['exits']], ['room_a__north'])
+
+    def test_refuses_on_error_and_keeps_old_manifest(self):
+        self.export()
+        before = self.snapshot()
+        self.write('rooms/room_b.md', ROOM_FILE.format(id='room_b', text='x').replace('Approved', 'Draft'))
+        self.sector['rooms']['room_b']['title'] = 'Renamed'
+        issues, path = self.export()
+        self.assertIsNone(path)
+        self.assertIn('not_approved', codes(issues, check.ERROR))
+        after = self.snapshot()
+        self.assertEqual(before['prospect/world/data/sectors/test.json'],
+                         after['prospect/world/data/sectors/test.json'])
+
+    def test_game_parser_failure_is_reported_not_raised(self):
+        self.write('ambient/objects/thing.md', OBJECT_FILE.format(id='thing', name='a thing')
+                   .replace('room: room_a\n', ''))
+        issues, path = self.export()
+        self.assertIsNone(path)
+        self.assertEqual(codes(issues, check.ERROR), ['parse_error'])
+
+    def test_quest_prop_locks_from_params(self):
+        self.write('objects/hint.md', OBJECT_FILE.format(id='hint', name='a hint'))
+        self.sector['entities']['hint'] = {'kind': 'quest_prop', 'room': 'room_a', 'content': 'objects/hint.md',
+                                           'params': {'visibility': 'module_exchange_hint_visible'}}
+        _issues, path = self.export()
+        self.assertEqual(read_json(path)['entities']['hint']['locks'],
+                         'view:module_exchange_hint_visible();search:module_exchange_hint_visible();get:false()')
+
+    def test_export_is_deterministic_and_writes_only_the_manifest(self):
+        write_json(self.root / 'sectors/test/sector.json', self.sector)
+        before = self.snapshot()
+        export.export(self.root, 'test')
+        first = self.snapshot()
+        export.export(self.root, 'test')
+        self.assertEqual(first, self.snapshot())
+        self.assertEqual(set(first) - set(before), {'prospect/world/data/sectors/test.json'})
+        self.assertEqual({k: v for k, v in first.items() if k in before}, before)
+
+    def test_staleness(self):
+        self.export()
+        self.assertEqual(check.check(self.root, ['test']), [])
+        self.sector['rooms']['room_a']['editor'] = {'x': 999, 'y': 1}  # layout only: not a game change
+        write_json(self.root / 'sectors/test/sector.json', self.sector)
+        self.assertEqual(check.check(self.root, ['test']), [])
+        self.write('rooms/room_a.md', ROOM_FILE.format(id='room_a', text='A changed room.'))
+        issues = check.check(self.root, ['test'])
+        self.assertEqual(codes(issues), ['stale_manifest'])
+        self.assertIn('content/rooms/room_a.md', issues[0].message)
+
+    def test_crlf_checkout_hashes_the_same(self):
+        self.export()
+        path = self.root / 'content/rooms/room_a.md'
+        data = path.read_bytes()
+        flipped = data.replace(b'\r\n', b'\n') if b'\r\n' in data else data.replace(b'\n', b'\r\n')
+        self.assertNotEqual(data, flipped)
+        path.write_bytes(flipped)
+        self.assertEqual(check.check(self.root, ['test']), [])
+
+
 class RealSectorTests(unittest.TestCase):
+    def test_elsewhere_resolves_with_the_game_parsers(self):
+        manifest = export.build_manifest(ROOT, 'elsewhere')
+        self.assertEqual(len(manifest['exits']), 2 * len(import_legacy.build_sector(ROOT)['exits']))
+
     def test_elsewhere_only_blocked_by_approval(self):
         # Structure must be sound; the remaining errors are content still awaiting approval.
         issues = check.check(ROOT, ['elsewhere'])

@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from world_model import (FORMAT_VERSION, ID_RE, ROOT, DuplicateKeyError, load_content, load_kinds,
-                         load_sector, sector_ids, sector_path)
+                         load_sector, manifest_path, read_json, sector_ids, sector_path, source_hashes)
 
 ERROR, WARNING, INFO = 'error', 'warning', 'info'
 
@@ -198,7 +198,25 @@ def check_sector(root, sector_id):
             referenced.add(entity['content'])
 
     issues += _exit_issues(sector, rooms)
+    issues += _manifest_issues(root, sector_id, sector, referenced)
     return issues, referenced
+
+
+def _manifest_issues(root, sector_id, sector, referenced):
+    """Is the exported manifest up to date with the sector and its prose?"""
+    path = manifest_path(root, sector_id)
+    where = path.relative_to(root).as_posix()
+    if not path.is_file():
+        return [Issue(INFO, 'not_exported', where, 'sector has not been exported yet')]
+    try:
+        current = source_hashes(root, sector_id, sector, referenced)
+        exported = read_json(path).get('sources', {})
+    except (OSError, ValueError):
+        return []  # missing content etc. is already reported above
+    changed = sorted(p for p in current.keys() | exported.keys() if current.get(p) != exported.get(p))
+    if changed:
+        return [Issue(WARNING, 'stale_manifest', where, 'changed since last export: ' + ', '.join(changed))]
+    return []
 
 
 def _unused_content(root, referenced):
