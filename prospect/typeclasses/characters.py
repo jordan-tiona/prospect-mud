@@ -31,10 +31,17 @@ class Character(ObjectParent, DefaultCharacter):
     description on every step while still giving `look` the complete
     text (typeclasses.rooms.Room.get_display_desc branches on this).
 
+    Also the hook `world/tutorial.py`'s one-time proactive NPC nudges
+    (Given/Daven speaking up unprompted a beat after a new player
+    walks in) key off of - see that module for why.
+
     """
 
     def at_post_move(self, source_location, move_type="move", **kwargs):
         if self.location.access(self, "view"):
             self.msg(text=(self.at_look(self.location, glance=True), {"type": "look"}))
+        from world.tutorial import maybe_schedule_nudge
+
+        maybe_schedule_nudge(self)
 
     at_after_move = at_post_move

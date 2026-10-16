@@ -98,6 +98,11 @@ FORCE_REACTION_ACTIONS = {
     "verify_notice",
     "withdraw_notice",
     "report_notice_outcome",
+    # Quest 3 ("Unwelcome Guests"): a real rejectable precondition
+    # (the actual kill count) - per docs/engineering-pitfalls.md #8's
+    # "any new action with a real rejectable precondition should go in
+    # FORCE_REACTION_ACTIONS by default."
+    "report_skitter_kills",
 }
 
 

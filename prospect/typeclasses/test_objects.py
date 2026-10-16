@@ -83,3 +83,42 @@ class ParcelLockTests(TestCase):
         )
         self.assertFalse(parcel.at_pre_give(self.owner, self.other))
         self.assertIs(parcel.location, self.owner)
+
+
+class PlantingBedDescTests(TestCase):
+    """
+    Quest 2's planting bed must reflect this specific looker's own
+    world.garden.is_bed_tended fact, not a single shared state -
+    caught live during playtesting (2026-10-14), where the bed still
+    read "overgrown" after it had actually been tended.
+    """
+
+    def setUp(self):
+        self.room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.tender = create_object(
+            "typeclasses.characters.Character", key="Tender", location=self.room
+        )
+        self.other = create_object(
+            "typeclasses.characters.Character", key="Other", location=self.room
+        )
+        self.bed = create_object(
+            "typeclasses.objects.PlantingBed",
+            key="a planting bed",
+            location=self.room,
+            attributes=[("desc", "Overgrown and in need of tending.")],
+        )
+
+    def test_untended_looker_sees_the_plain_desc(self):
+        self.assertIn("Overgrown", self.bed.get_display_desc(self.tender))
+
+    def test_tending_player_sees_updated_desc(self):
+        from world.garden import mark_bed_tended
+
+        mark_bed_tended(self.tender)
+        self.assertIn("tended to it yourself", self.bed.get_display_desc(self.tender))
+
+    def test_other_player_still_sees_the_plain_desc(self):
+        from world.garden import mark_bed_tended
+
+        mark_bed_tended(self.tender)
+        self.assertIn("Overgrown", self.bed.get_display_desc(self.other))

@@ -133,6 +133,7 @@ def log_commitment_reset(
     previous_statuses: list,
     actor_key: str,
     actor_dbref: str,
+    had_declined: bool = False,
     path: Optional[Path] = None,
 ) -> None:
     """
@@ -141,6 +142,12 @@ def log_commitment_reset(
     player's commitment progress mid-test. Distinguished from
     `log_quest_reset`'s "quest_reset" event (a different, older
     per-player state machine) by its own `"event": "commitment_reset"`.
+
+    `had_declined` (2026-10-16): whether this player's sticky decline-
+    history fact for this commitment_type was also cleared - separate
+    from had_offer/previous_statuses, since a decline can be the only
+    thing on record (no pending offer, no commitment instance) for an
+    ordinary scenario a player turned down once and never revisited.
     """
     record = {
         "event": "commitment_reset",
@@ -148,6 +155,7 @@ def log_commitment_reset(
         "commitment_type": commitment_type,
         "had_offer": had_offer,
         "previous_statuses": previous_statuses,
+        "had_declined": had_declined,
         "actor_key": actor_key,
         "actor_dbref": actor_dbref,
     }
@@ -209,40 +217,6 @@ def log_rumor_reset(
         "previous_informed_commitment_ids": previous_informed_commitment_ids,
         "previous_reputation_credited": previous_reputation_credited,
         "previous_mara_reputation": previous_mara_reputation,
-        "actor_key": actor_key,
-        "actor_dbref": actor_dbref,
-    }
-
-    target_path = path or DEFAULT_LOG_PATH
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-    with target_path.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(record, ensure_ascii=False) + "\n")
-
-
-def log_notice_reset(
-    *,
-    previous_approval_mark_present,
-    previous_resolutions: dict,
-    previous_notice_displayed: bool,
-    previous_informed_commitment_ids: list,
-    actor_key: str,
-    actor_dbref: str,
-    path: Optional[Path] = None,
-) -> None:
-    """
-    Append a marker record for the "unverified_notice" portion of a
-    `resetcommitment` command (see commands/admin.py's
-    CmdResetCommitment) - a human clearing a player's phase 3 notice-
-    approval state mid-test. Its own `"event": "notice_reset"`,
-    parallel to `log_rumor_reset`.
-    """
-    record = {
-        "event": "notice_reset",
-        "timestamp": _now_iso(),
-        "previous_approval_mark_present": previous_approval_mark_present,
-        "previous_resolutions": previous_resolutions,
-        "previous_notice_displayed": previous_notice_displayed,
-        "previous_informed_commitment_ids": previous_informed_commitment_ids,
         "actor_key": actor_key,
         "actor_dbref": actor_dbref,
     }

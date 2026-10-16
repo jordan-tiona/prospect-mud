@@ -73,6 +73,17 @@ LLM_REASONING_EFFORT = os.environ.get("PROSPECT_LLM_REASONING_EFFORT", "none")
 # (`max_reply_tokens`), read by world/npc_profile.py.
 LLM_MAX_TOKENS = int(os.environ.get("PROSPECT_LLM_MAX_TOKENS", "150"))
 
+# Every stock Evennia command resolves its own base class from this
+# setting at import time (see e.g. evennia.commands.default.general's
+# `COMMAND_DEFAULT_CLASS = class_from_module(settings.COMMAND_DEFAULT_CLASS)`).
+# Pointing it at commands.command.MuxCommand (which mixes in
+# _SessionCommandLoggingMixin on top of everything the stock
+# MuxCommand already does) makes every command in the game - get,
+# look, drop, movement/exit commands, inventory, as well as this
+# project's own custom commands - log to world/session_log.py's
+# sessions.jsonl, for playtest debugging (2026-10-15).
+COMMAND_DEFAULT_CLASS = "commands.command.MuxCommand"
+
 
 ######################################################################
 # Settings given in secret_settings.py override those in this file.

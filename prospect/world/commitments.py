@@ -1,23 +1,27 @@
 """
-Generic engine-authoritative commitment lifecycle (docs/phase2b-
-records-discrepancy-proposal.md). CLAUDE.md hard rules 1-2 and 5 apply
-here exactly as they did to phase 2A's module-exchange quest: this
-module is the only place a commitment's state actually changes, and
-each NPC's own role in a commitment (who can offer it, who can
-acknowledge a report, who can fulfill it) is fixed by scenario
-config, never chosen by the model.
+Generic engine-authoritative commitment lifecycle (originally docs/
+phase2b-records-discrepancy-proposal.md's design). CLAUDE.md hard
+rules 1-2 and 5 apply here exactly as they did to phase 2A's
+module-exchange quest: this module is the only place a commitment's
+state actually changes, and each NPC's own role in a commitment (who
+can offer it, who can acknowledge a report, who can fulfill it) is
+fixed by scenario config, never chosen by the model.
 
 A commitment is a promise the player makes to one NPC (the "holder"),
-fulfilled only once a different NPC (the "clerk") has engine-recorded
-evidence that the player did what the commitment required. State
-lives on the player (`actor.db`), persistent, and is handed back to
-each NPC fresh every turn (see commitment_context_for) rather than
-left to either side's conversation memory.
+optionally corroborated by a different NPC (the "clerk") before the
+holder can fulfill it. State lives on the player (`actor.db`),
+persistent, and is handed back to each NPC fresh every turn (see
+commitment_context_for) rather than left to either side's
+conversation memory.
 
-Only one commitment type is authored for the phase 2B prototype:
-"discrepancy_report". The lifecycle itself is written generic so a
-future scenario can reuse it by adding another SCENARIOS entry,
-without touching this module.
+The lifecycle is generic - a new scenario reuses it by adding another
+SCENARIOS entry, without touching this module. (Its original example
+scenario, "discrepancy_report," plus a follow-up, "unverified_notice,"
+were removed 2026-10-16 after live playtesting found their
+conversational triggers unreliably bled into Tarin's actual tutorial
+quest, hunt_skitters - see CLAUDE.md's "One quest offer per NPC" and
+docs/npc-action-prompt-guidelines.md guideline #20. Both were phase
+2B/3 demo content, never part of the playtest's three real quests.)
 """
 
 import uuid
@@ -31,6 +35,15 @@ from typing import Callable, Optional
 COMMITMENTS_KEY = "commitments"
 OFFERS_KEY = "commitment_offers"
 ACKS_KEY = "commitment_acks"
+# 2026-10-16: which commitment_types this player has ever declined at
+# least once - separate from OFFERS_KEY, which decline_commitment
+# already resets back to "not offered" so the errand stays re-
+# offerable. This is sticky (never cleared by re-offering, only by a
+# full builder reset_commitment) - it's what lets an *ordinary*
+# scenario's decline exempt it from the priority contention in
+# _blocking_scenario_for_proposal, while a *mandatory* one stays in
+# the running regardless.
+DECLINED_KEY = "commitment_declined_types"
 
 STATUS_OPEN = "open"
 STATUS_FULFILLED = "fulfilled"
@@ -46,13 +59,14 @@ COMMITMENT_ACTIONS = {
     "decline_commitment",
     "report_commitment_outcome",
     "accept_handoff",
-    # Phase 3 ("The Unverified Notice"): Veska's two scenario-specific
-    # fulfilling actions, parallel to accept_handoff's role for the
-    # parcel scenario - without this, commitment_context_for would
-    # never inject "unverified_notice" state for her at all, since
-    # neither action name is report_commitment_outcome/accept_handoff.
-    "verify_notice",
-    "withdraw_notice",
+    # Quest 2 ("A Little Community Work"): Iri's own fulfilling action,
+    # parallel to accept_handoff's/verify_notice's role for their
+    # scenarios - without this, commitment_context_for would never
+    # inject "tend_planting_bed" state for her at all.
+    "confirm_bed_tended",
+    # Quest 3 ("Unwelcome Guests"): Tarin's own fulfilling action for
+    # hunt_skitters, same role as confirm_bed_tended above.
+    "report_skitter_kills",
 }
 
 
@@ -91,14 +105,43 @@ class ScenarioConfig:
     # register as the scenario description below - not new setting
     # lore, just this NPC's situational demeanor.
     holder_hint_pose: str = ""
-    # Phase 3 ("The Unverified Notice"): the proposer-side equivalent
-    # of holder_hint_pose, for a scenario (like this one) where the
-    # proposer isn't also the holder - deliver_parcel hit this same
-    # asymmetry and solved it with a physical object instead (Mara had
-    # one available); this scenario doesn't, so Tarin needs his own
-    # passive cue once he's actually eligible to raise it. Same
-    # "not offered" gating as holder_hint_pose, via hint_pose_for below.
+    # The proposer-side equivalent of holder_hint_pose, for a scenario
+    # where the proposer isn't also the holder - deliver_parcel hit
+    # this same asymmetry and solved it with a physical object instead
+    # (Mara had one available). Same "not offered" gating as
+    # holder_hint_pose, via hint_pose_for below. Currently unused (its
+    # only scenario, unverified_notice, was removed 2026-10-16) - kept
+    # as reusable infrastructure for the next proposer/holder-split
+    # scenario, not dead code to prune speculatively.
     proposer_hint_pose: str = ""
+    # Quest 3 ("Unwelcome Guests"): when one NPC has more than one
+    # hint-eligible scenario simultaneously "not offered" (first hit
+    # for Tarin, once hunt_skitters joined discrepancy_report), which
+    # hint actually shows can't be left to dict insertion order - that
+    # happened to always favor discrepancy_report, silently hiding any
+    # higher-priority hint for as long as both are eligible. Higher
+    # wins; ties keep the stable, insertion-order behavior every
+    # scenario had before this field existed, so every pre-existing
+    # scenario's default of 0 changes nothing for it. hunt_skitters
+    # sets this above 0 - project owner's call, 2026-10-15: it's part
+    # of the tutorial sequence and should take precedence over Tarin's
+    # other, non-tutorial hint when both are eligible.
+    hint_priority: int = 0
+    # 2026-10-16, project owner's call: an NPC can be involved in many
+    # scenarios but should only ever have one *actually offerable*
+    # right now - see _blocking_scenario_for_proposal below for the
+    # mechanism. For an ordinary scenario, declining it counts as
+    # "dealt with": it stops competing for priority at all afterward
+    # (in either direction), even though its own state resets to "not
+    # offered" and it stays re-offerable on its own merits. A mandatory
+    # scenario is the deliberate exception - declining it does *not*
+    # release the block; it keeps outranking lower-priority scenarios
+    # by hint_priority until it's actually fulfilled, not just offered
+    # and refused. Currently used for the three tutorial quests that
+    # route through this module (hunt_skitters, tend_planting_bed) -
+    # the project owner expects more tutorial quests later and wants
+    # this distinction established now, not invented per-scenario.
+    mandatory: bool = False
     # Phase 3: an optional prerequisite - this commitment_type can't be
     # offered (and its proposer_hint_pose won't show) until a different
     # commitment_type is already STATUS_FULFILLED for this player. ""
@@ -151,7 +194,10 @@ class ScenarioConfig:
     # pipeline ever told her which fact was true. None (the default)
     # means no projection - commitment_context_for then just shows the
     # holder its ordinary unprojected state, same as every scenario
-    # before this one.
+    # before this one. Currently unused (its only scenario,
+    # unverified_notice, was removed 2026-10-16) - kept as reusable
+    # infrastructure for the next scenario shaped this way, not dead
+    # code to prune speculatively.
     holder_knowledge_projector: Optional[Callable[[object, str], str]] = None
 
     @property
@@ -167,18 +213,6 @@ class ScenarioConfig:
 # why) belongs to the project owner; this config only wires the
 # engine roles.
 SCENARIOS = {
-    # docs/phase2b-records-discrepancy-proposal.md's "Approved owner
-    # scenario".
-    "discrepancy_report": ScenarioConfig(
-        commitment_type="discrepancy_report",
-        holder_npc_id="tarin_os",
-        clerk_npc_id="veska_renn",
-        holder_hint_pose="frowning over a shipment manifest",
-        propose_narration="{npc} brings up the mismatched manifest and asks {actor} to help sort it out.",
-        accept_narration="{npc} is glad {actor} is willing to take this to the Civic Office.",
-        ack_narration="{npc} notes the report in {actor}'s file.",
-        fulfill_narration="{npc} marks the discrepancy as settled, now that it's on record.",
-    ),
     # docs/phase2c-misdelivered-parcel-proposal.md's "Scenario Premise",
     # redesigned 2026-10-13: Mara proposes a single generic errand, not
     # a destination to pick in conversation - either Tarin or Veska can
@@ -215,28 +249,62 @@ SCENARIOS = {
         ack_narration="{npc} confirms the revision {actor} reported matches the record.",
         fulfill_narration="{npc} is glad to hear the display's revision checked out.",
     ),
-    # docs/phase3-scope.md / docs/phase3-unverified-notice-design.md:
-    # "The Unverified Notice." Tarin proposes (once his own
-    # discrepancy_report is fulfilled - requires_fulfilled_commitment_
-    # type below), Veska resolves it one of two mutually-exclusive ways
-    # via world/actions.py's verify_notice/withdraw_notice, both routed
-    # through fulfill_commitment_with_precondition - whichever fires
-    # first leaves no open commitment for the other to find, so mutual
-    # exclusion falls out of existing code rather than needing new
-    # cross-type bookkeeping. No clerk role, same shape as deliver_parcel.
-    "unverified_notice": ScenarioConfig(
-        commitment_type="unverified_notice",
-        holder_npc_id="veska_renn",
-        proposer_npc_id="tarin_os",
-        requires_fulfilled_commitment_type="discrepancy_report",
-        proposer_hint_pose="looking a little uneasy about something posted at the Civic Office",
-        propose_narration="{npc} mentions the posted notice and asks {actor} to help settle whether it's right.",
-        accept_narration="{npc} is glad {actor} is willing to take it up with Veska.",
-        decline_narration="{npc} accepts that {actor} can't look into the notice right now.",
-        fulfill_narration="{npc} will hear how it went once {actor} tells him.",
-        # Phase 3: wired below, after import, to avoid a circular
-        # import (world/notice_approval.py imports from this module) -
-        # same workaround as deliver_parcel's projector.
+    # docs/prospect-initial-playtest-design-spec.md §6, Quest 2 ("A
+    # Little Community Work"): Iri proposes/accepts/declines and also
+    # fulfills - no clerk role, same shape as deliver_parcel. Unlike
+    # that one, the completing fact lives in the
+    # world itself (world/garden.py's per-player flag, set by commands/
+    # use.py's "use kit on bed" world action), not a physical handoff to
+    # the NPC or a reported value - confirm_bed_tended (world/actions.py)
+    # just checks that flag via fulfill_commitment_with_precondition,
+    # same mechanism revision-checking already uses.
+    "tend_planting_bed": ScenarioConfig(
+        commitment_type="tend_planting_bed",
+        holder_npc_id="iri_vael",
+        holder_hint_pose="frowning over a note about the square's neglected planting beds",
+        propose_narration="{npc} mentions the neglected planting bed and asks {actor} to help tend it.",
+        accept_narration="{npc} is glad {actor} is willing to help with the bed.",
+        decline_narration="{npc} accepts that {actor} can't help with the planting bed right now.",
+        fulfill_narration="{npc} is glad to see the planting bed properly tended.",
+        # One of the three tutorial quests (project owner, 2026-10-16) -
+        # see ScenarioConfig.mandatory's docstring. No other scenario
+        # currently competes with Iri for priority, so this has no
+        # observable effect yet; set now to establish the pattern
+        # ahead of future tutorial quests, per the project owner's
+        # explicit request.
+        mandatory=True,
+    ),
+    # docs/prospect-initial-playtest-design-spec.md §6, Quest 3
+    # ("Unwelcome Guests"): Tarin proposes/accepts/declines, hands over
+    # a real Weapon on accept (world/actions.py's _create_weapon_for,
+    # same shape as deliver_parcel's _create_parcel_for), and fulfills
+    # once the player's kill count (world/skitters.py) meets the
+    # required threshold - no clerk role, same shape as
+    # tend_planting_bed. The completing fact is a count, not a single
+    # boolean, but fulfill_commitment_with_precondition only needs a
+    # bool, so world/actions.py's report_skitter_kills validator is the
+    # one place that compares the count against the threshold.
+    "hunt_skitters": ScenarioConfig(
+        commitment_type="hunt_skitters",
+        holder_npc_id="tarin_os",
+        holder_hint_pose="frowning at the clicking sound of something skittering along the workshop wall",
+        # Part of the tutorial sequence (docs/prospect-initial-
+        # playtest-design-spec.md's three introductory quests) -
+        # project owner's call, 2026-10-15: outranks any other
+        # scenario sharing this NPC when both are simultaneously
+        # eligible (originally discrepancy_report; see "One quest
+        # offer per NPC" in CLAUDE.md for the general rule now that
+        # discrepancy_report itself is gone).
+        hint_priority=10,
+        # One of the three tutorial quests (project owner, 2026-10-16) -
+        # see ScenarioConfig.mandatory's docstring. Declining doesn't
+        # release a lower-priority scenario sharing this NPC - this
+        # keeps outranking one by hint_priority until actually fulfilled.
+        mandatory=True,
+        propose_narration="{npc} brings up the skitter problem and asks {actor} to help clear some out.",
+        accept_narration="{npc} is glad {actor} is willing to help, and lends over the shock baton for the job.",
+        decline_narration="{npc} accepts that {actor} can't help with the skitters right now.",
+        fulfill_narration="{npc} is glad to hear the skitters have been thinned out.",
     ),
 }
 
@@ -280,6 +348,21 @@ def _save_acks(actor, acks: dict) -> None:
     actor.attributes.add(ACKS_KEY, acks)
 
 
+def _declined_types(actor) -> dict:
+    return actor.attributes.get(DECLINED_KEY, default={})
+
+
+def _save_declined_types(actor, declined: dict) -> None:
+    actor.attributes.add(DECLINED_KEY, declined)
+
+
+def has_been_declined(actor, commitment_type: str) -> bool:
+    """Public lookup for _blocking_scenario_for_proposal - True iff
+    this player has ever declined this commitment_type at least once,
+    regardless of its current (re-offerable) state."""
+    return bool(_declined_types(actor).get(commitment_type, False))
+
+
 def _find_open_commitment(actor, commitment_type: str) -> dict | None:
     for commitment in _commitments(actor).values():
         if commitment["commitment_type"] == commitment_type and commitment["status"] == STATUS_OPEN:
@@ -297,6 +380,82 @@ def _prerequisite_met(actor, scenario: "ScenarioConfig") -> bool:
     return get_fulfilled_commitment(actor, scenario.requires_fulfilled_commitment_type) is not None
 
 
+def _blocking_scenario_for_proposal(actor, scenario: "ScenarioConfig") -> "ScenarioConfig | None":
+    """
+    "One quest to dispense at a time" per NPC (project owner,
+    2026-10-16, docs/playtest-quest3-skitters-design.md's live-eval
+    finding): among the scenarios the *same* NPC would propose
+    (matching effective_proposer_npc_id), `scenario` can't be newly
+    proposed while either of these is true, in order:
+
+    1. A *different* one of that NPC's scenarios is already active for
+       this player (offered-awaiting-answer, or open/accepted-but-not-
+       yet-fulfilled) - regardless of priority or mandatory status, an
+       NPC doesn't start a second errand while the first is still
+       actually in progress.
+    2. Nothing is active, but more than one scenario is simultaneously
+       "not offered" (never engaged, or re-offerable after a decline).
+       Only the single highest hint_priority one among those can be
+       offered - *except* that an ordinary (non-mandatory) scenario
+       the player has already declined at least once (world.
+       commitments.has_been_declined) is exempt from this contention
+       entirely, in both directions: declining counts as "dealt with,"
+       so it stops competing for priority (can't block, and can't be
+       blocked by, anything else) even though its own state is back to
+       "not offered." A `mandatory` scenario gets no such exemption -
+       declining it doesn't release the block; it keeps outranking
+       lower-priority scenarios until actually fulfilled. Ties don't
+       block each other, so every scenario still at the default
+       priority 0 is unaffected unless a real priority difference
+       exists - the same tie-breaking hint_pose_for already uses for
+       the passive room-listing cue.
+
+    Returns the scenario that must be dealt with first, or None if
+    `scenario` itself is clear to be proposed.
+
+    This fixes a real cross-contamination bug by construction - two
+    independent persona-wording passes failed to reliably stop Tarin's
+    model from generalizing discrepancy_report's own "direct check-in"
+    trigger onto hunt_skitters (confirmed 0/5 then 2/5 live, see the
+    design doc) - rather than continuing to rely on wording alone.
+    CLAUDE.md hard rule 2: the wrong propose_commitment call is simply
+    dropped here, same as any other invalid call, not "fixed up" or
+    left to the model to self-police.
+    """
+    npc_id = scenario.effective_proposer_npc_id
+    others = [
+        other
+        for other in SCENARIOS.values()
+        if other.commitment_type != scenario.commitment_type
+        and other.effective_proposer_npc_id == npc_id
+        and _prerequisite_met(actor, other)
+    ]
+
+    for other in others:
+        state = get_state_summary(actor, other.commitment_type)
+        if state == "offered, awaiting the player's answer" or state.startswith("open"):
+            return other
+
+    def _exempt(s: "ScenarioConfig") -> bool:
+        return not s.mandatory and has_been_declined(actor, s.commitment_type)
+
+    if _exempt(scenario):
+        return None
+
+    contenders = [scenario] + [
+        other
+        for other in others
+        if get_state_summary(actor, other.commitment_type) == "not offered" and not _exempt(other)
+    ]
+    highest = max(s.hint_priority for s in contenders)
+    if scenario.hint_priority >= highest:
+        return None
+    for other in contenders:
+        if other.hint_priority == highest:
+            return other
+    return None
+
+
 def propose_commitment(actor, commitment_type: str) -> LifecycleResult:
     """
     The holder NPC offers the errand. Only records that an offer is
@@ -309,6 +468,27 @@ def propose_commitment(actor, commitment_type: str) -> LifecycleResult:
         return LifecycleResult(False, reason=f"unknown commitment_type: {commitment_type!r}")
     if not _prerequisite_met(actor, scenario):
         return LifecycleResult(False, reason="prerequisite commitment not yet fulfilled")
+    blocker = _blocking_scenario_for_proposal(actor, scenario)
+    if blocker is not None:
+        # Worded as a direct instruction, not an internal state
+        # description, and deliberately omits blocker.commitment_type -
+        # confirmed live (2026-10-15/16) that a technical reason
+        # ("a higher-priority commitment ('hunt_skitters') must be
+        # offered first") got echoed back as a tool-result message but
+        # never stopped the model's reaction text from fully describing
+        # the rejected errand anyway, even with explicit persona/shared-
+        # rules wording added separately (two passes, zero effect -
+        # see docs/playtest-quest3-skitters-design.md). Putting the
+        # actual instruction in the same string the model sees the
+        # rejection through, instead of a fact it has to separately
+        # recall a rule about, is the untried variable.
+        return LifecycleResult(
+            False,
+            reason=(
+                "something else needs your attention first - don't mention this or describe it "
+                "at all right now, just respond to whatever they actually said"
+            ),
+        )
     if _find_open_commitment(actor, commitment_type):
         return LifecycleResult(False, reason="an open commitment of this type already exists")
     offers = _offers(actor)
@@ -363,6 +543,9 @@ def decline_commitment(actor, commitment_type: str) -> LifecycleResult:
         return LifecycleResult(False, reason="no pending offer of this type to decline")
     offers[commitment_type] = False
     _save_offers(actor, offers)
+    declined = _declined_types(actor)
+    declined[commitment_type] = True
+    _save_declined_types(actor, declined)
     return LifecycleResult(True)
 
 
@@ -611,10 +794,12 @@ def hint_pose_for(npc_id: str, actor) -> str | None:
     been offered (whatever the answer), so the hint doesn't linger
     after it's served its purpose.
     """
+    candidates = []  # (hint_priority, pose) - highest priority wins; ties
+    # keep the original insertion-order winner via a stable sort below.
     for scenario in SCENARIOS.values():
         if npc_id in scenario.holder_npc_ids and scenario.holder_hint_pose:
             if get_state_summary(actor, scenario.commitment_type) == "not offered":
-                return scenario.holder_hint_pose
+                candidates.append((scenario.hint_priority, scenario.holder_hint_pose))
         # Phase 3: the proposer-side equivalent, for a scenario where
         # the proposer isn't also the holder (deliver_parcel solved
         # this with a physical object instead; this one doesn't have
@@ -626,8 +811,12 @@ def hint_pose_for(npc_id: str, actor) -> str | None:
             and _prerequisite_met(actor, scenario)
             and get_state_summary(actor, scenario.commitment_type) == "not offered"
         ):
-            return scenario.proposer_hint_pose
-    return None
+            candidates.append((scenario.hint_priority, scenario.proposer_hint_pose))
+
+    if not candidates:
+        return None
+    candidates.sort(key=lambda c: c[0], reverse=True)
+    return candidates[0][1]
 
 
 def known_commitment_types_for(actor) -> set:
@@ -669,8 +858,10 @@ def reset_commitment(actor, commitment_type: str) -> dict:
     commitments = _commitments(actor)
     acks = _acks(actor)
     offers = _offers(actor)
+    declined = _declined_types(actor)
 
     had_offer = bool(offers.pop(commitment_type, False))
+    had_declined = bool(declined.pop(commitment_type, False))
     removed_ids = [
         cid for cid, commitment in commitments.items() if commitment["commitment_type"] == commitment_type
     ]
@@ -682,5 +873,6 @@ def reset_commitment(actor, commitment_type: str) -> dict:
     _save_offers(actor, offers)
     _save_commitments(actor, commitments)
     _save_acks(actor, acks)
+    _save_declined_types(actor, declined)
 
-    return {"had_offer": had_offer, "previous_statuses": previous_statuses}
+    return {"had_offer": had_offer, "previous_statuses": previous_statuses, "had_declined": had_declined}

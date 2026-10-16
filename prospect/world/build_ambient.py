@@ -58,6 +58,9 @@ ROOM_IDS = [
     "maintenance_workshop",
     "residential_courtyard",
     "civic_office",
+    "medical_bay",
+    "old_quarter_street",
+    "daven_office",
 ]
 
 

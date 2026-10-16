@@ -2,6 +2,8 @@
 
 Status: implemented and manually playtested (2026-10-14) - closed. Co-designed by the project owner and ChatGPT per `docs/phase3-scope.md`'s engineering brief, with one mid-design revision (Veska replaces Iri as corroborator, an approval-mark boolean replaces a revision-number comparison) made specifically to avoid a documented bug class before any code was written. See "Real bugs found in manual playtesting" below for what the first live playtest actually surfaced.
 
+**REMOVED 2026-10-16.** This scenario depended on `discrepancy_report` being fulfilled first (its `requires_fulfilled_commitment_type`); once `discrepancy_report` was removed after conflicting with Tarin's actual tutorial quest (`hunt_skitters`), this scenario became permanently unreachable and was removed with it - see `docs/playtest-quest3-skitters-design.md`'s "One quest to dispense per NPC" section and CLAUDE.md's rule of the same name. Kept here as a historical record, not as live or reviveable content as written.
+
 ## References and scope
 
 - [Phase 3 scope: requirements for co-design with ChatGPT](phase3-scope.md) - the engineering brief this scenario was designed against.

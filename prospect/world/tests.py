@@ -16,7 +16,7 @@ from world.npc_profile import NPCProfile, PersonaParseError, parse_persona, pars
 from world.output_check import is_flagged
 from world.prompt_builder import build_system_prompt
 
-ALL_NPC_IDS = ["mara_voss", "tarin_os", "iri_vael", "veska_renn"]
+ALL_NPC_IDS = ["mara_voss", "tarin_os", "iri_vael", "veska_renn", "given_marr", "daven_varek"]
 
 VALID_PERSONA_TEXT = """# Test NPC
 
@@ -88,6 +88,21 @@ class ParsePersonaTextTests(SimpleTestCase):
         broken = VALID_PERSONA_TEXT.replace("pronouns: they/them\n", "")
         with self.assertRaises(PersonaParseError):
             parse_persona_text("test_npc", broken)
+
+    def test_desc_defaults_to_none(self):
+        profile = parse_persona_text("test_npc", VALID_PERSONA_TEXT)
+        self.assertIsNone(profile.desc)
+
+    def test_desc_parsed_when_present(self):
+        with_desc = VALID_PERSONA_TEXT.replace(
+            "actions: test_action, another_action\n",
+            "actions: test_action, another_action\ndesc: A test NPC with a plain look.\n",
+        )
+        profile = parse_persona_text("test_npc", with_desc)
+        self.assertEqual(profile.desc, "A test NPC with a plain look.")
+        # The metadata comment is stripped entirely before the prompt
+        # sees anything, so desc text never leaks into profile.body.
+        self.assertNotIn("A test NPC with a plain look.", profile.body)
 
 
 class RealPersonaFileTests(SimpleTestCase):

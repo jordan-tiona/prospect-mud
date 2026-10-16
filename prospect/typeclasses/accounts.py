@@ -22,7 +22,11 @@ several more options for customizing the Guest account system.
 
 """
 
+import uuid
+
 from evennia.accounts.accounts import DefaultAccount, DefaultGuest
+
+from world.session_log import log_session_end, log_session_start
 
 
 class Account(DefaultAccount):
@@ -136,7 +140,20 @@ class Account(DefaultAccount):
 
     """
 
-    pass
+    def at_post_login(self, session=None, **kwargs):
+        super().at_post_login(session=session, **kwargs)
+        # A fresh session_id per login (not per command) - see
+        # world/session_log.py. Stored on ndb since it's only ever
+        # meaningful for the lifetime of this one connection.
+        session_id = uuid.uuid4().hex
+        self.ndb.session_id = session_id
+        log_session_start(session_id=session_id, account_key=self.key)
+
+    def at_disconnect(self, reason=None, **kwargs):
+        super().at_disconnect(reason=reason, **kwargs)
+        session_id = self.ndb.session_id
+        if session_id:
+            log_session_end(session_id=session_id, account_key=self.key, reason=reason or "")
 
 
 class Guest(DefaultGuest):

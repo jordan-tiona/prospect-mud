@@ -1,6 +1,5 @@
 """
-Tests for the builder-only `forget`/`restock` testing commands
-(commands/admin.py).
+Tests for the builder-only `forget` testing command (commands/admin.py).
 
 Run with:
     evennia test commands
@@ -12,7 +11,6 @@ from django.test import TestCase
 from evennia import create_object
 
 from world.actions import (
-    DEFAULT_STOCK,
     PARCEL_TAG_CATEGORY,
     _actor_has_correct_parcel,
     _create_parcel_for,
@@ -24,6 +22,7 @@ from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
 from world.commitments import (
     accept_commitment,
+    fulfill_commitment_with_precondition,
     get_open_commitment_id,
     get_state_summary,
     propose_commitment,
@@ -94,49 +93,6 @@ class ForgetCommandTests(TestCase):
         self.assertIn(self.actor.dbref, self.mara.ndb.conversations)
 
 
-class RestockCommandTests(TestCase):
-    def setUp(self):
-        rooms = build_rooms()
-        npcs = build_npcs()
-        self.workshop = rooms["maintenance_workshop"]
-        self.tarin = npcs["tarin_os"]
-        self.mara = npcs["mara_voss"]
-        self.actor = create_object(
-            "typeclasses.characters.Character", key="Tester", location=self.workshop
-        )
-        self.actor.permissions.add("Builder")
-        self.messages = []
-        self.actor.msg = lambda text="", **kw: self.messages.append(text)
-
-    def test_resets_depleted_stock_to_default(self):
-        self.tarin.db.stock = {"spare part": 0, "hand tool": 1}
-
-        self.actor.execute_cmd("restock Tarin Os")
-
-        self.assertEqual(self.tarin.db.stock, DEFAULT_STOCK)
-        self.assertTrue(any("restock" in m for m in self.messages))
-
-    def test_npc_without_hand_over_item_is_rejected(self):
-        self.mara.location = self.workshop  # bring her within search range
-
-        self.actor.execute_cmd("restock Mara Voss")
-
-        self.assertTrue(any("doesn't keep any stock" in m for m in self.messages))
-
-    def test_non_npc_target_is_rejected(self):
-        self.actor.execute_cmd("restock west")  # the exit back to Old Quarter Square
-
-        self.assertTrue(any("doesn't keep any stock" in m for m in self.messages))
-
-    def test_requires_builder_permission(self):
-        self.actor.permissions.remove("Builder")
-        self.tarin.db.stock = {"spare part": 0, "hand tool": 0}
-
-        self.actor.execute_cmd("restock Tarin Os")
-
-        self.assertEqual(self.tarin.db.stock, {"spare part": 0, "hand tool": 0})
-
-
 class ResetQuestCommandTests(TestCase):
     def setUp(self):
         rooms = build_rooms()
@@ -201,7 +157,11 @@ class ResetQuestCommandTests(TestCase):
 
 
 class ResetCommitmentCommandTests(TestCase):
-    COMMITMENT_TYPE = "discrepancy_report"
+    # verify_display_revision (holder=mara_voss, clerk=iri_vael) used
+    # purely as an example commitment_type to exercise resetcommitment's
+    # generic clearing logic. (Originally discrepancy_report; removed
+    # 2026-10-16, see CLAUDE.md's "One quest offer per NPC".)
+    COMMITMENT_TYPE = "verify_display_revision"
 
     def setUp(self):
         rooms = build_rooms()
@@ -221,10 +181,6 @@ class ResetCommitmentCommandTests(TestCase):
         rumor_log_patcher = patch("commands.admin.log_rumor_reset")
         self.mock_log_rumor_reset = rumor_log_patcher.start()
         self.addCleanup(rumor_log_patcher.stop)
-
-        notice_log_patcher = patch("commands.admin.log_notice_reset")
-        self.mock_log_notice_reset = notice_log_patcher.start()
-        self.addCleanup(notice_log_patcher.stop)
 
     def test_resets_own_commitment_with_no_argument(self):
         propose_commitment(self.actor, self.COMMITMENT_TYPE)
@@ -255,14 +211,15 @@ class ResetCommitmentCommandTests(TestCase):
     def test_logs_the_previous_state(self):
         propose_commitment(self.actor, self.COMMITMENT_TYPE)
         accept_commitment(self.actor, self.COMMITMENT_TYPE)
-        record_acknowledgment(self.actor, self.COMMITMENT_TYPE, "veska_renn")
+        record_acknowledgment(self.actor, self.COMMITMENT_TYPE, "iri_vael")
 
         self.actor.execute_cmd("resetcommitment")
 
-        self.mock_log_commitment_reset.assert_called_once_with(
+        self.mock_log_commitment_reset.assert_any_call(
             commitment_type=self.COMMITMENT_TYPE,
             had_offer=False,
             previous_statuses=["open"],
+            had_declined=False,
             actor_key="Tester",
             actor_dbref=self.actor.dbref,
         )
@@ -320,6 +277,37 @@ class ResetCommitmentCommandTests(TestCase):
 
         self.assertFalse(any("noticeboard revision" in m for m in self.messages))
 
+    def test_reset_clears_the_tended_bed_flag(self):
+        from world.garden import is_bed_tended, mark_bed_tended
+
+        mark_bed_tended(self.actor)
+
+        self.actor.execute_cmd("resetcommitment")
+
+        self.assertFalse(is_bed_tended(self.actor))
+        self.assertTrue(any("tended-planting-bed flag" in m for m in self.messages))
+
+    def test_reset_with_no_tended_bed_does_not_mention_it(self):
+        self.actor.execute_cmd("resetcommitment")
+
+        self.assertFalse(any("tended-planting-bed flag" in m for m in self.messages))
+
+    def test_reset_clears_the_skitter_kill_count(self):
+        from world.skitters import kills_for, record_kill
+
+        record_kill(self.actor)
+        record_kill(self.actor)
+
+        self.actor.execute_cmd("resetcommitment")
+
+        self.assertEqual(kills_for(self.actor), 0)
+        self.assertTrue(any("skitter kill count (was 2)" in m for m in self.messages))
+
+    def test_reset_with_no_skitter_kills_does_not_mention_it(self):
+        self.actor.execute_cmd("resetcommitment")
+
+        self.assertFalse(any("skitter kill count" in m for m in self.messages))
+
     def test_requires_builder_permission(self):
         self.actor.permissions.remove("Builder")
         propose_commitment(self.actor, self.COMMITMENT_TYPE)
@@ -369,44 +357,6 @@ class ResetCommitmentCommandTests(TestCase):
 
         self.assertFalse(any("rumor knowledge" in m for m in self.messages))
         self.mock_log_rumor_reset.assert_not_called()
-
-    def test_reset_clears_notice_approval_state(self):
-        # docs/phase3-unverified-notice-design.md: resetcommitment must
-        # also clear the notice's approval-mark fixture, resolution
-        # record, and Tarin's informed state, since all three are
-        # downstream of unverified_notice the same way rumor/reputation
-        # are downstream of deliver_parcel above.
-        from world.actions import (
-            _validate_accept_commitment as _acc,
-            _validate_propose_commitment as _prop,
-            _validate_report_commitment_outcome as _rco,
-            _validate_withdraw_notice,
-        )
-        from world.notice_approval import notice_displayed
-
-        tarin = self.npcs["tarin_os"]
-        veska = self.npcs["veska_renn"]
-        _prop(tarin, self.actor, {"commitment_type": "discrepancy_report"})
-        _acc(tarin, self.actor, {"commitment_type": "discrepancy_report"})
-        _rco(veska, self.actor, {"commitment_type": "discrepancy_report"})
-        _rco(tarin, self.actor, {"commitment_type": "discrepancy_report"})
-        _prop(tarin, self.actor, {"commitment_type": "unverified_notice"})
-        _acc(tarin, self.actor, {"commitment_type": "unverified_notice"})
-        _validate_withdraw_notice(veska, self.actor, {"confirmed": True})
-        self.assertFalse(notice_displayed(self.actor))
-
-        self.actor.execute_cmd("resetcommitment")
-
-        self.assertTrue(notice_displayed(self.actor))
-        self.assertTrue(any("notice-approval fact" in m for m in self.messages))
-        self.mock_log_notice_reset.assert_called_once()
-
-    def test_reset_with_no_notice_progress_does_not_mention_it_or_log(self):
-        self.actor.execute_cmd("resetcommitment")
-
-        self.assertFalse(any("notice-approval fact" in m for m in self.messages))
-        self.mock_log_notice_reset.assert_not_called()
-
 
 class ResetMemoryCommandTests(TestCase):
     def setUp(self):

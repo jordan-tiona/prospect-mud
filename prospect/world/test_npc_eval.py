@@ -103,11 +103,11 @@ class RunScenarioTests(TestCase):
         mock_chat.return_value = _reply()
 
         def setup(actor):
-            propose_commitment(actor, "discrepancy_report")
-            accept_commitment(actor, "discrepancy_report")
+            propose_commitment(actor, "verify_display_revision")
+            accept_commitment(actor, "verify_display_revision")
 
         scenario = EvalScenario(
-            name="t", npc_id="tarin_os", player_message="x", setup=setup
+            name="t", npc_id="mara_voss", player_message="x", setup=setup
         )
 
         run_scenario(scenario, trials=1)

@@ -58,3 +58,48 @@ def commitment_hint_visible(accessing_obj, accessed_obj, *args, **kwargs):
         return get_state_summary(accessing_obj, args[0]) == "not offered"
     except Exception:
         return False
+
+
+def skitter_targetable(accessing_obj, accessed_obj, *args, **kwargs):
+    """
+    view/search-lock func for typeclasses.creatures.Skitter, usage:
+    `view:skitter_targetable()` (no argument - every skitter uses the
+    same eligibility rule, unlike commitment_hint_visible above).
+
+    True only for a looker currently eligible to hunt skitters -
+    world.skitters.is_hunting, which itself just checks the
+    "hunt_skitters" commitment's open state. Same per-looker
+    view/search gating pattern as commitment_hint_visible, applied to
+    a shared-world creature instead of a per-player hint object:
+    typeclasses.creatures.Creature.access() is what forces
+    no_superuser_bypass for this to actually work against the
+    solo dev's own (superuser) account, the same lesson
+    docs/engineering-pitfalls.md #2 already taught for
+    CommitmentHintObject.
+    """
+    from world.skitters import is_hunting
+
+    try:
+        return is_hunting(accessing_obj)
+    except Exception:
+        return False
+
+
+def module_exchange_hint_visible(accessing_obj, accessed_obj, *args, **kwargs):
+    """
+    view-lock func for the heating-unit module-exchange quest's hint prop
+    (world/build_quest_props.py). This quest predates the per-player
+    discoverability rule above (world/actions.py's QUEST_MODULE_EXCHANGE_*
+    state machine, phase 2) and has no generic commitment_type to key off -
+    its own state lives in world.actions.get_quest_state, not
+    world.commitments. True only for a looker who hasn't started the
+    errand yet, the same "not offered"-equivalent bar commitment_hint_visible
+    uses, so the hint quietly stops existing for a player once they engage
+    with it, same discipline as that function.
+    """
+    from world.actions import get_quest_state
+
+    try:
+        return get_quest_state(accessing_obj) == "not_started"
+    except Exception:
+        return False

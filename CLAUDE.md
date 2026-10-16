@@ -1,10 +1,10 @@
 # Prospect and the Constellation
 
-A text-based multiplayer sci-fi MUD built on **Evennia** (Python), where some NPCs are voiced by an LLM. Solo project. Currently building the **phase 1 prototype**: a small conversation test, not a vertical slice of the full game.
+A text-based multiplayer sci-fi MUD built on **Evennia** (Python), where some NPCs are voiced by an LLM. Solo project. Past the original phase 1 conversation prototype; now building toward a small external **playtest** (see `docs/prospect-initial-playtest-design-spec.md`) that adds character creation, light combat, and persistent per-player quest state on top of the existing LLM-NPC/commitment infrastructure.
 
 ## Source of truth
 
-- **`docs/prospect-constellation-design-v0.4.1.md`** is the authoritative design document for both setting canon and engineering decisions. Read the relevant sections before starting a task; don't load the whole file into context unless needed.
+- **`docs/prospect-constellation-design-v0.4.3.md`** is the authoritative design document for both setting canon and engineering decisions. Read the relevant sections before starting a task; don't load the whole file into context unless needed.
 - Engineering sections to know: **13.5–13.7** (prototype scope, rooms, travel), **14.2, 14.4, 14.6, 14.7** (NPC knowledge, generation/game-state boundary, prototype cast, logging), **16.4–16.8** (stack, request flow, lore store, safety, roadmap).
 - If code, task instructions and the bible disagree, stop and ask rather than picking one.
 
@@ -29,7 +29,11 @@ These are non-negotiable architecture constraints:
 - **Config:** model name, base URL and API key come from settings/environment, never hard-coded. Switching to vLLM or a hosted API later must be a config change only.
 - **Lore store:** plain files or SQLite, chunked from the bible with status tags.
 
-## Phase 1 prototype scope
+## Current scope
+
+**`docs/prospect-initial-playtest-design-spec.md`** is the current source of truth for what's in and out of scope, superseding the "Phase 1 prototype scope" section below where the two disagree. It explicitly adds character creation/persistent identity, light combat, and shared-world entities (the skitters) — all previously listed as out of scope for phase 1. The phase 1 section is kept as historical record of the original conversation-test boundaries, not an active restriction.
+
+## Phase 1 prototype scope (historical — superseded by the current playtest spec above)
 
 In scope:
 
@@ -49,7 +53,7 @@ Out of scope for phase 1 (don't build unless asked): persistent NPC memory, ques
 NPC personas and the common-knowledge sheet are **authored content**, written by the project owner. Code loads them; code does not generate them. Suggested layout (adjust if Evennia conventions suggest better):
 
 ```
-docs/prospect-constellation-design-v0.4.1.md  # authoritative design doc
+docs/prospect-constellation-design-v0.4.3.md  # authoritative design doc
 content/common-knowledge.md   # what any ordinary Elsewhere resident knows
 content/npc-shared-rules.md   # behavior rules shared by every talk-capable NPC
 content/npcs/<npc_id>.md      # persona, knowledge scope, permitted actions
@@ -67,10 +71,19 @@ Before adding a new generic multi-scenario action, a new per-player visibility m
 
 **Every quest or commitment a player can discover must have a passive, in-world cue** — not only a conversational trigger a player has to think to ask about. No "going up to every NPC asking 'need any help?'" (project owner, 2026-10-13). Concretely, a quest-giving NPC needs at least one of:
 
-- A per-player pose hint (`world.commitments.hint_pose_for`, e.g. Tarin "frowning over a shipment manifest"), and/or
+- A per-player pose hint (`world.commitments.hint_pose_for`, e.g. Tarin "frowning at the clicking sound of something skittering along the workshop wall"), and/or
 - A discoverable room object (`world/build_quest_props.py`, e.g. the misdelivered parcel on Mara's counter) — a real, inspectable, non-pickable object whose `view`/`search` locks are wired to `server/conf/lockfuncs.py`'s `commitment_hint_visible(<commitment_type>)`, so it's visible only to a player whose own state for that commitment is still `"not offered"`. This makes it genuinely per-player (quests are isolated per player, not shared-world, per the design doc) with no separate timer or respawn logic — it falls out of the lock check alone.
 
 Apply this to every new quest/commitment scenario going forward; the actual hint text (pose or object description) is still authored content.
+
+## One quest offer per NPC
+
+**An NPC can be involved in many commitment scenarios, but only one of them may actually be offerable to a given player at a time.** Enforced in the engine (`world/commitments.py`'s `_blocking_scenario_for_proposal`, checked inside `propose_commitment` itself — CLAUDE.md hard rule 2: the losing call is dropped, not narrated around), not left as a prompt convention, because it isn't reliably controllable through wording alone (confirmed live, 2026-10-15/16, two independent wording passes with no fix — see `docs/npc-action-prompt-guidelines.md` guideline #20).
+
+- `ScenarioConfig.mandatory: bool` marks an actual quest (reserved for the playtest's real quests, not legacy/demo commitment scenarios). A mandatory scenario outranks every non-mandatory one on the same NPC by `hint_priority`, and **declining it does not release the block** — only fulfilling it does. There's no timer and no "running out of quests": a declined mandatory scenario just returns to `"not offered"`, where it's still the dominant, re-offerable thing the moment its own trigger comes up again.
+- An **ordinary** (non-mandatory) scenario that's been declined at least once becomes exempt from this contention afterward, in both directions — declining it counts as "dealt with," the standard case unless a scenario is explicitly marked mandatory.
+- While anything from an NPC is actively offered-pending-answer or accepted-but-unfulfilled, nothing else from that same NPC can be newly proposed, regardless of priority — an NPC doesn't start a second errand while the first is genuinely in progress.
+- Apply `mandatory=True` to every future tutorial-sequence quest sharing an NPC with other commitment content, from the start — don't wait for a live cross-contamination bug to surface before adding it.
 
 ## Working style
 

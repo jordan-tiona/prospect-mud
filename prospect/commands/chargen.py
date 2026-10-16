@@ -1,0 +1,458 @@
+"""
+Scripted character creation - "First Awakening" (project-owner +
+ChatGPT collaborative script, uploads/1dbe8f29-prospect-character-
+creation-opening-expanded-v2.md, approved 2026-10-14; supersedes the
+shorter script this module held before). Replaces Evennia's default
+one-line `create <name> <password>` unloggedin command with a
+cinematic, non-LLM Q&A sequence collecting identity (name, sex,
+species) before a password - commands/default_cmdsets.py's
+UnloggedinCmdSet adds this over the default by key, same pattern as
+every other command override in this project.
+
+Reuses Account.create() for the actual account/character creation and
+its own username/password validation (world/chargen.py's docstring
+has more on the reuse rationale) - this command only adds the
+narrated Q&A in front of it and the one-time species/sex/location
+setup after. Passwords are typed directly into this flow's own
+prompts and handed straight to Account.create(); Evennia's own
+default `create` command accepts a password the same way (in plain
+text, not echo-masked) - this doesn't change that. Passwords never
+reach world/conversation_log.py or any NPC-facing code path.
+
+Pacing: a generator-based Command's `func()` can `yield` a plain
+number instead of a prompt string - evennia.commands.cmdhandler's
+`_progressive_cmd_run` reads that as a non-blocking delay (not a
+request for input) and resumes the generator on its own after that
+many seconds (confirmed against Evennia's source: fractional seconds
+work fine, it's just handed to `utils.delay`). Yielding a *string*
+instead displays it and waits for the player's response - also
+confirmed against source (`_progressive_cmd_run` dispatches on
+`isinstance(value, (int, float))` vs `isinstance(value, str)`).
+`_block()` below sends one or more already-script's `[DISPLAY
+TOGETHER]` lines as a single message (so multi-line beats appear with
+no artificial delay between them, matching the script's explicit
+"accumulate, don't drip-feed one line per NPC-reply pause" framing),
+then optionally yields the beat's own pause length.
+
+Two deliberate departures from a literal reading of the script, both
+engineering calls rather than content:
+- The player-facing wording for *which* field to correct, after
+  declining the identity summary, isn't in the source script (it only
+  says "return only to the relevant earlier fields") - this module
+  adds a short "name/sex/species/all" sub-prompt to do that. Everything
+  the recovery voice itself says is transcribed from the source
+  document as written.
+- "Allow players to advance a pause early" and "skip the cinematic on
+  repeat attempts" (script's implementation-boundary note 7) aren't
+  implemented: Evennia's generator-command mechanism offers either a
+  timed, non-interactive delay (`yield <number>`) or an indefinite
+  wait for input (`yield <string>`), not a race between the two, so a
+  pause can't be interrupted by an early keypress without hooking the
+  session's input queue directly - flagged as a known gap rather than
+  attempted here.
+
+Color: `|c"..."|n` (bright cyan) for every line the recovery voice
+speaks, matching the convention already used for NPC/player speech
+elsewhere (commands/say.py). `|W...|n` (gray) for narrative prose -
+matching typeclasses/rooms.py's room-description color - to visually
+separate "what's happening to you" from "what the voice says
+to you". The faux `Darkness` title uses `|Y...|n`, the same
+dark-yellow room-title color as a real room name. Plain, uncolored
+text for system prompts/summaries/errors, same as before.
+"""
+
+from django.conf import settings
+from evennia.utils import class_from_module, utils
+
+from world.chargen import SPECIES_CHOICES, apply_identity, place_in_medical_bay, validate_sex, validate_species
+
+COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
+
+_SPECIES_MENU = "\n".join(f"  {i}. {name}" for i, name in enumerate(SPECIES_CHOICES, start=1))
+
+
+def _narration(text):
+    """Narrative prose (the script's *italics*) - gray, not quoted."""
+    return f"|W{text}|n"
+
+
+def _voice(text):
+    """A line the recovery computer actually says - bright cyan, quoted."""
+    return f'|c"{text}"|n|n'
+
+
+def _block(session, *lines, pause=None):
+    """
+    Send one `[DISPLAY TOGETHER]` beat: `lines` (each already colored
+    by `_narration`/`_voice`, or plain for uncolored system text) are
+    joined with a blank line between them and sent as a single
+    message, so they render with no artificial delay between them but
+    still read as visually separate lines. A trailing blank line is
+    also appended after the whole block (project owner, 2026-10-14:
+    confirmed live over Mudlet - consecutive blocks are separate
+    `session.msg()` sends, and a client starts each one on its own
+    fresh line but adds no gap of its own, so without this the next
+    block/prompt runs on immediately with no breathing room at all).
+    `pause`, if given, is the non-blocking `yield` afterward - see the
+    module docstring's "Pacing" note.
+    """
+    session.msg("\n\n".join(lines) + "\n")
+    if pause:
+        yield pause
+
+
+def _title(session, title):
+    """The faux `Darkness` opening title: same dark-yellow styling as
+    a real room name (typeclasses/rooms.py), but not a real room -
+    no exits, no room_id, nothing to `look` at afterward."""
+    session.msg(f"|Y{title}|n")
+
+
+class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
+    """
+    create a new character
+
+    Usage (at login screen):
+      create
+
+    A guided, in-world sequence for creating a new character: your
+    name, sex, and species, followed by a password to protect your
+    account. If you already have a character, use `connect` instead.
+    """
+
+    key = "create"
+    aliases = ["cre", "cr"]
+    locks = "cmd:all()"
+    arg_regex = r"\s.*?|$"
+
+    def at_pre_cmd(self):
+        if not settings.NEW_ACCOUNT_REGISTRATION_ENABLED:
+            self.msg("Registration is currently disabled.")
+            return True
+        return super().at_pre_cmd()
+
+    def func(self):
+        session = self.caller
+
+        yield from self._scene_1(session)
+        yield from self._scene_2(session)
+
+        name = yield from self._ask_name(session)
+        sex = yield from self._ask_sex(session)
+        species = yield from self._ask_species(session)
+
+        while True:
+            yield from self._show_summary(session, name, sex, species)
+            action = yield from self._confirm_or_correct(session)
+            if action == "confirm":
+                break
+            target = yield from self._ask_correction_target(session)
+            if target in ("name", "all"):
+                name = yield from self._ask_name(session)
+            if target in ("sex", "all"):
+                sex = yield from self._ask_sex(session)
+            if target in ("species", "all"):
+                species = yield from self._ask_species(session)
+
+        yield from _block(
+            session,
+            _voice("Identity record confirmed."),
+            _voice(
+                "Your responses indicate that you are awake, attentive, and able to follow "
+                "this procedure. The medical technician will conduct any further assessment "
+                "that's needed."
+            ),
+            pause=3.6,
+        )
+
+        password = yield from self._ask_password(session, name)
+
+        Account = class_from_module(settings.BASE_ACCOUNT_TYPECLASS)
+        account, errors = Account.create(
+            username=name, password=password, ip=session.address, session=session
+        )
+        if not account:
+            session.msg("|R%s|n" % "\n".join(errors))
+            return
+
+        character = account.db._last_puppet
+        if character is None and account.characters:
+            character = account.characters.all()[0]
+        if character is not None:
+            try:
+                apply_identity(character, sex=sex, species=species)
+                place_in_medical_bay(character)
+            except Exception:
+                from evennia.utils import logger
+
+                logger.log_trace()
+                session.msg(
+                    "Something went wrong finishing your revival - an admin has been notified. "
+                    "You can still log in; a staff member will sort out your starting location."
+                )
+
+        yield from self._scene_5(session, name)
+
+        session.sessionhandler.login(session, account)
+
+    # -- Scene 1: the edge of consciousness -----------------------------
+
+    def _scene_1(self, session):
+        _title(session, "Darkness")
+        yield 2.5
+
+        yield from _block(
+            session,
+            _narration("At first, there is nothing."),
+            _narration(
+                "Then a sound, faint and regular. A low mechanical hum. Somewhere beyond it, "
+                "a soft sequence of tones repeats at measured intervals."
+            ),
+            _narration(
+                "You become aware of a distant pressure around your body, of warmth returning "
+                "to places that had forgotten what warmth felt like. There is no clear sense of "
+                "time. For a moment, even the difference between sleeping and waking seems "
+                "uncertain."
+            ),
+            pause=3.8,
+        )
+
+        yield from _block(
+            session,
+            _narration("The tones stop. A voice takes their place, close and perfectly clear."),
+            _voice("Good morning."),
+            _voice(
+                "Please remain calm. You are emerging from cryogenic suspension. Some "
+                "disorientation is expected during recovery."
+            ),
+            pause=3.0,
+        )
+
+        yield from _block(
+            session,
+            _voice(
+                "You may notice a delay between thinking about movement and being able to "
+                "move. This is normal. Please do not attempt to stand until the revival "
+                "procedure is complete."
+            ),
+            _voice("Your recovery is progressing within acceptable parameters."),
+            pause=3.4,
+        )
+
+        yield from _block(
+            session,
+            _narration(
+                "You try to place the voice. It has no obvious direction, no breath behind it, "
+                "and no hesitation between words. It simply waits for you to understand."
+            ),
+            _voice(
+                "I am the recovery system's automated attendant. I will guide you through the "
+                "final steps."
+            ),
+            _voice("You do not need to remember anything before answering my questions."),
+            pause=3.6,
+        )
+
+    # -- Scene 2: a place, and a name for it -----------------------------
+
+    def _scene_2(self, session):
+        yield from _block(
+            session,
+            _voice(
+                "For your orientation: you are aboard Elsewhere, an orbital habitat currently "
+                "in orbit around the planet Prospect."
+            ),
+            _voice(
+                "You are in a medical recovery facility. A member of the staff will be "
+                "available when the chamber opens."
+            ),
+            pause=4.5,
+        )
+
+        yield from _block(
+            session,
+            _voice(
+                "If those names are unfamiliar, that is not a problem. You may ask the "
+                "attending technician about your surroundings once you are fully awake."
+            ),
+            _voice(
+                "First, however, I need to complete your identity record and confirm that you "
+                "are able to understand and respond to simple questions."
+            ),
+            pause=2.8,
+        )
+
+        session.msg(_voice("We'll begin with something straightforward."))
+
+    # -- Scene 3: identity verification -----------------------------------
+
+    def _ask_name(self, session):
+        Account = class_from_module(settings.BASE_ACCOUNT_TYPECLASS)
+        while True:
+            raw = yield _voice("What is your name?")
+            name = Account.normalize_username((raw or "").strip())
+            if not name:
+                session.msg(_voice("I didn't catch that. What is your name?"))
+                continue
+            valid, errors = Account.validate_username(name)
+            if not valid:
+                session.msg("|R%s|n" % "\n".join(errors))
+                continue
+            session.msg(_voice(f"Thank you, {name}. I've recorded that."))
+            yield 2.7
+            return name
+
+    def _ask_sex(self, session):
+        session.msg(_voice("Now, please confirm your sex for the record."))
+        while True:
+            raw = yield _voice("Male or female?")
+            sex = validate_sex(raw)
+            if sex is None:
+                session.msg(_voice("I need either 'male' or 'female'."))
+                continue
+            session.msg(_voice("Understood."))
+            yield 2.7
+            return sex
+
+    def _ask_species(self, session):
+        session.msg(
+            _voice(
+                "Next is your species. You may find the terminology unfamiliar, but there is "
+                "no need to hurry. Review the available entries before making your selection."
+            )
+        )
+        while True:
+            raw = yield _SPECIES_MENU
+            species = validate_species(raw)
+            if species is None:
+                session.msg(
+                    _voice(
+                        "I didn't recognize that. Please choose one of the listed peoples, by "
+                        "name or number."
+                    )
+                )
+                continue
+            session.msg(_voice(f"{species}. Thank you."))
+            yield 3.1
+            return species
+
+    def _show_summary(self, session, name, sex, species):
+        yield from _block(
+            session,
+            _voice("Your answers are being accepted correctly. That's a good sign."),
+            _voice(
+                "I'll repeat the information once, so you can check it before we finalize the "
+                "record."
+            ),
+            f"  Name: {name}\n  Sex: {sex.capitalize()}\n  Species: {species}",
+            pause=2.8,
+        )
+
+    def _confirm_or_correct(self, session):
+        yield from _block(
+            session,
+            _voice(
+                "Is everything correct? Your name, sex, and species will be permanent "
+                "once confirmed."
+            ),
+            _voice("If something is wrong, this is the time to change it."),
+        )
+        while True:
+            raw = yield "Confirm, or make corrections? [Confirm/Correct]"
+            answer = (raw or "").strip().lower()
+            if answer in ("confirm", "confirmed", "yes", "y"):
+                return "confirm"
+            if answer in ("correct", "corrections", "no", "n"):
+                return "correct"
+            session.msg("|RPlease answer 'confirm' or 'correct'.|n")
+
+    def _ask_correction_target(self, session):
+        while True:
+            raw = yield "What would you like to change? [Name/Sex/Species/All]"
+            answer = (raw or "").strip().lower()
+            if answer in ("name", "sex", "species", "all"):
+                return answer
+            session.msg("|RPlease choose one of: name, sex, species, all.|n")
+
+    # -- Scene 4: stasis credentials ---------------------------------------
+
+    def _ask_password(self, session, name):
+        Account = class_from_module(settings.BASE_ACCOUNT_TYPECLASS)
+
+        yield from _block(
+            session,
+            _voice("There is one final administrative step before the chamber opens."),
+            _voice(
+                "When you are away, your connection may enter a protected state called "
+                "stasis. While in that state, you cannot interact with your surroundings."
+            ),
+            pause=3.0,
+        )
+
+        yield from _block(
+            session,
+            _voice(
+                "To restore access when you return, you will need a private authentication "
+                "credential. You can think of it as a key that belongs only to you."
+            ),
+            _voice(
+                "Please choose a password now. Do not share it with other residents or "
+                "medical staff."
+            ),
+        )
+
+        while True:
+            password = yield _voice("Password:")
+            valid, error = Account.validate_password(password, account=Account(username=name))
+            if not valid:
+                session.msg(
+                    "|R%s|n" % "\n".join(error.messages if error else ["That password isn't valid."])
+                )
+                continue
+            confirm = yield _voice("Please confirm your password:")
+            if confirm != password:
+                session.msg(_voice("Those passwords didn't match. Let's try again."))
+                continue
+            break
+
+        yield from _block(
+            session,
+            _voice("Credentials accepted. Your access is now protected."),
+            _voice("You won't need to repeat the identity questions each time you return."),
+            pause=3.4,
+        )
+        return password
+
+    # -- Scene 5: the chamber opens -----------------------------------------
+
+    def _scene_5(self, session, name):
+        yield from _block(
+            session,
+            _narration(
+                "The mechanical hum changes pitch. A subtle vibration travels through "
+                "whatever has been supporting you. For the first time, you notice the weight "
+                "of your own hands."
+            ),
+            _voice(f"Thank you, {name}. The revival procedure is complete."),
+            _voice("Please remain still while the recovery chamber opens."),
+            pause=3.8,
+        )
+
+        yield from _block(
+            session,
+            _narration(
+                "Something releases with a soft click. Air moves across your face. The "
+                "pressure around you eases, and the quiet machinery beyond the chamber "
+                "becomes a little louder."
+            ),
+            pause=3.3,
+        )
+
+        yield from _block(
+            session,
+            _voice("Welcome to Elsewhere."),
+            _voice("A medical technician is nearby if you have questions. Take your time getting up."),
+            pause=4.3,
+        )
+
+        session.msg(_narration("Your eyes open."))

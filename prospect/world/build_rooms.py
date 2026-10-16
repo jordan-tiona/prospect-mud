@@ -1,11 +1,13 @@
 """
-Phase 1 prototype world builder.
+Old Quarter neighborhood world builder.
 
-Creates the six-room test neighborhood from design-bible section 13.6
-(Lift Concourse, Old Quarter Square, Corner Café, Maintenance Workshop,
-Residential Courtyard, Civic Office), connected hub-and-spoke with Old
-Quarter Square as the hub, per that section's "connecting the other
-rooms" language.
+Creates the original six-room test neighborhood from design-bible
+section 13.6 (Lift Concourse, Old Quarter Square, Corner Café,
+Maintenance Workshop, Residential Courtyard, Civic Office), connected
+hub-and-spoke with Old Quarter Square as the hub, per that section's
+"connecting the other rooms" language - plus the three rooms added
+for the initial playtest (docs/prospect-initial-playtest-design-
+spec.md): Medical Bay, Old Quarter Street, and Daven's Office.
 
 Room descriptions are TODO(lore) stubs quoting only the bible's stated
 room *role* (not invented prose) until the project owner authors real
@@ -69,26 +71,60 @@ ROOMS = [
         "everyday public-service setting for civic conversations and a "
         "volunteer.",
     ),
+    (
+        "medical_bay",
+        "Medical Bay",
+        "TODO(lore): placeholder description. Role (initial playtest spec "
+        "docs/prospect-initial-playtest-design-spec.md 3): player's first "
+        "fully conscious location, reached from the Lift Concourse; "
+        "Given Marr's workplace.",
+    ),
+    (
+        "old_quarter_street",
+        "Old Quarter Street",
+        "TODO(lore): placeholder description. Role (initial playtest spec "
+        "docs/prospect-initial-playtest-design-spec.md 4-5): a short "
+        "street off Old Quarter Square, leading to Daven Varek's office. "
+        "Working room name pending approval.",
+    ),
+    (
+        "daven_office",
+        "Daven's Office",
+        "TODO(lore): placeholder description. Role (initial playtest spec "
+        "docs/prospect-initial-playtest-design-spec.md 4): Daven Varek's "
+        "office, reached from Old Quarter Street.",
+    ),
 ]
 
 HUB = "old_quarter_square"
 
 # (spoke_tag, exit key/aliases from hub -> spoke, exit key/aliases from spoke -> hub)
 #
-# Standard MUD cardinal-direction movement (plus up/down), per the
-# project owner's choice over the hub's own named-exit scheme this
-# replaced. The compass arrangement itself is arbitrary - the bible
-# gives each room a role but no map - except the Lift Concourse, which
-# is placed on up/down rather than a compass point since it's the
-# arrival point from the axial dock-to-rim elevator (design bible
-# 13.6): "up" toward the lift reads naturally next to the other four
-# ground-level spokes.
+# Standard MUD cardinal-direction movement, including the two
+# diagonals added for the initial playtest (project owner's call,
+# 2026-10-14): the four ground-level cardinals and up were already
+# spoken for by the original six rooms, so the Lift Concourse moved
+# from up/down onto northeast/southwest (it's envisioned as the base
+# of the elevator up to the low/no-gravity docking area, so "up" no
+# longer describes reaching it from the square) and Old Quarter Street
+# took the opposite diagonal, southwest/northeast.
 SPOKES = [
-    ("lift_concourse", ("up", ["u"]), ("down", ["d"])),
+    ("lift_concourse", ("northeast", ["ne"]), ("southwest", ["sw"])),
     ("corner_cafe", ("north", ["n"]), ("south", ["s"])),
     ("maintenance_workshop", ("east", ["e"]), ("west", ["w"])),
     ("residential_courtyard", ("south", ["s"]), ("north", ["n"])),
     ("civic_office", ("west", ["w"]), ("east", ["e"])),
+    ("old_quarter_street", ("southwest", ["sw"]), ("northeast", ["ne"])),
+]
+
+# Secondary connections: a spoke off another spoke room, not the hub
+# itself. Built after the hub spokes above (see `build()`), by then
+# both rooms already exist.
+#
+# (from_tag, to_tag, exit key/aliases from -> to, exit key/aliases to -> from)
+CHAINS = [
+    ("lift_concourse", "medical_bay", ("up", ["u"]), ("down", ["d"])),
+    ("old_quarter_street", "daven_office", ("north", ["n"]), ("south", ["s"])),
 ]
 
 
@@ -136,6 +172,13 @@ def build():
         _get_or_create_exit(hub_room, spoke_room, hub_to_spoke_key, hub_to_spoke_aliases)
         _get_or_create_exit(spoke_room, hub_room, spoke_to_hub_key, spoke_to_hub_aliases)
         print(f"Exits ready: {hub_room.key} <-> {spoke_room.key}")
+
+    for from_tag, to_tag, (fwd_key, fwd_aliases), (back_key, back_aliases) in CHAINS:
+        from_room = rooms[from_tag]
+        to_room = rooms[to_tag]
+        _get_or_create_exit(from_room, to_room, fwd_key, fwd_aliases)
+        _get_or_create_exit(to_room, from_room, back_key, back_aliases)
+        print(f"Exits ready: {from_room.key} <-> {to_room.key}")
 
     print("Done. Old Quarter Square dbref:", hub_room.dbref)
     return rooms

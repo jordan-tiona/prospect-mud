@@ -6,32 +6,25 @@ conversation history it clears (commands/say.py's
 `npc.ndb.conversations`) is already wiped by every restart/reload on
 its own, since it lives on `ndb`, not persisted to the database.
 
-`restock` exists for the opposite problem: a hand_over_item NPC's
-stock (world/actions.py) is a real, persistent, finite inventory with
-no in-fiction way to refill it - phase 1 keeps each NPC to one action
-(CLAUDE.md), so there's deliberately no player-facing restock action.
-Repeated testing runs it dry for real, same as any other player
-activity would; this is a manual reset for that, not a game feature.
 """
 
 from evennia.utils.utils import inherits_from
 
-from world.actions import DEFAULT_STOCK, QUEST_MODULE_EXCHANGE_KEY, cleanup_stray_parcels, get_quest_state
+from world.actions import QUEST_MODULE_EXCHANGE_KEY, cleanup_stray_parcels, get_quest_state
 from world.commitments import known_commitment_types_for, reset_commitment
 from world.conversation_log import (
     log_commitment_reset,
     log_memory_reset,
-    log_notice_reset,
     log_quest_reset,
     log_reset,
     log_rumor_reset,
 )
+from world.garden import reset_bed_tended
 from world.npc_memory import known_npc_ids_with_memory_for, reset_memory
-from world.notice_approval import reset_notice
 from world.noticeboard import reset_expected_revision
-from world.npc_profile import parse_persona
 from world.reputation import reset_reputation
 from world.rumors import reset_rumor
+from world.skitters import reset_kills
 
 from .command import Command
 
@@ -89,39 +82,6 @@ class CmdForget(Command):
             caller.msg(f"You have no conversation history with {target.key} to clear.")
 
 
-class CmdRestock(Command):
-    """
-    Reset an NPC's hand_over_item stock back to its default amount.
-
-    Usage:
-      restock <npc>
-    """
-
-    key = "restock"
-    locks = "cmd:perm(Builder)"
-    help_category = "Building"
-
-    def func(self):
-        caller = self.caller
-        target_name = self.args.strip()
-
-        if not target_name:
-            caller.msg("Restock whom? Usage: restock <npc>")
-            return
-
-        target = caller.search(target_name, location=caller.location)
-        if not target:
-            return
-
-        npc_id = getattr(target.db, "npc_id", None)
-        if not npc_id or "hand_over_item" not in parse_persona(npc_id).actions:
-            caller.msg(f"{target.key} doesn't keep any stock to restock.")
-            return
-
-        target.db.stock = dict(DEFAULT_STOCK)
-        caller.msg(f"You restock {target.key}'s supplies back to the default amount.")
-
-
 class CmdResetQuest(Command):
     """
     Reset a player's heating-unit-module quest progress back to the
@@ -167,8 +127,9 @@ class CmdResetCommitment(Command):
     Reset a player's commitment progress (phase 2B, docs/phase2b-
     records-discrepancy-proposal.md) back to the start, without
     restarting the server. Clears every authored commitment type for
-    that player - there's currently only one ("discrepancy_report"),
-    but this stays generic rather than hard-coding it.
+    that player - generic over whatever's in world.commitments.SCENARIOS
+    plus known_commitment_types_for's own-data fallback, never hard-coded
+    to one type.
 
     A stale model reply that arrives after this reset can't revive the
     cleared commitment: every commitment action looks up the player's
@@ -204,19 +165,29 @@ class CmdResetCommitment(Command):
         # rather than silently staying stuck forever.
         for commitment_type in known_commitment_types_for(target):
             snapshot = reset_commitment(target, commitment_type)
-            if not snapshot["had_offer"] and not snapshot["previous_statuses"]:
+            if not snapshot["had_offer"] and not snapshot["previous_statuses"] and not snapshot["had_declined"]:
                 continue
             cleared_any = True
             log_commitment_reset(
                 commitment_type=commitment_type,
                 had_offer=snapshot["had_offer"],
                 previous_statuses=snapshot["previous_statuses"],
+                had_declined=snapshot["had_declined"],
                 actor_key=target.key,
                 actor_dbref=target.dbref,
             )
 
         removed_parcels = cleanup_stray_parcels(target)
         previous_revision = reset_expected_revision(target)
+        # Quest 2/3: downstream world-state facts that aren't part of
+        # the commitment record itself (world/garden.py's tended flag,
+        # world/skitters.py's kill counter) - without clearing these
+        # too, a reset hunt_skitters/tend_planting_bed commitment would
+        # still start from an old tended flag or kill count instead of
+        # a genuinely clean slate, same gap previous_revision above was
+        # already fixed for.
+        previous_bed_tended = reset_bed_tended(target)
+        previous_skitter_kills = reset_kills(target)
 
         # Phase 2E: the parcel-rumor knowledge and reputation credit
         # are both downstream of deliver_parcel - coordinated here
@@ -236,44 +207,26 @@ class CmdResetCommitment(Command):
                 actor_dbref=target.dbref,
             )
 
-        # Phase 3: the notice-approval fact, resolution record, and
-        # Tarin-informed state are all downstream of unverified_notice -
-        # coordinated here for the same reason as the rumor/reputation
-        # block above, not as a separate `resetnotice` command.
-        notice_snapshot = reset_notice(target)
-        notice_cleared = bool(
-            notice_snapshot["previous_approval_mark_present"] is not None
-            or notice_snapshot["previous_resolutions"]
-            or not notice_snapshot["previous_notice_displayed"]
-            or notice_snapshot["previous_informed_commitment_ids"]
-        )
-        if notice_cleared:
-            log_notice_reset(
-                previous_approval_mark_present=notice_snapshot["previous_approval_mark_present"],
-                previous_resolutions=notice_snapshot["previous_resolutions"],
-                previous_notice_displayed=notice_snapshot["previous_notice_displayed"],
-                previous_informed_commitment_ids=notice_snapshot["previous_informed_commitment_ids"],
-                actor_key=target.key,
-                actor_dbref=target.dbref,
-            )
-
         if (
             cleared_any
             or removed_parcels
             or previous_revision is not None
+            or previous_bed_tended
+            or previous_skitter_kills
             or rumor_cleared
             or previous_mara_reputation
-            or notice_cleared
         ):
             caller.msg(f"You reset {target.key}'s commitment progress back to the start.")
             if removed_parcels:
                 caller.msg(f"Removed {removed_parcels} stray carried parcel(s) no longer tied to anything open.")
             if previous_revision is not None:
                 caller.msg("Cleared their generated noticeboard revision - the display will show a fresh one.")
+            if previous_bed_tended:
+                caller.msg("Cleared their tended-planting-bed flag.")
+            if previous_skitter_kills:
+                caller.msg(f"Cleared their skitter kill count (was {previous_skitter_kills}).")
             if rumor_cleared or previous_mara_reputation:
                 caller.msg("Cleared their parcel-delivery rumor knowledge and Mara's reputation credit.")
-            if notice_cleared:
-                caller.msg("Cleared their notice-approval fact, resolution record, and Tarin's informed state.")
         else:
             caller.msg(f"{target.key} has no commitment progress to reset.")
 

@@ -10,8 +10,9 @@ valid - the caller (step 7's talk command) narrates the drop as the
 NPC being unable to help, not as a corrected action.
 
 Phase 1 gives each prototype NPC exactly one action, per design-bible
-13.5: `serve_drink` (Mara), `hand_over_item` (Tarin), `give_directions`
-(Iri).
+13.5: `serve_drink` (Mara), `give_directions` (Iri). (Tarin's original
+phase 1 action, `hand_over_item`, was retired 2026-10-15 once nothing
+granted it anymore.)
 """
 
 import unicodedata
@@ -29,14 +30,7 @@ from world.commitments import get_open_commitment_id as _get_open_commitment_id
 from world.commitments import propose_commitment as _propose_commitment
 from world.commitments import record_acknowledgment as _record_acknowledgment
 from world.commitments import record_acknowledgment_with_precondition as _record_acknowledgment_with_precondition
-from world.notice_approval import RESOLUTION_VERIFIED, RESOLUTION_WITHDRAWN
-from world.notice_approval import approval_mark_present as _approval_mark_present
-from world.notice_approval import get_resolution as _get_notice_resolution
-from world.notice_approval import is_informed_of as _is_informed_of_notice
-from world.notice_approval import mark_informed as _mark_notice_informed
-from world.notice_approval import project_tarin_notice_knowledge as _project_tarin_notice_knowledge
-from world.notice_approval import project_veska_notice_knowledge as _project_veska_notice_knowledge
-from world.notice_approval import record_resolution as _record_notice_resolution
+from world.garden import is_bed_tended as _is_bed_tended
 from world.npc_memory import remember_fact as _remember_fact
 from world.npc_profile import parse_persona
 from world.reputation import adjust_reputation as _adjust_reputation
@@ -46,15 +40,12 @@ from world.rumors import mark_informed as _mark_informed
 from world.rumors import mark_reputation_credited as _mark_reputation_credited
 from world.rumors import project_mara_parcel_knowledge as _project_mara_parcel_knowledge
 
-# Phase 2E/3: wired here, not in world/commitments.py's SCENARIOS
-# literal, since world/rumors.py and world/notice_approval.py both
-# import from world/commitments.py and this avoids a circular import.
-# SCENARIOS is the same dict object commitments.py's own functions
-# read from, so mutating this field in place is visible everywhere,
-# not just through this module.
+# Phase 2E: wired here, not in world/commitments.py's SCENARIOS
+# literal, since world/rumors.py imports from world/commitments.py and
+# this avoids a circular import. SCENARIOS is the same dict object
+# commitments.py's own functions read from, so mutating this field in
+# place is visible everywhere, not just through this module.
 SCENARIOS["deliver_parcel"].proposer_knowledge_projector = _project_mara_parcel_knowledge
-SCENARIOS["unverified_notice"].proposer_knowledge_projector = _project_tarin_notice_knowledge
-SCENARIOS["unverified_notice"].holder_knowledge_projector = _project_veska_notice_knowledge
 
 
 @dataclass
@@ -101,32 +92,6 @@ def _validate_serve_drink(npc, actor, arguments: dict) -> ActionResult:
     if drink_type not in ("hot", "cold"):
         return ActionResult(False, "", reason=f"invalid drink_type: {drink_type!r}")
     return ActionResult(True, f"{npc.key} serves {actor.key} a {drink_type} drink.")
-
-
-# Starting stock for a hand_over_item NPC (currently just Tarin). Also
-# used by commands/admin.py's builder-only `restock` testing command,
-# since a finite stock that never refills makes repeated testing run
-# dry - there's no in-fiction restocking action (phase 1 keeps each
-# NPC to one action, per CLAUDE.md), just this manual admin reset.
-DEFAULT_STOCK = {"spare part": 3, "hand tool": 3}
-
-
-def _validate_hand_over_item(npc, actor, arguments: dict) -> ActionResult:
-    item_type = arguments.get("item_type")
-    if item_type not in ("spare part", "hand tool"):
-        return ActionResult(False, "", reason=f"invalid item_type: {item_type!r}")
-
-    stock = npc.db.stock
-    if stock is None:
-        stock = dict(DEFAULT_STOCK)
-
-    if stock.get(item_type, 0) <= 0:
-        npc.db.stock = stock
-        return ActionResult(False, "", reason=f"out of stock: {item_type}")
-
-    stock[item_type] -= 1
-    npc.db.stock = stock
-    return ActionResult(True, f"{npc.key} hands {actor.key} a {item_type}.")
 
 
 # Phase 2's first quest (design-bible 13.5; docs/phase2-quest-prototype-
@@ -316,6 +281,8 @@ def _validate_accept_commitment(npc, actor, arguments: dict) -> ActionResult:
         return ActionResult(False, "", reason=result.reason)
     if commitment_type in PARCEL_COMMITMENT_TYPES:
         _create_parcel_for(actor, result.commitment_id)
+    if commitment_type in WEAPON_COMMITMENT_TYPES:
+        _create_weapon_for(actor)
     scenario = SCENARIOS[commitment_type]
     return ActionResult(True, scenario.accept_narration.format(npc=npc.key, actor=actor.key))
 
@@ -424,6 +391,54 @@ def cleanup_stray_parcels(actor) -> int:
             obj.delete()
             removed += 1
     return removed
+
+
+# docs/playtest-quest3-skitters-design.md ("Unwelcome Guests"):
+# commitment types whose accepted commitment comes with a real Weapon
+# object, parallel to PARCEL_COMMITMENT_TYPES above.
+WEAPON_COMMITMENT_TYPES = {"hunt_skitters"}
+
+
+def _create_weapon_for(actor) -> None:
+    """Tarin's side of accepting the hunt_skitters offer: puts a real
+    typeclasses.objects.Weapon directly into the player's inventory.
+    Unlike _create_parcel_for, not tied to the commitment instance by
+    tag - a Weapon is ordinary, undistinguished gear, not a single
+    specific physical object the engine has to track possession of."""
+    from evennia import create_object
+
+    weapon = create_object(
+        "typeclasses.objects.Weapon",
+        key="a compact shock baton",
+        location=actor,
+    )
+    # docs/playtest-quest3-skitters-design.md's approved weapon lore
+    # (project owner, 2026-10-15): a plain, practical piece of
+    # pest-control equipment, not military gear - lent by Tarin, not
+    # given outright (CLAUDE.md's "whether the player keeps it
+    # afterward" is left open by that doc, not decided here).
+    weapon.db.desc = (
+        "A short, scuffed shock baton with a textured insulating grip and two metal contacts "
+        "at its blunt end. A small status light shows it's ready for use. It's nothing "
+        "military-grade - just something durable enough for tight service passages against "
+        "small pests - but repeated solid hits carry a jolt that can put one down."
+    )
+    weapon.db.damage = 1
+
+
+def _validate_report_skitter_kills(npc, actor, arguments: dict) -> ActionResult:
+    from world.skitters import REQUIRED_KILLS, kills_for
+
+    npc_id = npc.db.npc_id
+    scenario = SCENARIOS["hunt_skitters"]
+    if npc_id not in scenario.holder_npc_ids:
+        return ActionResult(False, "", reason=f"{npc_id!r} has no holder role for 'hunt_skitters'")
+
+    precondition_ok = kills_for(actor) >= REQUIRED_KILLS
+    result = _fulfill_commitment_with_precondition(actor, "hunt_skitters", npc_id, precondition_ok)
+    if not result.ok:
+        return ActionResult(False, "", reason=result.reason)
+    return ActionResult(True, scenario.fulfill_narration.format(npc=npc.key, actor=actor.key))
 
 
 def _validate_remember_fact(npc, actor, arguments: dict) -> ActionResult:
@@ -547,91 +562,25 @@ def _validate_report_parcel_delivery(npc, actor, arguments: dict) -> ActionResul
     return ActionResult(True, f"{npc.key} is glad to hear the parcel reached {recipient_name}.")
 
 
-# Phase 3 "The Unverified Notice" (docs/phase3-unverified-notice-
-# design.md): Tarin proposes/is told the outcome; Veska independently
-# resolves it one of two mutually-exclusive ways. Both verify_notice
-# and withdraw_notice route through fulfill_commitment_with_precondition,
-# which already requires STATUS_OPEN to proceed - so once either path
-# succeeds, the other finds no open commitment left and is rejected,
-# the same mutual-exclusion-for-free mechanism 2C's multi-holder parcel
-# already relies on. Neither action takes a real argument (the model's
-# only decision is which of the two to call); each still needs one
-# required field per docs/npc-action-prompt-guidelines.md guideline #7
-# (a zero-argument schema is reliably skipped in favor of narrating in
-# prose instead of calling the tool).
-def _validate_verify_notice(npc, actor, arguments: dict) -> ActionResult:
+# docs/prospect-initial-playtest-design-spec.md §6, Quest 2 ("A Little
+# Community Work"): Iri's fulfilling action. Unlike verify_revision_report,
+# there's no player-reported value to check - world/garden.py's per-player
+# flag is the only fact involved, set by a plain world action (commands/
+# use.py), never by anything the model proposes. confirmed is a trivial
+# required argument, same guideline-#7 reasoning as accept_help
+# above (a zero-argument schema goes
+# reliably uncalled).
+def _validate_confirm_bed_tended(npc, actor, arguments: dict) -> ActionResult:
     npc_id = npc.db.npc_id
-    scenario = SCENARIOS["unverified_notice"]
+    scenario = SCENARIOS["tend_planting_bed"]
     if npc_id not in scenario.holder_npc_ids:
-        return ActionResult(False, "", reason=f"{npc_id!r} has no holder role for 'unverified_notice'")
+        return ActionResult(False, "", reason=f"{npc_id!r} has no holder role for 'tend_planting_bed'")
 
-    commitment_id = _get_open_commitment_id(actor, "unverified_notice")
-    precondition_ok = bool(commitment_id) and _approval_mark_present(actor)
-
-    result = _fulfill_commitment_with_precondition(actor, "unverified_notice", npc_id, precondition_ok)
+    precondition_ok = _is_bed_tended(actor)
+    result = _fulfill_commitment_with_precondition(actor, "tend_planting_bed", npc_id, precondition_ok)
     if not result.ok:
         return ActionResult(False, "", reason=result.reason)
-
-    _record_notice_resolution(actor, result.commitment_id, RESOLUTION_VERIFIED)
-    return ActionResult(True, f"{npc.key} checks the notice herself and confirms the approval mark is there.")
-
-
-def _validate_withdraw_notice(npc, actor, arguments: dict) -> ActionResult:
-    npc_id = npc.db.npc_id
-    scenario = SCENARIOS["unverified_notice"]
-    if npc_id not in scenario.holder_npc_ids:
-        return ActionResult(False, "", reason=f"{npc_id!r} has no holder role for 'unverified_notice'")
-
-    commitment_id = _get_open_commitment_id(actor, "unverified_notice")
-    # Withdrawal doesn't contest Tarin's claim either way - it only
-    # requires an actual open commitment to act on, same bar as any
-    # other commitment action's basic precondition.
-    precondition_ok = bool(commitment_id)
-
-    result = _fulfill_commitment_with_precondition(actor, "unverified_notice", npc_id, precondition_ok)
-    if not result.ok:
-        return ActionResult(False, "", reason=result.reason)
-
-    _record_notice_resolution(actor, result.commitment_id, RESOLUTION_WITHDRAWN)
-    return ActionResult(True, f"{npc.key} pulls the notice from public display until it's sorted out.")
-
-
-_NOTICE_RESOLUTION_ARG_MAP = {"verified": RESOLUTION_VERIFIED, "withdrawn": RESOLUTION_WITHDRAWN}
-
-
-def _validate_report_notice_outcome(npc, actor, arguments: dict) -> ActionResult:
-    npc_id = npc.db.npc_id
-    if npc_id != "tarin_os":
-        return ActionResult(False, "", reason=f"{npc_id!r} has no role in the notice-resolution report")
-
-    reported_resolution = arguments.get("reported_resolution")
-    expected = _NOTICE_RESOLUTION_ARG_MAP.get(reported_resolution)
-    if expected is None:
-        return ActionResult(False, "", reason=f"invalid reported_resolution: {reported_resolution!r}")
-
-    commitment = _get_fulfilled_commitment(actor, "unverified_notice")
-    if commitment is None:
-        return ActionResult(False, "", reason="no fulfilled unverified_notice commitment on record")
-
-    actual = _get_notice_resolution(actor, commitment["commitment_id"])
-    if expected != actual:
-        return ActionResult(
-            False,
-            "",
-            reason=(
-                f"reported resolution {reported_resolution!r} does not match the actual "
-                f"resolution {actual!r}"
-            ),
-        )
-
-    commitment_id = commitment["commitment_id"]
-    if _is_informed_of_notice(actor, commitment_id):
-        return ActionResult(False, "", reason="already informed of this resolution")
-
-    _mark_notice_informed(actor, commitment_id)
-    if actual == RESOLUTION_VERIFIED:
-        return ActionResult(True, f"{npc.key} is relieved to hear the notice checked out and stayed up.")
-    return ActionResult(True, f"{npc.key} is glad the notice was pulled until it's sorted out.")
+    return ActionResult(True, scenario.fulfill_narration.format(npc=npc.key, actor=actor.key))
 
 
 def _fold_accents(text: str) -> str:
@@ -709,7 +658,6 @@ def _validate_give_directions(npc, actor, arguments: dict) -> ActionResult:
 
 _ACTION_VALIDATORS = {
     "serve_drink": _validate_serve_drink,
-    "hand_over_item": _validate_hand_over_item,
     "give_directions": _validate_give_directions,
     "accept_help": _validate_accept_help,
     "give_faulty_module": _validate_give_faulty_module,
@@ -722,10 +670,9 @@ _ACTION_VALIDATORS = {
     "accept_handoff": _validate_accept_handoff,
     "verify_revision_report": _validate_verify_revision_report,
     "report_parcel_delivery": _validate_report_parcel_delivery,
-    "verify_notice": _validate_verify_notice,
-    "withdraw_notice": _validate_withdraw_notice,
-    "report_notice_outcome": _validate_report_notice_outcome,
     "remember_fact": _validate_remember_fact,
+    "confirm_bed_tended": _validate_confirm_bed_tended,
+    "report_skitter_kills": _validate_report_skitter_kills,
 }
 
 
@@ -749,24 +696,6 @@ ACTION_SCHEMAS = {
                     }
                 },
                 "required": ["drink_type"],
-            },
-        },
-    },
-    "hand_over_item": {
-        "type": "function",
-        "function": {
-            "name": "hand_over_item",
-            "description": "Hand the player an item from the workshop's small stock of spares.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "item_type": {
-                        "type": "string",
-                        "enum": ["spare part", "hand tool"],
-                        "description": "Which kind of item to hand over.",
-                    }
-                },
-                "required": ["item_type"],
             },
         },
     },
@@ -884,7 +813,13 @@ ACTION_SCHEMAS = {
                 "or when the player asks what's wrong and you choose to explain. This only "
                 "records that you've offered it - it does not require the player to have "
                 "agreed yet. Wait for their answer, then call accept_commitment or "
-                "decline_commitment to record it."
+                "decline_commitment to record it. If this call doesn't actually go through, "
+                "that means something else of yours needs attention first and this genuinely "
+                "isn't the moment to raise it - your reply has to stand completely on its own, "
+                "as if you had never been about to mention it: don't describe the errand, the "
+                "problem behind it, or anything about it. Respond only to whatever the player "
+                "actually said, the same way you would if this topic had simply never occurred "
+                "to you yet."
             ),
             "parameters": {
                 "type": "object",
@@ -1052,16 +987,16 @@ ACTION_SCHEMAS = {
             },
         },
     },
-    "verify_notice": {
+    "confirm_bed_tended": {
         "type": "function",
         "function": {
-            "name": "verify_notice",
+            "name": "confirm_bed_tended",
             "description": (
-                "Go check the posted notice yourself for the required approval mark, rather "
-                "than taking anyone's word for it. Call it the moment the player asks you to "
-                "confirm the notice is correctly approved, instead of asking them to take it "
-                "down. The engine tells you what you actually find when you check - it is not "
-                "something you can assume or guess at."
+                "Confirm whether the player has actually tended the planting bed in Old Quarter "
+                "Square. Call it the moment they tell you they've done it, or ask you to check - "
+                "the engine checks whether they really used the gardening kit on the bed and will "
+                "tell you the result; you have no way to know that yourself, however confident "
+                "they sound."
             ),
             "parameters": {
                 "type": "object",
@@ -1069,8 +1004,8 @@ ACTION_SCHEMAS = {
                     "confirmed": {
                         "type": "boolean",
                         "description": (
-                            "Always true - this action takes no real argument, it just "
-                            "confirms you're acting now."
+                            "Always true - this action takes no real argument, it just confirms "
+                            "you're checking now."
                         ),
                     }
                 },
@@ -1078,14 +1013,15 @@ ACTION_SCHEMAS = {
             },
         },
     },
-    "withdraw_notice": {
+    "report_skitter_kills": {
         "type": "function",
         "function": {
-            "name": "withdraw_notice",
+            "name": "report_skitter_kills",
             "description": (
-                "Pull the posted notice from public display, regardless of whether its "
-                "approval mark actually checks out. Call it the moment the player asks you to "
-                "take the notice down instead of verifying it."
+                "Check whether the player has actually cleared enough skitters, and close the "
+                "matter out if so. Call it the moment they tell you they've been hunting them or "
+                "ask you to check - the engine checks the real count and will tell you the "
+                "result; you have no way to know that yourself, however confident they sound."
             ),
             "parameters": {
                 "type": "object",
@@ -1093,37 +1029,12 @@ ACTION_SCHEMAS = {
                     "confirmed": {
                         "type": "boolean",
                         "description": (
-                            "Always true - this action takes no real argument, it just "
-                            "confirms you're acting now."
+                            "Always true - this action takes no real argument, it just confirms "
+                            "you're checking now."
                         ),
                     }
                 },
                 "required": ["confirmed"],
-            },
-        },
-    },
-    "report_notice_outcome": {
-        "type": "function",
-        "function": {
-            "name": "report_notice_outcome",
-            "description": (
-                "Record that the player has just told you what happened with the notice at "
-                "the Civic Office - either that Veska checked it herself and it's staying up, "
-                "or that she pulled it. The engine checks that against the real record and "
-                "will tell you the result - it is not something you can tell just by what they "
-                "say. Do not call it for a question, a guess between the two, a case where "
-                "they're unsure, or a claim that leaves it unresolved."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "reported_resolution": {
-                        "type": "string",
-                        "enum": ["verified", "withdrawn"],
-                        "description": "Which outcome the player says actually happened.",
-                    }
-                },
-                "required": ["reported_resolution"],
             },
         },
     },

@@ -9,11 +9,15 @@ Run with:
     evennia test world
 """
 
+from unittest.mock import patch
+
 from django.test import TestCase
 from evennia import create_object
 
 from world.commitments import (
     COMMITMENT_ACTIONS,
+    SCENARIOS,
+    ScenarioConfig,
     accept_commitment,
     commitment_context_for,
     decline_commitment,
@@ -21,6 +25,7 @@ from world.commitments import (
     fulfill_commitment_with_precondition,
     get_open_commitment_id,
     get_state_summary,
+    has_been_declined,
     hint_pose_for,
     propose_commitment,
     record_acknowledgment,
@@ -28,13 +33,19 @@ from world.commitments import (
     reset_commitment,
 )
 
-NOTICE_TYPE = "unverified_notice"
-NOTICE_PROPOSER = "tarin_os"
-NOTICE_HOLDER = "veska_renn"
-
-COMMITMENT_TYPE = "discrepancy_report"
-HOLDER = "tarin_os"
-CLERK = "veska_renn"
+# CommitmentLifecycleTests below uses verify_display_revision purely
+# as an example holder+clerk scenario to test the generic lifecycle,
+# not a test of that scenario's own content - same reasoning as
+# world/test_actions.py's CommitmentActionWiringTests. (Originally
+# used discrepancy_report; removed 2026-10-16, see CLAUDE.md's "One
+# quest offer per NPC".) Mara has no other hint-eligible scenario
+# (deliver_parcel's holder_hint_pose is unset for her), so these tests
+# don't need any hunt_skitters-style isolation dance the way the
+# original discrepancy_report fixture did once hunt_skitters joined
+# Tarin's roster.
+COMMITMENT_TYPE = "verify_display_revision"
+HOLDER = "mara_voss"
+CLERK = "iri_vael"
 
 # docs/phase2c-misdelivered-parcel-proposal.md's parcel scenario,
 # redesigned 2026-10-13: one commitment type, two valid holders -
@@ -215,14 +226,15 @@ class CommitmentLifecycleTests(TestCase):
     def test_context_for_clerk_hides_offer_state(self):
         # An offer is pending but nothing has been accepted yet - the
         # clerk has no legitimate reason to know that, only whether
-        # there's something open to report. (Veska is also a holder
-        # for a different, unrelated 2C scenario - checking the exact
-        # discrepancy_report line, not the whole string, keeps this
-        # test from breaking every time another scenario is added.)
+        # there's something open to report. (Iri is also a holder for
+        # a different, unrelated scenario of her own, tend_planting_bed -
+        # checking the exact verify_display_revision line, not the
+        # whole string, keeps this test from breaking every time
+        # another scenario is added.)
         propose_commitment(self.actor, COMMITMENT_TYPE)
         context = commitment_context_for(CLERK, list(COMMITMENT_ACTIONS), self.actor)
         self.assertIn(
-            "'discrepancy_report' commitment with this player: no open commitment to report", context
+            "'verify_display_revision' commitment with this player: no open commitment to report", context
         )
 
     def test_context_for_clerk_reveals_open_unacknowledged(self):
@@ -239,9 +251,15 @@ class CommitmentLifecycleTests(TestCase):
         self.assertIsNone(commitment_context_for("nobody_npc", list(COMMITMENT_ACTIONS), self.actor))
 
     # -- discoverability hint pose ----------------------------------------
+    # Mara has no other hint-eligible scenario (deliver_parcel's own
+    # holder_hint_pose is unset for her), so unlike the original
+    # discrepancy_report/hunt_skitters fixture these need no isolation
+    # dance at all. The priority-tie mechanism itself (when an NPC
+    # *does* have two hint-eligible scenarios) is tested independently
+    # with synthetic scenarios in OneQuestAtATimeTests below.
 
     def test_hint_pose_shown_before_any_offer(self):
-        self.assertEqual(hint_pose_for(HOLDER, self.actor), "frowning over a shipment manifest")
+        self.assertEqual(hint_pose_for(HOLDER, self.actor), "glancing at the café's information display")
 
     def test_hint_pose_gone_once_offered(self):
         propose_commitment(self.actor, COMMITMENT_TYPE)
@@ -253,17 +271,22 @@ class CommitmentLifecycleTests(TestCase):
         # Declining clears the offer flag, putting the state back to
         # "not offered" - deliberately still shows the hint again, the
         # same as before any offer, since nothing prevents re-offering.
-        self.assertEqual(hint_pose_for(HOLDER, self.actor), "frowning over a shipment manifest")
+        self.assertEqual(hint_pose_for(HOLDER, self.actor), "glancing at the café's information display")
 
     def test_hint_pose_none_for_npc_with_no_holder_role(self):
-        self.assertIsNone(hint_pose_for(CLERK, self.actor))
+        # Not CLERK (iri_vael) - she's also the holder of her own,
+        # unrelated tend_planting_bed hint, so she'd legitimately show
+        # one here. veska_renn currently holds no hint-eligible role
+        # at all (her only commitment role, deliver_parcel's alt-
+        # holder, has no holder_hint_pose set for her).
+        self.assertIsNone(hint_pose_for("veska_renn", self.actor))
         self.assertIsNone(hint_pose_for("nobody_npc", self.actor))
 
     def test_hint_pose_is_per_player(self):
         other = create_object("typeclasses.characters.Character", key="Other")
         propose_commitment(self.actor, COMMITMENT_TYPE)
         self.assertIsNone(hint_pose_for(HOLDER, self.actor))
-        self.assertEqual(hint_pose_for(HOLDER, other), "frowning over a shipment manifest")
+        self.assertEqual(hint_pose_for(HOLDER, other), "glancing at the café's information display")
 
 
 class MultiHolderFulfillmentTests(TestCase):
@@ -395,62 +418,104 @@ class RecordAcknowledgmentWithPreconditionTests(TestCase):
         self.assertTrue(result.ok)
 
 
-class PrerequisiteGatedScenarioTests(TestCase):
+
+
+# Synthetic scenarios isolated from the real roster (SCENARIOS), so
+# these tests exercise _blocking_scenario_for_proposal's mechanism
+# directly rather than depending on real quests' own side effects
+# (hunt_skitters' kill count, discrepancy_report's clerk step, etc.) -
+# same reasoning MultiHolderFulfillmentTests already uses a dedicated
+# npc_id for. Both share a holder/proposer NPC that doesn't exist for
+# real, so nothing here can collide with any other test's state.
+_FAKE_NPC = "fake_test_npc"
+_FAKE_MANDATORY = ScenarioConfig(
+    commitment_type="fake_mandatory",
+    holder_npc_id=_FAKE_NPC,
+    hint_priority=10,
+    mandatory=True,
+)
+_FAKE_ORDINARY = ScenarioConfig(
+    commitment_type="fake_ordinary",
+    holder_npc_id=_FAKE_NPC,
+    hint_priority=0,
+    mandatory=False,
+)
+
+
+class OneQuestAtATimeTests(TestCase):
     """
-    docs/phase3-unverified-notice-design.md: "unverified_notice" can't
-    be offered (or hinted at) until "discrepancy_report" is already
-    fulfilled for this player - an engine-enforced prerequisite, not
-    just persona wording (CLAUDE.md hard rule 2).
+    2026-10-16, project owner's call: an NPC can be involved in many
+    scenarios but should only ever have one actually offerable right
+    now. docs/playtest-quest3-skitters-design.md's live-eval finding
+    is what motivated this; the mechanism itself
+    (world.commitments._blocking_scenario_for_proposal) is generic,
+    tested here independent of any real scenario's content.
     """
 
     def setUp(self):
         room = create_object("typeclasses.rooms.Room", key="Test Room")
-        self.actor = create_object("typeclasses.characters.Character", key="Tester", location=room)
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=room
+        )
+        patcher = patch.dict(
+            SCENARIOS, {"fake_mandatory": _FAKE_MANDATORY, "fake_ordinary": _FAKE_ORDINARY}
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
-    def _fulfill_discrepancy_report(self):
-        propose_commitment(self.actor, "discrepancy_report")
-        accept_commitment(self.actor, "discrepancy_report")
-        record_acknowledgment(self.actor, "discrepancy_report", "veska_renn")
-        fulfill_commitment(self.actor, "discrepancy_report", "tarin_os")
-
-    def test_propose_rejected_before_prerequisite_fulfilled(self):
-        result = propose_commitment(self.actor, NOTICE_TYPE)
+    def test_mandatory_blocks_ordinary_while_both_not_offered(self):
+        result = propose_commitment(self.actor, "fake_ordinary")
         self.assertFalse(result.ok)
-        self.assertEqual(get_state_summary(self.actor, NOTICE_TYPE), "not offered")
+        self.assertEqual(get_state_summary(self.actor, "fake_ordinary"), "not offered")
 
-    def test_propose_succeeds_once_prerequisite_fulfilled(self):
-        self._fulfill_discrepancy_report()
-        result = propose_commitment(self.actor, NOTICE_TYPE)
+    def test_mandatory_can_itself_be_proposed(self):
+        result = propose_commitment(self.actor, "fake_mandatory")
         self.assertTrue(result.ok)
 
-    def test_prerequisite_check_is_per_player(self):
-        other = create_object("typeclasses.characters.Character", key="Other")
-        self._fulfill_discrepancy_report()
-        # Other player's own discrepancy_report is still unfulfilled.
-        result = propose_commitment(other, NOTICE_TYPE)
+    def test_declining_mandatory_does_not_release_the_block(self):
+        propose_commitment(self.actor, "fake_mandatory")
+        decline_commitment(self.actor, "fake_mandatory")
+        self.assertTrue(has_been_declined(self.actor, "fake_mandatory"))
+        result = propose_commitment(self.actor, "fake_ordinary")
         self.assertFalse(result.ok)
 
-    def test_proposer_hint_pose_hidden_before_prerequisite(self):
-        # Tarin is also the holder of his own, unrelated
-        # discrepancy_report hint - clear that one first (by offering
-        # it, not fulfilling it) so this isolates whether the new
-        # scenario's own hint leaks early, not whether Tarin has *any*
-        # hint at all.
-        propose_commitment(self.actor, "discrepancy_report")
-        self.assertIsNone(hint_pose_for(NOTICE_PROPOSER, self.actor))
+    def test_fulfilling_mandatory_releases_the_block(self):
+        propose_commitment(self.actor, "fake_mandatory")
+        accept_commitment(self.actor, "fake_mandatory")
+        fulfill_commitment_with_precondition(self.actor, "fake_mandatory", _FAKE_NPC, True)
+        result = propose_commitment(self.actor, "fake_ordinary")
+        self.assertTrue(result.ok)
 
-    def test_proposer_hint_pose_shown_once_prerequisite_fulfilled(self):
-        self._fulfill_discrepancy_report()
-        self.assertEqual(
-            hint_pose_for(NOTICE_PROPOSER, self.actor),
-            "looking a little uneasy about something posted at the Civic Office",
-        )
+    def test_an_active_offer_blocks_a_different_proposal_regardless_of_priority(self):
+        # fake_ordinary is offered (active, awaiting an answer) -
+        # fake_mandatory can't be newly proposed either, even though
+        # it outranks fake_ordinary by priority: something already in
+        # progress blocks everything else from the same NPC.
+        propose_commitment(self.actor, "fake_mandatory")
+        accept_commitment(self.actor, "fake_mandatory")
+        fulfill_commitment_with_precondition(self.actor, "fake_mandatory", _FAKE_NPC, True)
+        propose_commitment(self.actor, "fake_ordinary")
+        result = propose_commitment(self.actor, "fake_mandatory")
+        self.assertFalse(result.ok)
 
-    def test_proposer_hint_pose_gone_once_offered(self):
-        self._fulfill_discrepancy_report()
-        propose_commitment(self.actor, NOTICE_TYPE)
-        self.assertIsNone(hint_pose_for(NOTICE_PROPOSER, self.actor))
+    def test_declining_ordinary_exempts_it_from_future_priority_contention(self):
+        # Directly exercises the exemption clause itself, bypassing
+        # the real blocking order (fake_mandatory would otherwise have
+        # to be dealt with first) - this confirms a *declined* ordinary
+        # scenario stops competing for priority at all afterward, not
+        # just that it happens to succeed once nothing else is pending.
+        offers = self.actor.attributes.get("commitment_offers", default={})
+        offers["fake_ordinary"] = True
+        self.actor.attributes.add("commitment_offers", offers)
+        decline_commitment(self.actor, "fake_ordinary")
+        self.assertTrue(has_been_declined(self.actor, "fake_ordinary"))
 
-    def test_holder_has_no_proposer_hint(self):
-        self._fulfill_discrepancy_report()
-        self.assertIsNone(hint_pose_for(NOTICE_HOLDER, self.actor))
+        result = propose_commitment(self.actor, "fake_ordinary")
+        self.assertTrue(result.ok, "a declined ordinary scenario must stay exempt, not re-blocked")
+
+    def test_reset_clears_the_decline_history(self):
+        propose_commitment(self.actor, "fake_mandatory")
+        decline_commitment(self.actor, "fake_mandatory")
+        snapshot = reset_commitment(self.actor, "fake_mandatory")
+        self.assertTrue(snapshot["had_declined"])
+        self.assertFalse(has_been_declined(self.actor, "fake_mandatory"))

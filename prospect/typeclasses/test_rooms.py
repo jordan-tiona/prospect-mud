@@ -104,34 +104,41 @@ class RoomAppearanceTests(TestCase):
             self.room.get_display_things(self.looker), "    |cTarin Os is here.|n"
         )
 
-    # -- phase 2B discoverability hint pose ------------------------------
+    # -- discoverability hint pose ------------------------------
+    # verify_display_revision (Mara holds/proposes it) used purely as
+    # an example hint-eligible scenario - Mara has no other hint-
+    # eligible scenario (deliver_parcel's own holder_hint_pose is unset
+    # for her), so these need no hunt_skitters-style isolation the way
+    # the original discrepancy_report/Tarin fixture did. (Originally
+    # Tarin/discrepancy_report; removed 2026-10-16, see CLAUDE.md's
+    # "One quest offer per NPC".)
 
     def test_commitment_holder_shows_hint_pose_before_any_offer(self):
         npc = create_object(
-            "typeclasses.npcs.TalkativeNPC", key="Tarin Os", location=self.room
+            "typeclasses.npcs.TalkativeNPC", key="Mara Voss", location=self.room
         )
-        npc.db.npc_id = "tarin_os"
+        npc.db.npc_id = "mara_voss"
         self.assertEqual(
             self.room.get_display_things(self.looker),
-            "    |cTarin Os is here, frowning over a shipment manifest.|n",
+            "    |cMara Voss is here, glancing at the café's information display.|n",
         )
 
     def test_commitment_holder_hint_pose_gone_once_offered(self):
         npc = create_object(
-            "typeclasses.npcs.TalkativeNPC", key="Tarin Os", location=self.room
+            "typeclasses.npcs.TalkativeNPC", key="Mara Voss", location=self.room
         )
-        npc.db.npc_id = "tarin_os"
-        propose_commitment(self.looker, "discrepancy_report")
+        npc.db.npc_id = "mara_voss"
+        propose_commitment(self.looker, "verify_display_revision")
         self.assertEqual(
-            self.room.get_display_things(self.looker), "    |cTarin Os is here.|n"
+            self.room.get_display_things(self.looker), "    |cMara Voss is here.|n"
         )
 
     def test_hint_pose_is_per_looker(self):
         npc = create_object(
-            "typeclasses.npcs.TalkativeNPC", key="Tarin Os", location=self.room
+            "typeclasses.npcs.TalkativeNPC", key="Mara Voss", location=self.room
         )
-        npc.db.npc_id = "tarin_os"
-        propose_commitment(self.looker, "discrepancy_report")
+        npc.db.npc_id = "mara_voss"
+        propose_commitment(self.looker, "verify_display_revision")
         other = create_object(
             "typeclasses.characters.Character", key="Other", location=self.room
         )
@@ -139,7 +146,7 @@ class RoomAppearanceTests(TestCase):
         # hasn't, and still sees the hint.
         self.assertEqual(
             self.room.get_display_things(other),
-            "    |cTarin Os is here, frowning over a shipment manifest.|n",
+            "    |cMara Voss is here, glancing at the café's information display.|n",
         )
 
     def test_static_ambient_pose_still_wins_for_non_commitment_npcs(self):
@@ -148,6 +155,11 @@ class RoomAppearanceTests(TestCase):
         )
         npc.db.npc_id = "iri_vael"
         npc.db.ambient_pose = "flipping through a thick ledger"
+        # Iri is also the holder of her own tend_planting_bed hint
+        # (Quest 2) - clear that one (by offering it, not fulfilling
+        # it) so this isolates the static-pose fallback itself, not
+        # whether Iri specifically has zero commitment role at all.
+        propose_commitment(self.looker, "tend_planting_bed")
         self.assertEqual(
             self.room.get_display_things(self.looker),
             "    |cIri Vael is here, flipping through a thick ledger.|n",

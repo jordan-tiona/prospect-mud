@@ -117,6 +117,42 @@ class RevisionDisplayObject(RoomObject):
         return indent_paragraphs(text)
 
 
+class SignpostObject(RoomObject):
+    """
+    Old Quarter Square's signpost (docs/prospect-initial-playtest-
+    design-spec.md 4, docs/prospect-playtest-new-characters-and-
+    rooms.md 4): always visible to everyone, same as `RevisionDisplayObject`,
+    but unlike that class its content isn't per-looker - it's computed
+    once from the real room graph so it can never drift from the
+    actual map.
+
+    The route to Daven's office is computed via the same BFS
+    (world.actions._find_exit_path) that the `give_directions` NPC
+    action already uses, not hand-authored text. `db.spoke_lines` is
+    the one hand-authored part: plain "<direction>: <existing room
+    name>" flavor for the square's other spokes, set by the builder.
+    """
+
+    def get_display_desc(self, looker, **kwargs):
+        from evennia import search_tag
+
+        from world.actions import _find_exit_path
+        from world.build_rooms import BUILD_TAG_CATEGORY as ROOM_TAG_CATEGORY
+
+        lines = ["A simple signpost lists the streets leading off the square."]
+
+        matches = search_tag(key="daven_office", category=ROOM_TAG_CATEGORY)
+        target_room = matches[0] if matches else None
+        if target_room is not None and self.location is not None:
+            path = _find_exit_path(self.location, target_room)
+            if path:
+                route_text = ", then ".join(path)
+                lines.append(f"Daven's office: {route_text}.")
+
+        lines.extend(self.db.spoke_lines or [])
+        return indent_paragraphs("\n\n".join(lines))
+
+
 class CommitmentHintObject(RoomObject):
     """
     A RoomObject whose entire purpose is per-player narrative hiding
@@ -173,6 +209,63 @@ class Parcel(ObjectParent, DefaultObject):
     def at_pre_give(self, giver, getter, **kwargs):
         giver.msg(f"{self.get_display_name(giver)} isn't yours to give away.")
         return False
+
+
+class GardeningKit(ObjectParent, DefaultObject):
+    """
+    Quest 2's communal tool (docs/prospect-initial-playtest-design-
+    spec.md §6: "not locked behind a code or puzzle"). Unlike Parcel,
+    this is a perfectly ordinary gettable/droppable item - no lock
+    overrides at all. commands/use.py checks the actor is actually
+    holding one of these (by typeclass) before letting them tend the
+    planting bed; nothing about possession needs to be exclusive or
+    consumed, since the completion fact tracked is per-player
+    (world/garden.py), not tied to the kit itself.
+    """
+
+
+class PlantingBed(RoomObject):
+    """
+    Quest 2's "use kit on bed" target in Old Quarter Square - the one
+    justified interactable object the design spec asks for (§6,
+    Quest 2), folding what was previously just room-description prose
+    ("low planting beds") into something commands/use.py can actually
+    target. Not pickable, same as any other RoomObject.
+
+    `look <bed>` reflects whether *this specific looker* has tended it
+    (world/garden.py's is_bed_tended) - same per-looker pattern as
+    RevisionDisplayObject above, and for the same reason: this is a
+    per-player quest fact, not shared-world state, so one player
+    finishing the bed must not change what a second player sees.
+    `db.desc` (set by world/build_garden_props.py) is only the
+    not-yet-tended text; the tended text is authored here since it
+    isn't data the builder tracks.
+    """
+
+    def get_display_desc(self, looker, **kwargs):
+        from world.garden import is_bed_tended
+
+        if hasattr(looker, "attributes") and is_bed_tended(looker):
+            return indent_paragraphs(
+                "The square's planting bed, soil freshly turned and weeded - you tended to it yourself."
+            )
+        return super().get_display_desc(looker, **kwargs)
+
+
+class Weapon(ObjectParent, DefaultObject):
+    """
+    Quest 3's ("Unwelcome Guests") starter weapon - handed to the
+    player by accept_commitment's engine-side effect for the
+    "hunt_skitters" commitment (world/actions.py's
+    _create_weapon_for), same shape as Quest 1's accept_commitment
+    creating a Parcel. Unlike Parcel, ordinary gettable/droppable -
+    no reason to make it exclusive, same as GardeningKit.
+
+    `db.damage` is the only mechanical property commands/attack.py
+    reads, kept on the instance rather than hardcoded in the command
+    so a future different weapon type could vary it without touching
+    command code.
+    """
 
 
 class Object(ObjectParent, DefaultObject):

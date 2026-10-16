@@ -2,6 +2,8 @@
 
 Status: Scenario and implementation direction approved by the project owner on 2026-10-13. Engineering implementation belongs to Claude. This document is a handoff, not a claim that Phase 2B is implemented or its exit test has passed.
 
+**REMOVED 2026-10-16.** The `discrepancy_report` commitment scenario this document describes was fully removed from the game, along with its dependent `unverified_notice` scenario (docs/phase3-unverified-notice-design.md), after live playtesting found it unreliably conflicted with Tarin's actual tutorial quest (`hunt_skitters`) - see `docs/playtest-quest3-skitters-design.md`'s "One quest to dispense per NPC" section and CLAUDE.md's rule of the same name. Kept here as a historical record of the original design, not as live or reviveable content as written.
+
 ## References and scope
 
 - [Phase 2 design, particularly sections 11–12](phase2-quest-prototype-design.md)

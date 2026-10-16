@@ -410,14 +410,12 @@ class SayCommandTests(TestCase):
 
     @patch("commands.say.chat")
     def test_action_not_granted_to_this_npc_is_dropped(self, mock_chat):
-        # Mara's persona doesn't grant hand_over_item - even if the
-        # model proposes it, it must never be applied.
-        mock_chat.return_value = _reply(
-            "Here.", tool_calls=[{"name": "hand_over_item", "arguments": {"item_type": "spare part"}}]
-        )
-        self._say("got any spare parts?")
+        # Mara's persona doesn't grant exchange_module (that's Tarin's) -
+        # even if the model proposes it, it must never be applied.
+        mock_chat.return_value = _reply("Here.", tool_calls=[{"name": "exchange_module", "arguments": {"confirmed": True}}])
+        self._say("swap the module for me?")
 
-        self.assertFalse(any("hands" in m for m in self.messages))
+        self.assertFalse(any("swapped" in m for m in self.messages))
 
     @patch("commands.say.chat")
     def test_flagged_reply_is_not_shown_to_player(self, mock_chat):
@@ -610,7 +608,7 @@ class SayCommandTests(TestCase):
         self.assertEqual(kwargs["player_message"], "Hello there.")
         self.assertEqual(kwargs["npc_response"], "Afternoon.")
         self.assertEqual(kwargs["model"], "test-model")
-        self.assertEqual(kwargs["prompt_version"], "35")
+        self.assertEqual(kwargs["prompt_version"], "39")
         self.assertEqual(kwargs["flagged"], False)
         self.assertEqual(kwargs["tool_calls"], [])
         self.assertIn("prompt_messages", kwargs)
@@ -663,19 +661,18 @@ class SayCommandTests(TestCase):
         self.assertTrue(kwargs["flag_reason"].startswith("llm_unavailable"))
         self.assertIn("timed out", kwargs["flag_reason"])
 
-    # -- module-exchange quest state (retired 2026-10-13) ------------------
-    # Mara's and Tarin's personas no longer grant any of the quest
-    # actions, so quest_context_for never has anything to inject for
-    # either of them any more - confirmed here rather than just assumed,
-    # since this used to be live, asserted-true behavior for Mara.
+    # -- module-exchange quest state (revived as Quest 1, 2026-10-14) -----
+    # Mara's and Tarin's personas grant the heating-module actions again
+    # (docs/prospect-initial-playtest-design-spec.md §6, Quest 1), so
+    # quest_context_for has something to inject for Mara once more.
 
     @patch("commands.say.chat")
-    def test_quest_context_no_longer_injected_for_mara(self, mock_chat):
+    def test_quest_context_injected_for_mara(self, mock_chat):
         mock_chat.return_value = _reply("Afternoon.")
         self._say("hello there")
 
         messages = mock_chat.call_args.args[0]
-        self.assertFalse(
+        self.assertTrue(
             any("heating-unit module errand" in m.get("content", "") for m in messages)
         )
 
@@ -737,13 +734,12 @@ class SayCommandTests(TestCase):
         self.assertTrue(any("[memory]" in m and "grew up near the Docks" in m for m in self.messages))
 
     @patch("commands.say.chat")
-    def test_hallucinated_retired_action_is_dropped_not_applied(self, mock_chat):
-        # accept_help was retired from Mara's persona (the heater errand
-        # served its purpose for 2A's exit test and isn't live content
-        # any more) - if the model ever hallucinates the call anyway, it
-        # must be rejected as not-permitted, not silently honored.
+    def test_hallucinated_action_outside_npcs_grant_is_dropped_not_applied(self, mock_chat):
+        # exchange_module is Tarin's action, not Mara's - if the model
+        # ever hallucinates the call on the wrong NPC, it must be
+        # rejected as not-permitted, not silently honored.
         mock_chat.return_value = _reply(
-            "Oh, that'd be a help.", tool_calls=[{"name": "accept_help", "arguments": {}}]
+            "Let me swap that for you.", tool_calls=[{"name": "exchange_module", "arguments": {}}]
         )
         self._say("want me to take that module to Tarin?")
 
@@ -794,14 +790,14 @@ class SayCommandTests(TestCase):
         self.actor.location = self.workshop
         mock_chat.side_effect = [
             _reply(
-                "There's a notice I'm not supposed to mention yet.",
-                tool_calls=[{"name": "propose_commitment", "arguments": {"commitment_type": "unverified_notice"}}],
+                "There's a parcel I'm not supposed to mention yet.",
+                tool_calls=[{"name": "propose_commitment", "arguments": {"commitment_type": "deliver_parcel"}}],
             ),
             _reply("Let me rephrase - never mind, forget I said anything."),
         ]
         self._say("how's work?")
 
-        self.assertFalse(any("notice I'm not supposed to mention yet" in m for m in self.messages))
+        self.assertFalse(any("parcel I'm not supposed to mention yet" in m for m in self.messages))
         self.assertTrue(any("forget I said anything" in m for m in self.messages))
 
     @patch("commands.say.chat")

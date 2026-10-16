@@ -16,7 +16,8 @@ from unittest.mock import PropertyMock, patch
 from django.test import TestCase
 from evennia import create_object
 
-from server.conf.lockfuncs import commitment_hint_visible
+from server.conf.lockfuncs import commitment_hint_visible, module_exchange_hint_visible
+from world.actions import _validate_accept_help
 from world.build_quest_props import QUEST_PROP_TAG_CATEGORY, build
 from world.build_rooms import build as build_rooms
 from world.commitments import accept_commitment, decline_commitment, propose_commitment
@@ -55,6 +56,28 @@ class CommitmentHintVisibleLockFuncTests(TestCase):
         # Defensive: a non-Character accessing_obj (or anything without
         # real commitment state) must fail closed, not raise.
         self.assertFalse(commitment_hint_visible(object(), None, "deliver_parcel"))
+
+
+class ModuleExchangeHintVisibleLockFuncTests(TestCase):
+    """The heating-unit module-exchange quest (world/actions.py's
+    QUEST_MODULE_EXCHANGE_*) predates the generic commitment_type
+    mechanism above and has its own hint lock func - same per-player
+    "not started" bar, different state source."""
+
+    def setUp(self):
+        room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.mara = create_object("typeclasses.npcs.NPC", key="Mara Voss", location=room)
+        self.actor = create_object("typeclasses.characters.Character", key="Tester", location=room)
+
+    def test_not_started_is_visible(self):
+        self.assertTrue(module_exchange_hint_visible(self.actor, None))
+
+    def test_accepted_is_not_visible(self):
+        _validate_accept_help(self.mara, self.actor, {})
+        self.assertFalse(module_exchange_hint_visible(self.actor, None))
+
+    def test_unknown_accessing_obj_denies_rather_than_errors(self):
+        self.assertFalse(module_exchange_hint_visible(object(), None))
 
 
 class BuildQuestPropsTests(TestCase):
@@ -118,6 +141,21 @@ class BuildQuestPropsTests(TestCase):
         with patch.object(type(self.actor), "is_superuser", new_callable=PropertyMock, return_value=True):
             self.assertFalse(parcel.access(self.actor, "view"))
             self.assertFalse(parcel.access(self.actor, "search"))
+
+    def test_builds_the_faulty_module_prop_in_the_cafe(self):
+        props = build()
+        module = props["faulty_heating_module_hint"]
+        self.assertEqual(module.location, self.rooms["corner_cafe"])
+        self.assertTrue(module.access(self.actor, "view"))
+
+    def test_faulty_module_prop_hidden_once_the_errand_is_accepted(self):
+        from world.actions import _validate_accept_help
+
+        props = build()
+        module = props["faulty_heating_module_hint"]
+        mara = create_object("typeclasses.npcs.NPC", key="Mara Voss", location=self.rooms["corner_cafe"])
+        _validate_accept_help(mara, self.actor, {})
+        self.assertFalse(module.access(self.actor, "view"))
 
     def test_upgrades_a_prop_created_as_plain_room_object(self):
         # Migration path for a prop that already exists from before

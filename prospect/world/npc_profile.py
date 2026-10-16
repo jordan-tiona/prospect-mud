@@ -34,6 +34,12 @@ class NPCProfile:
     # Optional - falls back to settings.LLM_MAX_TOKENS when unset, so
     # existing persona files without this field keep working.
     max_reply_tokens: int | None = None
+    # The NPC's `look` description (world/build_npcs.py applies this to
+    # db.desc). Lives in the metadata comment, not the body, so it's
+    # stripped by strip_html_comments() the same as everything else in
+    # the comment and never reaches a prompt. Optional - an NPC with no
+    # authored desc yet just keeps Evennia's default "nothing special."
+    desc: str | None = None
 
 
 def _parse_metadata(comment_text: str) -> dict:
@@ -105,4 +111,5 @@ def parse_persona_text(npc_id: str, raw: str) -> NPCProfile:
         pronouns=fields["pronouns"],
         body=strip_html_comments(raw),
         max_reply_tokens=max_reply_tokens,
+        desc=fields.get("desc") or None,
     )

@@ -16,6 +16,7 @@ Run with:
 from evennia import create_object, search_tag
 
 from world.build_rooms import BUILD_TAG_CATEGORY as ROOM_TAG_CATEGORY
+from world.npc_profile import parse_persona
 
 NPC_TAG_CATEGORY = "phase1_npcs"
 
@@ -27,6 +28,8 @@ NPCS = [
     ("tarin_os", "Tarin Os", "maintenance_workshop"),
     ("iri_vael", "Iri Vael", "civic_office"),
     ("veska_renn", "Veska Renn", "civic_office"),
+    ("given_marr", "Given Marr", "medical_bay"),
+    ("daven_varek", "Daven Varek", "daven_office"),
 ]
 
 
@@ -48,13 +51,22 @@ def _get_or_create_npc(npc_id, name, room):
         first_name = name.split()[0]
         if first_name not in npc.aliases.all():
             npc.aliases.add(first_name)
-        return npc
+    else:
+        npc = create_object("typeclasses.npcs.TalkativeNPC", key=name, location=room)
+        npc.db.npc_id = npc_id
+        npc.tags.add(npc_id, category=NPC_TAG_CATEGORY)
+        first_name = name.split()[0]
+        npc.aliases.add(first_name)
 
-    npc = create_object("typeclasses.npcs.TalkativeNPC", key=name, location=room)
-    npc.db.npc_id = npc_id
-    npc.tags.add(npc_id, category=NPC_TAG_CATEGORY)
-    first_name = name.split()[0]
-    npc.aliases.add(first_name)
+    # Persona's optional `desc` metadata field (world/npc_profile.py) -
+    # re-applied on every run so an updated persona file's desc takes
+    # effect without deleting and recreating the NPC. An NPC with no
+    # `desc` field yet (nothing authored) is left alone rather than
+    # overwritten with a blank string.
+    desc = parse_persona(npc_id).desc
+    if desc:
+        npc.db.desc = desc
+
     return npc
 
 

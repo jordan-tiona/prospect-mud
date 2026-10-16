@@ -22,10 +22,15 @@ from commands.admin import (
     CmdResetCommitment,
     CmdResetMemory,
     CmdResetQuest,
-    CmdRestock,
 )
+from commands.attack import CmdAttack
+from commands.chargen import CmdScriptedCreate
+from commands.get import CmdGet
 from commands.look import CmdLook
 from commands.say import CmdSay
+from commands.scripted_login import CmdScriptedLogin
+from commands.tannoy import CmdTannoy
+from commands.use import CmdUse
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
@@ -47,12 +52,15 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         #
         self.add(CmdSay())
         self.add(CmdLook())
+        self.add(CmdGet())
         self.add(CmdForget())
-        self.add(CmdRestock())
         self.add(CmdResetQuest())
         self.add(CmdResetCommitment())
         self.add(CmdResetMemory())
         self.add(CmdMemoryDebug())
+        self.add(CmdUse())
+        self.add(CmdAttack())
+        self.add(CmdTannoy())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
@@ -91,6 +99,8 @@ class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
+        self.add(CmdScriptedCreate())
+        self.add(CmdScriptedLogin())
 
 
 class SessionCmdSet(default_cmds.SessionCmdSet):
