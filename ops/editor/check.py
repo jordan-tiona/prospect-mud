@@ -68,6 +68,7 @@ def _content_issues(root, where, relative, kind, object_id):
 def _exit_issues(sector, rooms):
     issues = []
     used = defaultdict(dict)  # room -> {command word: exit description}
+    pairs = {}  # frozenset of the two rooms -> the first exit record between them
     out_links, in_links = defaultdict(set), defaultdict(set)
 
     def claim(room, key, aliases, where):
@@ -91,6 +92,15 @@ def _exit_issues(sector, rooms):
             continue
         if src == dst:
             issues.append(Issue(WARNING, 'self_exit', where, 'exit leads back into the same room'))
+        # One connection per pair of rooms (owner decision, 2026-10-16): a record
+        # already covers both directions, and synonyms are aliases.
+        pair = frozenset((src, dst))
+        if pair in pairs:
+            issues.append(Issue(ERROR, 'duplicate_room_pair', where,
+                                f'{pairs[pair]} already connects these rooms - merge them into one '
+                                'record (extra words go in aliases; the way back in "return")'))
+        else:
+            pairs[pair] = where
         claim(src, ex['key'], ex.get('aliases', []), where)
         out_links[src].add(dst)
         in_links[dst].add(src)

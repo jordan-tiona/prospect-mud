@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MUD Editor</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="bar">
+    <strong class="brand">MUD Editor</strong>
+    <span class="tag-ro" title="Milestone 5a: nothing in this view writes to disk">read-only</span>
+    <label class="sector-pick">Sector <select id="sector"></select></label>
+    <button id="issues-btn" class="pill" type="button">Check</button>
+    <span id="manifest" class="pill static"></span>
+    <button id="unplaced-btn" class="pill" type="button">Unplaced</button>
+    <span class="spacer"></span>
+    <button id="reload" type="button" title="Re-read the sector and content files">Reload</button>
+  </header>
+  <main>
+    <section id="map-wrap" aria-label="Sector map">
+      <svg id="map" role="img" aria-label="Rooms and exits"></svg>
+      <div class="hint">Drag to pan · scroll to zoom · <kbd>F</kbd> to fit · <kbd>Esc</kbd> for overview</div>
+      <div id="error" class="load-error" hidden></div>
+    </section>
+    <aside id="panel" aria-live="polite"></aside>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

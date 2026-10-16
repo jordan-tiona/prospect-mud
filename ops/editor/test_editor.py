@@ -98,15 +98,41 @@ class CheckTests(unittest.TestCase):
         self.assertIn('one_way_exit', codes(issues, check.INFO))
         self.assertEqual(codes(issues, check.WARNING), ['dead_end', 'unreachable'])
 
+    def add_room_c(self):
+        self.write('rooms/room_c.md', ROOM_FILE.format(id='room_c', text='Room C.'))
+        self.sector['rooms']['room_c'] = {'title': 'Room C', 'content': 'rooms/room_c.md'}
+
     def test_duplicate_exit_word_in_one_room(self):
-        self.sector['exits'].append({'from': 'room_a', 'to': 'room_b', 'key': 'up', 'aliases': ['N'],
+        self.add_room_c()
+        self.sector['exits'].append({'from': 'room_a', 'to': 'room_c', 'key': 'up', 'aliases': ['N'],
                                      'return': {'key': 'down', 'aliases': []}})
         self.assertEqual(codes(self.run_check(), check.ERROR), ['duplicate_exit'])
 
     def test_return_exit_words_are_claimed_too(self):
-        self.sector['exits'].append({'from': 'room_b', 'to': 'room_a', 'key': 'south', 'aliases': [],
-                                     'return': {'key': 'up', 'aliases': []}})
+        self.add_room_c()
+        self.sector['exits'].append({'from': 'room_c', 'to': 'room_a', 'key': 'down', 'aliases': [],
+                                     'return': {'key': 'north', 'aliases': []}})
         self.assertEqual(codes(self.run_check(), check.ERROR), ['duplicate_exit'])
+
+    def test_one_connection_per_pair_of_rooms(self):
+        second = {'from': 'room_a', 'to': 'room_b', 'key': 'door', 'aliases': [], 'return': None}
+        self.sector['exits'].append(second)
+        issues = [i for i in self.run_check() if i.level == check.ERROR]
+        self.assertEqual(codes(issues), ['duplicate_room_pair'])
+        self.assertIn('exit[0] room_a->room_b', issues[0].message)
+
+    def test_two_one_way_records_facing_each_other_are_one_connection(self):
+        self.sector['exits'] = [
+            {'from': 'room_a', 'to': 'room_b', 'key': 'north', 'aliases': [], 'return': None},
+            {'from': 'room_b', 'to': 'room_a', 'key': 'south', 'aliases': [], 'return': None},
+        ]
+        self.assertEqual(codes(self.run_check(), check.ERROR), ['duplicate_room_pair'])
+
+    def test_different_pairs_are_fine(self):
+        self.add_room_c()
+        self.sector['exits'].append({'from': 'room_b', 'to': 'room_c', 'key': 'east', 'aliases': [],
+                                     'return': {'key': 'west', 'aliases': []}})
+        self.assertEqual(self.run_check(), [])
 
     def test_unknown_rooms(self):
         self.sector['exits'][0]['to'] = 'nowhere'

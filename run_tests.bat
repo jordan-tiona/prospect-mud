@@ -10,7 +10,7 @@ if "%TEST_PARALLEL%"=="" set TEST_PARALLEL=8
 set LABELS=%*
 if "%LABELS%"=="" (
     pushd "%~dp0ops\editor"
-    python -m unittest -q test_editor || exit /b 1
+    python -m unittest -q test_editor test_serve || exit /b 1
     popd
     set LABELS=commands world typeclasses
 )
