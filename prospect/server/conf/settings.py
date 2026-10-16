@@ -110,6 +110,10 @@ LLM_PLAYER_DAILY_SPEND_USD = float(os.environ.get("PROSPECT_LLM_PLAYER_DAILY_SPE
 # Update these if the model or its pricing changes.
 LLM_INPUT_COST_PER_1M_TOKENS = float(os.environ.get("PROSPECT_LLM_INPUT_COST_PER_1M_TOKENS", "0.40"))
 LLM_OUTPUT_COST_PER_1M_TOKENS = float(os.environ.get("PROSPECT_LLM_OUTPUT_COST_PER_1M_TOKENS", "1.60"))
+# Prompt tokens served from the provider's prompt cache (25% of the input
+# rate for gpt-4.1-mini). Only used when the provider doesn't report its
+# own per-call cost; OpenRouter does, so this is a fallback.
+LLM_CACHED_INPUT_COST_PER_1M_TOKENS = float(os.environ.get("PROSPECT_LLM_CACHED_INPUT_COST_PER_1M_TOKENS", "0.10"))
 
 # Server-wide daily spend circuit breaker (world/llm_budget.py), well
 # below the OpenRouter key's own $25 spend limit. Deliberately set

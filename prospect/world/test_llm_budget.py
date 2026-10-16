@@ -135,6 +135,19 @@ class GlobalSpendTests(TestCase):
             settings.LLM_INPUT_COST_PER_1M_TOKENS + settings.LLM_OUTPUT_COST_PER_1M_TOKENS,
         )
 
+    @override_settings(
+        LLM_INPUT_COST_PER_1M_TOKENS=1.0, LLM_CACHED_INPUT_COST_PER_1M_TOKENS=0.25, LLM_OUTPUT_COST_PER_1M_TOKENS=0
+    )
+    def test_cached_prompt_tokens_are_priced_at_the_cached_rate(self):
+        usage = {"prompt_tokens": 1_000_000, "cached_tokens": 800_000, "completion_tokens": 0}
+
+        self.assertAlmostEqual(call_cost_usd(usage), 0.2 + 0.2)
+
+    def test_provider_reported_cost_wins_over_token_pricing(self):
+        usage = {"prompt_tokens": 1_000_000, "completion_tokens": 1_000_000, "cost": 0.0123}
+
+        self.assertEqual(call_cost_usd(usage), 0.0123)
+
     @override_settings(LLM_DAILY_SPEND_LIMIT_USD=0.01)
     def test_limit_not_reached_below_the_ceiling(self):
         record_global_spend({"prompt_tokens": 1000, "completion_tokens": 0})

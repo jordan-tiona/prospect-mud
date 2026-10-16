@@ -74,8 +74,22 @@ class UsageCaptureTests(SimpleTestCase):
 
         self.assertEqual(
             reply.usage,
-            {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+            {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15, "cached_tokens": 0},
         )
+
+    @patch("world.llm_client._get_client")
+    def test_cached_tokens_and_provider_cost_are_captured_when_reported(self, mock_get_client):
+        mock_client = MagicMock()
+        response = _mock_response()
+        response.usage.prompt_tokens_details.cached_tokens = 8
+        response.usage.cost = 0.0007
+        mock_client.chat.completions.create.return_value = response
+        mock_get_client.return_value = mock_client
+
+        reply = chat([{"role": "user", "content": "hi"}])
+
+        self.assertEqual(reply.usage["cached_tokens"], 8)
+        self.assertEqual(reply.usage["cost"], 0.0007)
 
     @patch("world.llm_client._get_client")
     def test_missing_usage_on_the_response_yields_an_empty_dict(self, mock_get_client):

@@ -98,15 +98,21 @@ def _global_spend_today() -> float:
 
 def call_cost_usd(usage: dict) -> float:
     """
-    Real dollar cost of one model call from its actual token usage,
-    using OpenRouter's per-token rates for the configured model
-    (settings.LLM_INPUT_COST_PER_1M_TOKENS / _OUTPUT_). These need
-    updating if the model or its pricing changes.
+    Real dollar cost of one model call (or one turn's combined calls).
+    Uses the provider's own billed `cost` when the usage carries one
+    (world/llm_client.py; OpenRouter reports it, cache discounts
+    included). Otherwise prices the tokens with settings'
+    per-1M rates, charging `cached_tokens` at the cached-input rate.
+    Those rates need updating if the model or its pricing changes.
     """
+    if "cost" in usage:
+        return usage["cost"]
     prompt_tokens = usage.get("prompt_tokens", 0)
+    cached_tokens = min(usage.get("cached_tokens", 0), prompt_tokens)
     completion_tokens = usage.get("completion_tokens", 0)
     return (
-        prompt_tokens * settings.LLM_INPUT_COST_PER_1M_TOKENS / 1_000_000
+        (prompt_tokens - cached_tokens) * settings.LLM_INPUT_COST_PER_1M_TOKENS / 1_000_000
+        + cached_tokens * settings.LLM_CACHED_INPUT_COST_PER_1M_TOKENS / 1_000_000
         + completion_tokens * settings.LLM_OUTPUT_COST_PER_1M_TOKENS / 1_000_000
     )
 

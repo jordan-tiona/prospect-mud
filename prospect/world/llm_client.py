@@ -51,11 +51,28 @@ def _usage_dict(response) -> dict:
     usage = getattr(response, "usage", None)
     if usage is None:
         return {}
-    return {
+    result = {
         "prompt_tokens": usage.prompt_tokens,
         "completion_tokens": usage.completion_tokens,
         "total_tokens": usage.total_tokens,
+        # Prompt tokens the provider served from its prompt cache, billed at
+        # a discount (OpenAI-style `prompt_tokens_details`; 0 if not reported).
+        "cached_tokens": _number(getattr(getattr(usage, "prompt_tokens_details", None), "cached_tokens", None)) or 0,
     }
+    # The provider's own billed cost for this call, when it reports one
+    # (OpenRouter does, as `usage.cost`). world/llm_budget.call_cost_usd
+    # prefers it over pricing tokens from settings.
+    cost = _number(getattr(usage, "cost", None))
+    if cost is not None:
+        result["cost"] = cost
+    return result
+
+
+def _number(value):
+    """value if it's a real int/float (not a bool or a mock), else None."""
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return value
+    return None
 
 
 def _parse_tool_calls(message) -> list:

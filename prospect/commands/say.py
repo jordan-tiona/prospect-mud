@@ -186,6 +186,10 @@ def _combine_usage(first: dict, second: dict) -> dict:
     own docstring for why the logged usage/cost covers the full turn,
     not just one completion."""
     keys = set(first) | set(second)
+    if ("cost" in first) != ("cost" in second):
+        # A provider cost for only one call isn't the turn's cost; let
+        # call_cost_usd price the combined tokens instead.
+        keys.discard("cost")
     return {key: first.get(key, 0) + second.get(key, 0) for key in keys}
 
 
