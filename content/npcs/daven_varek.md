@@ -7,7 +7,7 @@ species: Kethari
 pronouns: he/him
 prompt_version: 1
 status: Provisional
-approval: Draft
+approval: Approved
 knowledge_scope (bible sections, Established content only):
   11.2.1, 11.2.2, 11.2.3, 11.2.6
 actions: give_directions, remember_fact

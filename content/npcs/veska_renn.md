@@ -7,7 +7,7 @@ species: Aevyrin
 pronouns: she/her
 prompt_version: 8
 status: Provisional
-approval: Draft
+approval: Approved
 knowledge_scope (bible sections, Established content only):
   11.1, 11.2.1, 11.2.6, 5.8
 actions: accept_handoff, remember_fact

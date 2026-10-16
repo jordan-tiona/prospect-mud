@@ -7,7 +7,7 @@ species: Voldren
 pronouns: she/her
 prompt_version: 39
 status: Provisional
-approval: Draft
+approval: Approved
 knowledge_scope (bible sections, Established content only):
   11.2.1, 11.2.2, 11.2.3, 11.2.4, 11.2.6, 5.6
 actions: serve_drink, give_directions, accept_help, give_faulty_module, accept_replacement, propose_commitment, accept_commitment, decline_commitment, report_commitment_outcome, report_parcel_delivery, remember_fact
