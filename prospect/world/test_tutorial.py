@@ -16,6 +16,8 @@ Run with:
     evennia test world
 """
 
+from unittest.mock import patch
+
 from django.test import TestCase
 from evennia import create_object
 
@@ -59,6 +61,19 @@ class TannoyTests(TestCase):
         sent_before = len(self.sent)
         maybe_schedule_nudge(self.character)
         self.assertEqual(len(self.sent), sent_before + 1)
+
+    def test_tannoy_fires_when_a_player_takes_control_in_the_room(self):
+        # Chargen places a new character before login, so at_post_move's
+        # tannoy reaches nobody; at_post_puppet is what a new player sees.
+        with patch("evennia.objects.objects.DefaultCharacter.at_post_puppet"):
+            self.character.at_post_puppet()
+        self.assertTrue(any("SAY" in str(text) for text in self.sent))
+
+    def test_no_tannoy_on_puppet_in_a_room_without_one(self):
+        self.character.location = self.rooms["old_quarter_square"]
+        with patch("evennia.objects.objects.DefaultCharacter.at_post_puppet"):
+            self.character.at_post_puppet()
+        self.assertFalse(any("SAY" in str(text) for text in self.sent))
 
     def test_tannoy_is_not_attributed_to_given_as_dialogue(self):
         maybe_schedule_nudge(self.character)
