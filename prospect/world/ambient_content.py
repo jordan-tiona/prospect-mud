@@ -31,7 +31,7 @@ class AmbientContentParseError(Exception):
 @dataclass
 class AmbientNPCContent:
     ambient_id: str
-    room: str
+    room: str  # legacy, optional ("" if absent); placement comes from the sector file
     status: str
     approval: str
     key: str  # sentence-opening display key, e.g. "An elderly Kethari"
@@ -43,7 +43,7 @@ class AmbientNPCContent:
 @dataclass
 class AmbientObjectContent:
     object_id: str
-    room: str
+    room: str  # legacy, optional ("" if absent); placement comes from the sector file
     status: str
     approval: str
     key: str  # display key, shown on direct examine
@@ -96,7 +96,9 @@ def parse_ambient_npc_text(ambient_id: str, raw: str) -> AmbientNPCContent:
 
     fields = _parse_metadata(comment_match.group(1))
 
-    required = ("ambient_id", "room", "status", "approval")
+    # No "room": placement comes from the sector file now (MUD Editor Step C);
+    # a legacy room: field is still read, but optional.
+    required = ("ambient_id", "status", "approval")
     missing = [key for key in required if not fields.get(key)]
     if missing:
         raise AmbientContentParseError(f"{ambient_id}.md metadata is missing: {', '.join(missing)}")
@@ -123,7 +125,7 @@ def parse_ambient_npc_text(ambient_id: str, raw: str) -> AmbientNPCContent:
 
     return AmbientNPCContent(
         ambient_id=fields["ambient_id"],
-        room=fields["room"],
+        room=fields.get("room", ""),
         status=fields["status"],
         approval=fields["approval"],
         key=key,
@@ -148,7 +150,7 @@ def parse_ambient_object_text(object_id: str, raw: str) -> AmbientObjectContent:
 
     fields = _parse_metadata(comment_match.group(1))
 
-    required = ("object_id", "room", "status", "approval")
+    required = ("object_id", "status", "approval")  # room: optional, as above
     missing = [key for key in required if not fields.get(key)]
     if missing:
         raise AmbientContentParseError(f"{object_id}.md metadata is missing: {', '.join(missing)}")
@@ -175,7 +177,7 @@ def parse_ambient_object_text(object_id: str, raw: str) -> AmbientObjectContent:
 
     return AmbientObjectContent(
         object_id=fields["object_id"],
-        room=fields["room"],
+        room=fields.get("room", ""),
         status=fields["status"],
         approval=fields["approval"],
         key=key,

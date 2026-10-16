@@ -17,4 +17,4 @@ Open **Elsewhere Map** in the file list for the spatial map. Dragging a card onl
 
 The generated notes under `maps/rooms/` link to one another through their exits, so Obsidian's Graph view can show room-to-room connections too.
 
-When the source data changes, run the generator described in the map guide. Authored content stays in `content/`; all generated navigation stays in `maps/`. The map reflects builder definitions, not live database state.
+When the source data changes, run the generator described in the map guide. Authored content stays in `content/`; all generated navigation stays in `maps/`. The map reflects the MUD editor's sector file, not live database state.

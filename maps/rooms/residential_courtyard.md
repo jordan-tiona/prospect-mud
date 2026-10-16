@@ -16,4 +16,4 @@
 
 [[maps/Elsewhere Map.canvas|Elsewhere Map]] · [[maps/README|Map guide]]
 
-Generated from builder definitions and approved ambient content. This is a source-data reference, not a live game snapshot or new setting canon.
+Generated from the sector file and approved ambient content. This is a source-data reference, not a live game snapshot or new setting canon.

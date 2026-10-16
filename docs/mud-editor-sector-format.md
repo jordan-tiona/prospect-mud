@@ -1,6 +1,6 @@
 # MUD Editor: sector format and export manifest
 
-**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Implemented so far (milestones 2-3): `sectors/elsewhere/sector.json` imported from today's builders, `ops/editor/check.py` and `ops/editor/export.py`. Elsewhere was first exported on 2026-10-16 (`prospect/world/data/sectors/elsewhere.json`), which is Step B of `docs/build-sector-proposal.md`. Nothing in the game reads the manifest until `build_sector()` lands. `build_sector()` and the editor UI aren't built yet. Changes to the build pipeline (Section 7) also need a Dev-lane review before code lands.
+**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Implemented: `ops/editor/check.py` and `ops/editor/export.py`; `sectors/elsewhere/sector.json` (imported once from the old build scripts, now owned by the editor); the Elsewhere manifest `prospect/world/data/sectors/elsewhere.json`; and `world/build_sector.py`, which every `world/build_*.py` now wraps (Steps A-C of `docs/build-sector-proposal.md`). Not built yet: the editor UI (milestone 5).
 
 **Background:** bible §18, "Planned content-authoring tool". This spec is the data model for that tool. It does not approve any lore and doesn't change how prose is authored.
 
@@ -178,7 +178,7 @@ The hand-written lists in `build_rooms.py`, `build_npcs.py`, `build_ambient.py`,
 - It's run with the server stopped, as all database-writing scripts are today.
 - `build_skitters.py` stays as it is. It's mechanics.
 
-**Migration guarantee:** the first `elsewhere` manifest comes from a one-off importer that reads today's build-script lists and content files. `prospect/world/test_sector_manifest.py` runs the old scripts in Evennia's test database and asserts that the manifest describes exactly what they build: rooms, exits, entities, attributes, locks and tags, with nothing extra on either side. That test passes as of milestone 3. Once `build_sector()` exists, it also builds from the manifest and compares the two. The old scripts are removed only after that passes.
+**Migration guarantee (done):** the first `elsewhere` manifest came from a one-off importer (since retired) that reads today's build-script lists and content files. `prospect/world/test_sector_manifest.py` runs the old scripts in Evennia's test database and asserts that the manifest describes exactly what they build: rooms, exits, entities, attributes, locks and tags, with nothing extra on either side. That test passes as of milestone 3. Once `build_sector()` exists, it also builds from the manifest and compares the two. The old scripts are removed only after that passes.
 
 ## 8. Lore lane interaction
 

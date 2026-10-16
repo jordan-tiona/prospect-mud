@@ -19,7 +19,6 @@ import unicodedata
 from dataclasses import dataclass
 
 from world.build_rooms import BUILD_TAG_CATEGORY as ROOM_TAG_CATEGORY
-from world.build_rooms import ROOMS as NEIGHBORHOOD_ROOMS
 from world.commitments import SCENARIOS
 from world.commitments import accept_commitment as _accept_commitment
 from world.commitments import decline_commitment as _decline_commitment
@@ -633,15 +632,34 @@ def _fold_accents(text: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
 
 
-def _find_neighborhood_room(destination_name: str):
-    """Match free-text destination against the six known rooms, by
-    display name, case- and accent-insensitively. Returns the room
-    object, or None if it's not one of the six (per persona: "Don't
-    describe routes to places outside this neighborhood")."""
+def _npc_sector(npc):
+    """The sector the NPC's room was built in (world.build_sector tags every
+    room with it); the default sector for a room that predates sector tags."""
+    from world.build_sector import DEFAULT_SECTOR, SECTOR_TAG_CATEGORY
+
+    room = getattr(npc, "location", None)
+    sectors = room.tags.get(category=SECTOR_TAG_CATEGORY, return_list=True) if room is not None else []
+    return sectors[0] if sectors else DEFAULT_SECTOR
+
+
+def _find_neighborhood_room(destination_name: str, sector_id=None):
+    """Match free-text destination against the room titles in the NPC's
+    sector manifest, case- and accent-insensitively - by name, since
+    that's how players ask (owner, 2026-10-16). Any room in the sector
+    is a valid destination; persona and knowledge limit which ones an
+    NPC actually offers (docs/build-sector-proposal.md Section 5).
+    Returns the room object, or None if no room has that title.
+
+    Duplicate titles: the first match in manifest order wins for now.
+    TODO(dev): owner and Dev to design picking the closest match when
+    several rooms share a title (docs/build-sector-proposal.md Section 5).
+    """
     from evennia import search_tag
 
+    from world.build_sector import DEFAULT_SECTOR, room_titles
+
     destination_name = _fold_accents((destination_name or "").strip().lower())
-    for tag, name, _desc in NEIGHBORHOOD_ROOMS:
+    for tag, name in room_titles(sector_id or DEFAULT_SECTOR):
         if _fold_accents(name.lower()) == destination_name:
             matches = search_tag(key=tag, category=ROOM_TAG_CATEGORY)
             return matches[0] if matches else None
@@ -680,7 +698,7 @@ def _find_exit_path(start_room, target_room, max_depth=4):
 
 def _validate_give_directions(npc, actor, arguments: dict) -> ActionResult:
     destination_name = arguments.get("destination", "")
-    target_room = _find_neighborhood_room(destination_name)
+    target_room = _find_neighborhood_room(destination_name, _npc_sector(npc))
     if target_room is None:
         return ActionResult(False, "", reason=f"destination not in neighborhood: {destination_name!r}")
 

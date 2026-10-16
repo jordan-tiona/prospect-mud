@@ -21,23 +21,20 @@ class GeneratorTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         shutil.copytree(ROOT / 'content', self.root / 'content')
-        world = self.root / 'prospect/world'
-        world.mkdir(parents=True)
-        for filename in ('build_rooms.py', 'build_npcs.py', 'build_ambient.py'):
-            shutil.copy2(ROOT / 'prospect/world' / filename, world / filename)
+        shutil.copytree(ROOT / 'sectors', self.root / 'sectors')
         (self.root / 'maps').mkdir()
         shutil.copy2(ROOT / 'maps/README.md', self.root / 'maps/README.md')
         shutil.copy2(ROOT / MAP, self.root / MAP)
 
     def test_sources_unchanged_and_second_run_identical(self):
-        before = (snapshot(self.root / 'content'), snapshot(self.root / 'prospect'))
+        before = (snapshot(self.root / 'content'), snapshot(self.root / 'sectors'))
         generate(self.root)
         first = snapshot(self.root / 'maps')
         generate(self.root)
         self.assertEqual(first, snapshot(self.root / 'maps'))
-        self.assertEqual(before, (snapshot(self.root / 'content'), snapshot(self.root / 'prospect')))
+        self.assertEqual(before, (snapshot(self.root / 'content'), snapshot(self.root / 'sectors')))
 
-    def test_builder_entities_only_and_bidirectional_navigation(self):
+    def test_sector_entities_only_and_bidirectional_navigation(self):
         generate(self.root)
         square = (self.root / 'maps/rooms/old_quarter_square.md').read_text(encoding='utf-8')
         cafe = (self.root / 'maps/rooms/corner_cafe.md').read_text(encoding='utf-8')

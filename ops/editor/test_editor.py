@@ -1,10 +1,9 @@
-"""Tests for the MUD editor's importer and check.
+"""Tests for the MUD editor's check and export.
 
 Run from the repo root:  python -m unittest discover -s ops/editor
 """
 
 import copy
-import json
 import shutil
 import tempfile
 import unittest
@@ -12,127 +11,11 @@ from pathlib import Path
 
 import check
 import export
-import import_legacy
-from world_model import KINDS_FILE, ROOT, literals, load_content, manifest_path, parse_content, read_json, write_json
-
-WORLD = ROOT / 'prospect/world'
+from world_model import KINDS_FILE, ROOT, load_sector, manifest_path, parse_content, read_json, write_json
 
 
 def codes(issues, level=None):
     return sorted({i.code for i in issues if level is None or i.level == level})
-
-
-class ImporterTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.sector = import_legacy.build_sector(ROOT)
-
-    def test_every_room_imported_with_title_and_content(self):
-        rooms = literals(WORLD / 'build_rooms.py', ('ROOMS',))['ROOMS']
-        self.assertEqual({r[0]: r[1] for r in rooms},
-                         {k: v['title'] for k, v in self.sector['rooms'].items()})
-        for room_id, room in self.sector['rooms'].items():
-            self.assertEqual(room['content'], f'rooms/{room_id}.md')
-            self.assertIn('editor', room)
-
-    def test_every_exit_pair_imported(self):
-        data = literals(WORLD / 'build_rooms.py', ('HUB', 'SPOKES', 'CHAINS'))
-        expected = {(data['HUB'], spoke, fwd[0], back[0]) for spoke, fwd, back in data['SPOKES']}
-        expected |= {(src, dst, fwd[0], back[0]) for src, dst, fwd, back in data['CHAINS']}
-        actual = {(e['from'], e['to'], e['key'], e['return']['key']) for e in self.sector['exits']}
-        self.assertEqual(expected, actual)
-        self.assertEqual(len(self.sector['exits']), len(expected))
-
-    def test_every_built_entity_imported_in_its_room(self):
-        entities = self.sector['entities']
-        expected = {}
-        for npc_id, _name, room in literals(WORLD / 'build_npcs.py', ('NPCS',))['NPCS']:
-            expected[npc_id] = ('talk_npc', room)
-        ambient = literals(WORLD / 'build_ambient.py', ('AMBIENT_NPC_IDS', 'AMBIENT_OBJECT_IDS'))
-        for kind, folder, key in (('ambient_npc', 'ambient/npcs', 'AMBIENT_NPC_IDS'),
-                                  ('ambient_object', 'ambient/objects', 'AMBIENT_OBJECT_IDS')):
-            for ambient_id in ambient[key]:
-                expected[ambient_id] = (kind, load_content(ROOT, f'{folder}/{ambient_id}.md').fields['room'])
-        for prop in literals(WORLD / 'build_quest_props.py', ('QUEST_PROPS',))['QUEST_PROPS']:
-            expected[prop[0]] = ('quest_prop', prop[1])
-        expected['civic_information_display'] = ('revision_display', 'corner_cafe')
-        expected['old_quarter_square_signpost'] = ('signpost', 'old_quarter_square')
-        expected['civic_office_skitter_ledger'] = ('skitter_ledger', 'civic_office')
-        expected['gardening_kit'] = ('gardening_kit', 'residential_courtyard')
-        expected['planting_bed'] = ('planting_bed', 'old_quarter_square')
-        self.assertEqual(expected, {k: (v['kind'], v['room']) for k, v in entities.items()})
-
-    def test_quest_prop_lock_calls_become_params(self):
-        for prop_id, _room, _key, _line, _desc, lock_call in literals(
-                WORLD / 'build_quest_props.py', ('QUEST_PROPS',))['QUEST_PROPS']:
-            params = self.sector['entities'][prop_id]['params']
-            arg = f"({params['commitment_type']})" if 'commitment_type' in params else '()'
-            self.assertEqual(lock_call, params['visibility'] + arg)
-
-    def test_garden_aliases_kept(self):
-        for prop in import_legacy.garden_props(ROOT):
-            self.assertEqual(prop['aliases'], self.sector['entities'][prop['id']].get('aliases', []))
-
-    def test_import_is_deterministic(self):
-        self.assertEqual(self.sector, import_legacy.build_sector(ROOT))
-
-    def test_committed_sector_file_matches_a_fresh_import(self):
-        # Holds only until the editor starts owning the sector file; drop it then.
-        committed = json.loads((ROOT / 'sectors/elsewhere/sector.json').read_text(encoding='utf-8'))
-        self.assertEqual(self.sector, committed)
-
-    def test_refuses_to_overwrite_without_force(self):
-        with tempfile.TemporaryDirectory() as temp:
-            target = Path(temp) / 'sectors/elsewhere/sector.json'
-            target.parent.mkdir(parents=True)
-            target.write_text('{"keep": true}', encoding='utf-8')
-            self.assertEqual(import_legacy.main(['--root', temp]), 1)
-            self.assertEqual(target.read_text(encoding='utf-8'), '{"keep": true}')
-
-
-class MovedProseTests(unittest.TestCase):
-    """Approved text in content/objects/ must match the in-code copy the game still reads, until build_sector replaces the old scripts."""
-
-    def content(self, object_id):
-        return load_content(ROOT, f'objects/{object_id}.md')
-
-    def assert_object(self, object_id, key, room_line, desc=None):
-        content = self.content(object_id)
-        self.assertEqual(content.fields['object_id'], object_id)
-        if content.fields.get('approval') != 'Approved':
-            # A Lore revision awaiting approval may differ from the in-code copy:
-            # the game keeps the last approved text until Dev/Tools copy the new
-            # one across after approval (see LR-0001's resolution).
-            return
-        self.assertEqual(content.heading, key)
-        self.assertEqual(content.sections['Short Description'], room_line)
-        if desc is not None:
-            self.assertEqual(content.sections['Description'], desc)
-
-    def test_quest_props(self):
-        for prop_id, _room, key, room_line, desc, _lock in literals(
-                WORLD / 'build_quest_props.py', ('QUEST_PROPS',))['QUEST_PROPS']:
-            self.assert_object(prop_id, key, room_line, desc)
-
-    def test_garden_props(self):
-        for prop in import_legacy.garden_props(ROOT):
-            self.assert_object(prop['id'], prop['key'], prop['room_line'], prop['desc'])
-
-    def test_noticeboard(self):
-        data = literals(WORLD / 'build_noticeboard.py', ('DISPLAY_PROP_ID', 'ROOM_LINE'))
-        self.assert_object(data['DISPLAY_PROP_ID'], import_legacy.single_prop_key(ROOT, 'build_noticeboard.py'),
-                           data['ROOM_LINE'])
-
-    def test_skitter_ledger(self):
-        data = literals(WORLD / 'build_skitter_ledger.py', ('LEDGER_PROP_ID', 'KEY', 'ROOM_LINE', 'DESC'))
-        self.assert_object(data['LEDGER_PROP_ID'], data['KEY'], data['ROOM_LINE'], data['DESC'])
-
-    def test_signpost(self):
-        data = literals(WORLD / 'build_signpost.py', ('SIGNPOST_PROP_ID', 'ROOM_LINE', 'SPOKE_LINES'))
-        self.assert_object(data['SIGNPOST_PROP_ID'], import_legacy.single_prop_key(ROOT, 'build_signpost.py'),
-                           data['ROOM_LINE'])
-        lines = self.content(data['SIGNPOST_PROP_ID']).sections['Spoke Lines'].splitlines()
-        self.assertEqual([line.removeprefix('- ') for line in lines], data['SPOKE_LINES'])
 
 
 ROOM_FILE = """<!--
@@ -367,8 +250,9 @@ class ExportTests(CheckTests.__base__):
                          after['prospect/world/data/sectors/test.json'])
 
     def test_game_parser_failure_is_reported_not_raised(self):
+        # check.py doesn't require status:, but the game's ambient parser does.
         self.write('ambient/objects/thing.md', OBJECT_FILE.format(id='thing', name='a thing')
-                   .replace('room: room_a\n', ''))
+                   .replace('status: Provisional\n', ''))
         issues, path = self.export()
         self.assertIsNone(path)
         self.assertEqual(codes(issues, check.ERROR), ['parse_error'])
@@ -415,7 +299,14 @@ class ExportTests(CheckTests.__base__):
 class RealSectorTests(unittest.TestCase):
     def test_elsewhere_resolves_with_the_game_parsers(self):
         manifest = export.build_manifest(ROOT, 'elsewhere')
-        self.assertEqual(len(manifest['exits']), 2 * len(import_legacy.build_sector(ROOT)['exits']))
+        sector = load_sector(ROOT, 'elsewhere')
+        self.assertEqual(len(manifest['exits']), sum(2 if e['return'] else 1 for e in sector['exits']))
+
+    def test_committed_manifest_is_a_valid_export(self):
+        # Not a staleness check (Lore commits mustn't break tests): only that
+        # what's committed parses and is the format build_sector expects.
+        manifest = read_json(manifest_path(ROOT, 'elsewhere'))
+        self.assertEqual((manifest['format_version'], manifest['sector_id']), (1, 'elsewhere'))
 
     def test_elsewhere_only_blocked_by_approval(self):
         # Structure must be sound; the remaining errors are content still awaiting approval.

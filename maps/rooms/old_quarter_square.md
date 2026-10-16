@@ -6,11 +6,12 @@
 
 ## Exits
 
-- **Up:** [[maps/rooms/lift_concourse|Lift Concourse]]
-- **North:** [[maps/rooms/corner_cafe|Corner Cafe]]
+- **Northeast:** [[maps/rooms/lift_concourse|Lift Concourse]]
+- **North:** [[maps/rooms/corner_cafe|Corner Café]]
 - **East:** [[maps/rooms/maintenance_workshop|Maintenance Workshop]]
 - **South:** [[maps/rooms/residential_courtyard|Residential Courtyard]]
 - **West:** [[maps/rooms/civic_office|Civic Office]]
+- **Southwest:** [[maps/rooms/old_quarter_street|Old Quarter Street]]
 
 ## Ambient NPCs
 
@@ -24,4 +25,4 @@
 
 [[maps/Elsewhere Map.canvas|Elsewhere Map]] · [[maps/README|Map guide]]
 
-Generated from builder definitions and approved ambient content. This is a source-data reference, not a live game snapshot or new setting canon.
+Generated from the sector file and approved ambient content. This is a source-data reference, not a live game snapshot or new setting canon.
