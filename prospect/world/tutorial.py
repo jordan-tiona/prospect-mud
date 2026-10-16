@@ -84,7 +84,8 @@ _ROOM_TANNOYS = {
     "medical_bay": (
         'A tannoy near the ceiling crackles to life: "Reminder to new '
         "arrivals - type SAY followed by your message to talk to someone, "
-        'and type a direction (like NORTH or SOUTHWEST) to move there."'
+        "type a direction (like NORTH or SOUTHWEST) to move there, and type "
+        'LOOK followed by something you see to take a closer look at it."'
     ),
 }
 
@@ -123,6 +124,19 @@ def tannoy_text_for_room(room):
     return None
 
 
+def announce_tannoy(character):
+    """Send the character's current room's tannoy text, if it has one.
+    Called on every room entry (maybe_schedule_nudge) and again when a
+    player takes control of the character (typeclasses/characters.py's
+    at_post_puppet): character creation moves a brand-new character into
+    the Medical Bay before the player is logged in to it, so the arrival
+    announcement reaches nobody - the puppet call is what a new player
+    actually sees (found live, 2026-10-16)."""
+    tannoy_text = tannoy_text_for_room(character.location)
+    if tannoy_text:
+        character.msg("\n" + tannoy_text)
+
+
 def maybe_schedule_nudge(character):
     """Call whenever a character enters a room (typeclasses/
     characters.py's at_post_move). Delivers this room's tannoy text,
@@ -135,9 +149,7 @@ def maybe_schedule_nudge(character):
     if not room:
         return
 
-    tannoy_text = tannoy_text_for_room(room)
-    if tannoy_text:
-        character.msg("\n" + tannoy_text)
+    announce_tannoy(character)
 
     for room_tag, config in _ROOM_NUDGES.items():
         if not _room_has_tag(room, room_tag):

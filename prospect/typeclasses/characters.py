@@ -65,3 +65,13 @@ class Character(ObjectParent, DefaultCharacter):
             )
 
     at_after_move = at_post_move
+
+    def at_post_puppet(self, **kwargs):
+        super().at_post_puppet(**kwargs)
+        # A new character is moved into the Medical Bay by chargen before
+        # anyone is logged in to it, so at_post_move's tannoy goes
+        # nowhere; repeat it now that the player is actually here
+        # (world/tutorial.py announce_tannoy).
+        from world.tutorial import announce_tannoy
+
+        announce_tannoy(self)
