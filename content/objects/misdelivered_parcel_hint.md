@@ -4,6 +4,7 @@ status: Provisional
 approval: Approved
 moved_from: prospect/world/build_quest_props.py QUEST_PROPS (verbatim, Tools lane, 2026-10-16)
 Lore review (LR-TOOLS-0001, 2026-10-16): text kept as moved. Owner approved 2026-10-16; nothing to copy back to code.
+probe_description: Draft (LR-DEV-0001, 2026-10-16); pending owner approval
 -->
 
 # a small parcel
@@ -15,3 +16,7 @@ A small parcel sits on the counter, unopened.
 ## Description
 
 A small, plainly wrapped parcel. The shipping label reads: "Tarin Os, Maintenance Workshop." It was clearly meant to go there, not here.
+
+## Probe Description
+
+The wrapping is plain, folded tight and taped at the seams, and the parcel looks heavy for its size, the compact shape of something mechanical rather than anything soft. The label is printed, not handwritten: "Tarin Os, Maintenance Workshop," with a short routing code beneath it that would mean something only to a courier. There is no sender's name. Someone has set it to one side of the counter, out of the way of the cups, where it has gathered a small ring of crumbs.
