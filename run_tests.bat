@@ -11,6 +11,7 @@ set LABELS=%*
 if "%LABELS%"=="" (
     pushd "%~dp0ops\editor"
     python -m unittest -q test_editor test_serve || exit /b 1
+    where node >nul 2>nul && (node --test test_core.js || exit /b 1)
     popd
     set LABELS=commands world typeclasses
 )

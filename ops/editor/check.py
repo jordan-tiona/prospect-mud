@@ -54,11 +54,21 @@ def _content_issues(root, where, relative, kind, object_id):
     if approval != 'Approved':
         issues.append(Issue(ERROR, 'not_approved', where,
                             f'content/{relative} approval is {approval!r}, not Approved'))
+    # Per-field approval, e.g. `probe_description: Draft (LR-DEV-0001, ...)`:
+    # an approved file can still carry a draft section or metadata line.
+    for field, value in content.fields.items():
+        if field != 'approval' and str(value).startswith('Draft'):
+            issues.append(Issue(ERROR, 'draft_field', where,
+                                f'content/{relative} marks {field} as {value!r}; needs owner approval first'))
     for section in kind['required_sections']:
         if not content.sections.get(section):
             issues.append(Issue(ERROR, 'missing_section', where, f'content/{relative} has no "## {section}"'))
     if kind['needs_heading'] and not content.heading:
         issues.append(Issue(ERROR, 'missing_heading', where, f'content/{relative} has no "# Name" heading'))
+    if content.sections.get('Probe Description') and kind.get('probe', True) is False:
+        issues.append(Issue(WARNING, 'probe_unused', where,
+                            f'content/{relative} has a "## Probe Description", but this kind shows its '
+                            'per-player look text for probe too, so players never see it'))
     if 'TODO(lore)' in content.visible_text:
         issues.append(Issue(WARNING, 'visible_todo', where,
                             f'content/{relative} has TODO(lore) text outside an HTML comment'))
@@ -156,7 +166,14 @@ def check_sector(root, sector_id):
         return [Issue(ERROR, 'duplicate_id', where, str(exc))], set()
     except ValueError as exc:
         return [Issue(ERROR, 'bad_json', where, str(exc))], set()
+    return check_sector_data(root, sector_id, sector)
 
+
+def check_sector_data(root, sector_id, sector, manifest=True):
+    """check_sector() for a sector dict that may not be saved yet (the editor's
+    live check). manifest=False skips the staleness comparison, which only
+    means something for the saved file."""
+    where = f'sectors/{sector_id}/sector.json'
     room_kind, kinds = load_kinds(root)
     issues, referenced = [], set()
     if sector.get('format_version') != FORMAT_VERSION:
@@ -215,7 +232,8 @@ def check_sector(root, sector_id):
             referenced.add(entity['content'])
 
     issues += _exit_issues(sector, rooms)
-    issues += _manifest_issues(root, sector_id, sector, referenced)
+    if manifest:
+        issues += _manifest_issues(root, sector_id, sector, referenced)
     return issues, referenced
 
 

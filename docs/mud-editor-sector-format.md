@@ -1,6 +1,6 @@
 # MUD Editor: sector format and export manifest
 
-**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Implemented: `ops/editor/check.py` and `ops/editor/export.py`; `sectors/elsewhere/sector.json` (imported once from the old build scripts, now owned by the editor); the Elsewhere manifest `prospect/world/data/sectors/elsewhere.json`; and `world/build_sector.py`, which every `world/build_*.py` now wraps (Steps A-C of `docs/build-sector-proposal.md`). Editor UI: milestone 5a (read-only viewer, `python ops/editor/serve.py`, http://127.0.0.1:8765) is built; 5b (structure editing and export) and 5c (candidate tray) aren't yet.
+**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Implemented: `ops/editor/check.py` and `ops/editor/export.py`; `sectors/elsewhere/sector.json` (imported once from the old build scripts, now owned by the editor); the Elsewhere manifest `prospect/world/data/sectors/elsewhere.json`; and `world/build_sector.py`, which every `world/build_*.py` now wraps (Steps A-C of `docs/build-sector-proposal.md`). Editor UI (`python ops/editor/serve.py`, http://127.0.0.1:8765): 5a (viewer) and 5b (structure editing, Save with saved-version history and autosaves, Export) are built; 5c (candidate tray) isn't yet. Saving writes only `sectors/<id>/sector.json`, plus its gitignored `.history/` (previous versions, last 20) and `.autosave/` (`latest.json` a few seconds after each change, plus a copy every 5 minutes, last 5). See `ops/editor/store.py`.
 
 **Background:** bible §18, "Planned content-authoring tool". This spec is the data model for that tool. It does not approve any lore and doesn't change how prose is authored.
 
@@ -160,7 +160,7 @@ Export runs the same checks as the read-only `check` command and **refuses to wr
   - two exits from one room with the same key or alias
   - a content file that's referenced but missing, or whose header ID doesn't match
   - a content file with no metadata
-- **Approval gate (error):** every room and entity in the sector must point at a content file whose header is `approval: Approved`. A missing `content` reference, a missing file or a non-Approved file blocks the export. A placeholder reaching the game always means content that was never requested from Lore, so it should never ship silently (owner decision, 2026-10-16). The editor's "awaiting prose" list shows what to request.
+- **Approval gate (error):** every room and entity in the sector must point at a content file whose header is `approval: Approved`. A missing `content` reference, a missing file or a non-Approved file blocks the export. So does any other metadata line whose value starts with `Draft`, such as `probe_description: Draft (LR-DEV-0001, ...)`: an approved file can still carry a section or field awaiting approval (`draft_field`). A placeholder reaching the game always means content that was never requested from Lore, so it should never ship silently (owner decision, 2026-10-16). The editor's "awaiting prose" list shows what to request.
 - **Warnings:**
   - `TODO(lore)` text that would reach players
   - content files no sector uses
