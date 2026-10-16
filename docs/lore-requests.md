@@ -58,3 +58,11 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Blocking: yes (MUD Editor export)
 - Status: approved (2026-10-16)
 - Resolution: Added `status: Provisional` and `approval: Draft` to the metadata comment of all six personas (`daven_varek`, `given_marr`, `iri_vael`, `mara_voss`, `tarin_os`, `veska_renn`), after `prompt_version`. `Provisional` follows bible 14.6's own status line (the cast are "lightweight example profiles", not established NPCs), matching the room files. All six parse unchanged through `world/npc_profile.py`. Owner approved all six on 2026-10-16; every persona is now `approval: Approved`.
+
+## LR-TOOLS-0003: Remove stray direction lines from the square noticeboard
+- Requested by: tools
+- Needed for: `content/ambient/objects/square_noticeboard.md`, shown live on `look noticeboard` in Old Quarter Square.
+- What's needed: Its `## Description` ends with a `--------------------------` separator and five direction lines ("North: Corner Café", "South: Residential Courtyard", "East: Maintenance Workshop", "West: Civic Office", "Up: Lift Concourse"). They look like leftover drafting notes, and players see them. "Up" is also wrong now: the Lift Concourse is northeast of the square. Remove everything from the separator down, keeping the paragraph above it, and per spec 8.1 don't mention directions in the description. Then re-approve. Players see the change after the next export and rebuild.
+- Blocking: no
+- Status: open
+- Resolution:
