@@ -139,3 +139,35 @@ What changes:
 5. `give_directions` room list from the manifest, plus the multiple-match rule for duplicate titles (Section 5; owner and Dev).
 6. Ambient parser relaxation in Step C: any other code relying on ambient files' `room:` field? (`ops/generate_obsidian.py` does until Obsidian is retired.)
 7. Review `prospect/world/entity_kinds.py`, which the Tools lane drafted, and take ownership of it.
+
+## 8. Dev-lane review (2026-10-16)
+
+**Verdict:** approved for Step A, with the changes below. One question (item 5) still needs the owner.
+
+1. **Removing managed attributes: approved.** The only game code that writes `desc` or `room_line` at runtime is for parcels, weapons and skitters (`world/actions.py`, `world/skitters.py`), and none of those belong to a sector. Runtime code never changes aliases. Per-player state for the garden, ledger and noticeboard is stored on the player, not on the object. One condition: an object without `db.sector_managed` (anything built by the old scripts) has its values **recorded on that first run, not removed**.
+2. **Exit adoption: approved, with a guard.** If two or more untagged exits share the same source and destination, adopt none of them. Report it as a conflict and create nothing for that exit.
+3. **Pruning: add these rules.**
+   - **Rooms the engine needs.** Game code finds some rooms by tag:
+     - `medical_bay`: chargen spawn, `world/chargen.py`
+     - `daven_office`: `typeclasses/objects.py`
+     - the skitter spawn rooms: `world/skitters.py`
+     - the tutorial rooms: `world/tutorial.py`
+
+     Add a Dev-owned `REQUIRED_ROOM_IDS` list to `entity_kinds.py`. `check.py` reports an error when a sector is missing one of them, so export refuses. Without this, deleting a room in the editor would break chargen without any error, and pruning would then delete the live room.
+   - **A room is blocked unless it's empty.** Only delete a room if it holds nothing apart from other orphans being pruned in the same run. Checking only for player-owned objects isn't enough: when Evennia deletes a room, it moves the contents to their `home` or deletes them, and that includes skitters, dropped items and parcels.
+   - **A room someone uses as `home` is blocked** (`ObjectDB.objects.filter(db_home=room)`).
+4. **Wrappers: agreed.** That includes `build_ambient.apply_all_room_content()` and `build_ambient_entities()`, which tests call directly. Keep the existing return shapes.
+5. **Source for `give_directions`.** Dev recommends using all rooms in the NPC's sector, as proposed:
+   - The engine still checks every route against the real exits.
+   - The persona prompt already limits which places an NPC offers to explain.
+
+   **Owner to confirm** that any exported room automatically becoming a valid destination is the intended rule. Two cleanups for Step C:
+   - `_find_neighborhood_room`'s docstring still says "six known rooms".
+   - `_find_exit_path`'s `max_depth=4` will need raising once a sector is wider than four hops.
+6. **Relaxing the ambient parser: fine.** The only readers of `room:` are `world/build_ambient.py` and `ops/generate_obsidian.py`. Retire the second one in the same step, or teach it to read placements from the sector file.
+7. **`entity_kinds.py`: Dev takes ownership.**
+   - The tag categories are checked by `test_sector_manifest`.
+   - The `quest_prop` lock template matches `build_quest_props`' `lock_string`.
+   - `REQUIRED_ROOM_IDS` (item 3) goes here.
+
+**Not on the checklist.** Section 3.3 says to move an entity back to its room when it's somewhere else. That conflicts with Section 3.5's rule that nothing a character carries is ever touched. `GardeningKit` can be picked up, and today `build_garden_props.py` already takes it out of a player's inventory on a rebuild. For consistency: **don't move an entity a character is carrying.** Report it as "held by <character>" instead.

@@ -61,14 +61,10 @@ def build():
         "typeclasses.objects.GardeningKit",
         "a gardening kit",
         courtyard,
-        # Draft, pending project-owner approval (CLAUDE.md's authored-
-        # content rule) - minimal and mundane, same stub-and-flag
-        # workflow as the new rooms/NPCs earlier this arc. Flagged to
-        # the project owner in chat, not marked in the text itself
-        # (db.desc has no comment-stripping step the way content files
-        # do - anything written here is shown to players verbatim).
-        "A worn gardening kit pulled from the courtyard's communal equipment locker - a hand trowel, "
-        "a pair of shears, and a few lengths of twine, all kept here for anyone to use.",
+        # Copy of content/objects/gardening_kit.md (owner-approved,
+        # LR-TOOLS-0001) until world.build_sector reads the manifest.
+        "A worn gardening kit from the courtyard's communal equipment locker: a hand trowel, a pair of "
+        "shears, and a few lengths of twine, left out where anyone who needs them can take them.",
         room_line="A gardening kit sits here, free for anyone to use.",
         aliases=["kit", "gardening kits"],
     )
