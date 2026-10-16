@@ -86,7 +86,7 @@ The example uses current real data only.
 
 Rules:
 
-- **IDs** (`[a-z0-9_]+`) are unique per sector across rooms and entities. They double as the Evennia tag that matches an existing database object, so **an ID never changes once built**. Renaming happens in prose or the title, not the ID.
+- **IDs** (`[a-z0-9_]+`) are unique per sector across rooms and entities. They double as the Evennia tag that matches an existing database object, so **an ID never changes once built**. Renaming happens in prose or the title, not the ID. **Titles and display names don't need to be unique.** Data that refers to a room or entity (exits, placement, tags, the manifest) uses the ID (owner decision, 2026-10-16). Players and NPCs still talk about places by name: `give_directions` matches names, and resolving duplicate names is a Dev-lane design (`docs/build-sector-proposal.md` Section 5).
 - **`content`** is a path relative to `content/`. It's optional while prose doesn't exist yet. The editor shows such an entity as "awaiting prose" and export reports it.
 - **Exits:** every exit is one record. `"return": null` marks an intentional one-way exit, and a missing `return` is a validation error. That rules out the accidental one-way drift that hand-kept `SPOKES`/`CHAINS` lists allow. The hub-and-spoke assumption in `build_rooms.py` goes away, and every connection is explicit.
 - **`editor`** holds map layout and other editor-only data. Export strips it.
@@ -184,7 +184,20 @@ The hand-written lists in `build_rooms.py`, `build_npcs.py`, `build_ambient.py`,
 
 - Lore keeps writing `content/` Markdown exactly as now and never edits sector files or manifests.
 - A new content file that no sector references shows up in the editor as **unplaced**. The owner places it.
-- The editor can produce a read-only map (taking over from `ops/generate_obsidian.py`), so Lore can see layout and exits while writing prose that mentions directions.
+- The editor can produce a read-only map (taking over from `ops/generate_obsidian.py`), so Lore can see layout and exits.
+
+### 8.1 Batch requests: request, pick, place (owner workflow, agreed 2026-10-16)
+
+The owner builds out an area by asking Lore for a batch of candidates, then choosing and wiring up the ones they want in the editor:
+
+1. **Request.** The owner files a batch lore request (`docs/lore-requests.md`, batch variant): what kind of content, how many, the area, and any constraints. Example: "10 rooms in an area".
+2. **Candidates.** Lore delivers ordinary content files in the usual folders (`content/rooms/`, `content/ambient/npcs/`, ...), each `approval: Draft`, with a `request: LR-...` line in the metadata header. Lore chooses the file names, which become the IDs (`[a-z0-9_]+`, never changed once built). A room's `# Heading`, if present, is only the editor's *suggested* title; the owner sets the real one.
+3. **Room descriptions don't mention directions.** No "a doorway to the north": the game lists exits itself, and the owner decides the layout after the prose is written. Batch requests say so by default. If a particular room's prose does need to fit its final layout, the owner sends a follow-up request after placing it.
+4. **Pick.** The editor's tray shows unplaced content grouped by `request:`. Placing a candidate adds it to `sector.json` as a room or entity. **Draft content can be placed**, so an area can be laid out and checked before anything is approved. Only export requires approval (Section 6).
+5. **Dismiss.** Rejected candidates can be dismissed from the tray. The editor never writes content files, so dismissals go in an editor-owned list (`sectors/_dismissed.json`, content paths). Deleting a rejected file is a separate git action for the owner, whenever they choose.
+6. **Connect, approve, export.** The owner wires exits in the editor, approval is set in each content file's header (not by the editor), then the owner exports.
+
+*To build with the editor UI (milestone 5):* the tray, `request:` grouping and dismiss list. Once those exist, `check`'s unused-content warning skips files tied to a request or dismissed, and only warns about stray files.
 - If the owner changes a room title, `check` warns about content files that still mention the old title. It doesn't touch them.
 
 ## 9. Reserved / out of scope for format_version 1

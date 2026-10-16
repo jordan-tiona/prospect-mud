@@ -1,6 +1,6 @@
 # Proposal: `world.build_sector`, building the world from sector manifests
 
-**Status:** Proposal, Tools lane (2026-10-16), **for Dev-lane review**. No game code has changed yet. This is milestone 4 of the MUD Editor (`docs/mud-editor-sector-format.md` Section 7).
+**Status:** Proposal, Tools lane (2026-10-16). **Dev-reviewed 2026-10-16: approved for Step A** with the changes in Section 8, which are now folded into Section 3 and Step C below. The owner settled the remaining question (Section 5) the same day. No game code has changed yet. This is milestone 4 of the MUD Editor (`docs/mud-editor-sector-format.md` Section 7).
 
 **Why Dev review:** it replaces how the world gets built, touches modules that game code imports (`world/build_rooms.py`, `world/actions.py`), and includes one small behaviour change (Section 5). The Tools lane may write `world/build_*.py`, but must not change game behaviour without a Dev-lane review.
 
@@ -49,6 +49,8 @@ Each exit gets a new tag (`<from>__<key>`, category `sector_exit`). Today's exit
 2. Otherwise, **adopt** an untagged exit in the source room with the same destination (today's `_get_or_create_exit` rule), and tag it.
 3. Otherwise, create a new exit.
 
+**Guard (Dev review):** if two or more untagged exits in the source room lead to the same destination, adopt none of them. Report it as a conflict and create nothing for that exit.
+
 Then the build sets `key`, `destination` and aliases. Matching by tag means changing an exit's direction in the editor updates the existing exit, instead of creating a new one next to the old.
 
 ### 3.3 Entities
@@ -56,7 +58,7 @@ Then the build sets `key`, `destination` and aliases. Matching by tag means chan
 These are matched by tag (`<entity_id>`, the kind's existing tag category). The build:
 - creates the object in its room if it's missing
 - swaps the typeclass if it differs
-- moves the object to its room if it's elsewhere (`move_to(quiet=True)`)
+- moves the object to its room if it's elsewhere (`move_to(quiet=True)`), **unless a character is carrying it** (e.g. a picked-up gardening kit). In that case it's reported as "held by <character>" and left alone, matching 3.5's rule that nothing a character carries is touched (Dev review; today's `build_garden_props` does take it back)
 - sets `key`, the attributes listed in the manifest, poses and locks
 
 | Manifest field | Applied as |
@@ -70,7 +72,7 @@ Talk NPCs get `db.npc_id` from `attributes`, and so are still found by the promp
 
 ### 3.4 Removing things the manifest no longer sets
 
-Today's builders only ever *add*: a removed alias or a deleted description stays on the object forever. The new build records what it set on each object in `db.sector_managed`, a dict of `{"attributes": [...], "aliases": [...]}`. On the next run it removes only managed values that the manifest no longer lists. Anything set some other way (by hand, or by a game mechanic) is never touched.
+Today's builders only ever *add*: a removed alias or a deleted description stays on the object forever. The new build records what it set on each object in `db.sector_managed`, a dict of `{"attributes": [...], "aliases": [...]}`. On the next run it removes only managed values that the manifest no longer lists. **On an object with no `db.sector_managed` yet (anything the old scripts built), the first run only records what it set and removes nothing** (Dev review). Anything set some other way (by hand, or by a game mechanic) is never touched.
 
 ### 3.5 Orphans (`docs/engineering-pitfalls.md` #3 and #4)
 
@@ -82,9 +84,18 @@ Every object the build creates or adopts also gets a sector tag (`elsewhere`, ca
 The second rule catches old objects built before sector tags existed. Pitfall #3 is the reason for it: a cleanup tool has to find what's actually in the database, not only what the current config knows about.
 
 Orphans are **reported** on every run. They're deleted only with `prune=True`, and even then:
-- a room that still contains a puppeted character or any player-owned object isn't deleted. It's reported as blocked instead;
+- **a room is deleted only if it's empty**, apart from other orphans being pruned in the same run. Otherwise it's reported as blocked. Deleting a room moves its contents to their `home` or deletes them, and that includes skitters, dropped items and parcels;
+- **a room that anything uses as its `home`** (`ObjectDB.objects.filter(db_home=room)`) is blocked;
 - player characters, accounts and anything carried by a character are never touched;
 - skitters (`skitter_entity` category) are outside sector ownership and are ignored.
+
+**Rooms the engine needs (Dev review).** Game code finds some rooms by tag:
+- `medical_bay` (chargen spawn)
+- `daven_office` (`typeclasses/objects.py`)
+- the skitter spawn rooms (`world/skitters.py`)
+- the tutorial rooms (`world/tutorial.py`)
+
+These go in a Dev-owned `REQUIRED_ROOM_IDS` list in `entity_kinds.py`. `check.py` reports an error when a sector is missing one, so export refuses, and a missing required room can never reach pruning.
 
 ### 3.6 Running it
 
@@ -109,17 +120,20 @@ As with every database-writing script, it's run only with the server stopped. If
 
 **Step C: switch over (Dev-reviewed change, after B).**
 - Each old builder's `build()` becomes a thin wrapper: `build_sector.build("elsewhere", kinds={...})`. Its hard-coded lists (`ROOMS`, `SPOKES`, `CHAINS`, `NPCS`, `AMBIENT_*_IDS`, `ROOM_IDS`, `QUEST_PROPS`, and the in-code prose and room lines) are deleted. Constants and return shapes stay, e.g. `build_npcs.build()` still returns `{npc_id: npc}`.
-- `actions._find_neighborhood_room` reads titles from the manifest (Section 5).
-- Ambient content parsers stop requiring a `room:` metadata field, since placement comes from the sector now.
+- `actions._find_neighborhood_room` reads titles from the manifest (Section 5). Fix its "six known rooms" docstring, and raise `_find_exit_path`'s `max_depth=4` once a sector is wider than four hops.
+- Ambient content parsers stop requiring a `room:` metadata field, since placement comes from the sector now. `ops/generate_obsidian.py` is that field's only other reader; it's retired once the editor's viewer exists (owner decision), or taught to read placements from the sector file if Step C lands first.
 - Live run: dry run first, then the real build. Then the existing equivalence test is retired in favour of Step A's old-vs-new test.
 
 The wrappers can be removed later, test module by test module (a Tests-lane task). That isn't needed for the switch.
 
-## 5. The one behaviour change
+## 5. The one behaviour change: `give_directions` reads rooms from the manifest
 
-`give_directions` matches a free-text destination against a fixed list of the original nine room names, from `build_rooms.ROOMS`. After the switch it would match against **all room titles in the NPC's sector manifest**. Two consequences:
-- **Today, with the same nine rooms:** behaviour is identical.
-- **Later:** any room added in the editor automatically becomes a valid destination for NPC directions, which is the point. But it also means a room exists for directions as soon as it's exported. Is that the intended rule? Or should directions be limited, for example to rooms in the NPC's own `knowledge_scope`, or by a per-room flag? Dev and owner to decide; I'd ship the simple version first.
+**Rule (owner, 2026-10-16): rooms are identified by ID everywhere in the data. Titles are display text and may repeat**, which isn't unusual in MUDs. **`give_directions` deliberately stays name-based**, because players ask for places by name. The model passes the destination's name as free text, and the engine matches it against room titles.
+
+What changes:
+- `_find_neighborhood_room` reads the room list (ID and title) from the manifest instead of `build_rooms.ROOMS`. With today's nine rooms, players see no difference.
+- Duplicate titles mean a name can match more than one room. **The owner will work out with Dev how to resolve multiple matches, picking the closest one as the room the player meant.** That design belongs to Dev. `build_sector` only has to supply the room list with both IDs and titles, so whatever rule Dev settles on can return a specific room ID.
+- **Decided (owner, 2026-10-16):** the engine lets an NPC give directions to any room in its sector. Which rooms an NPC actually offers directions to is limited by its persona and what it knows, not by an engine list. Every route is still checked against the real exits.
 
 ## 6. Out of scope
 
@@ -133,7 +147,7 @@ The wrappers can be removed later, test module by test module (a Tests-lane task
 2. Exit adoption rule (3.2): is same source plus same destination safe? Today no room pair has two exits between them.
 3. Prune safety rules (3.5): anything else that must never be deleted?
 4. Wrappers vs. moving tests to `build_sector` directly in Step C.
-5. `give_directions` source (Section 5).
+5. `give_directions` room list from the manifest, plus the multiple-match rule for duplicate titles (Section 5; owner and Dev).
 6. Ambient parser relaxation in Step C: any other code relying on ambient files' `room:` field? (`ops/generate_obsidian.py` does until Obsidian is retired.)
 7. Review `prospect/world/entity_kinds.py`, which the Tools lane drafted, and take ownership of it.
 
@@ -158,7 +172,7 @@ The wrappers can be removed later, test module by test module (a Tests-lane task
    - The engine still checks every route against the real exits.
    - The persona prompt already limits which places an NPC offers to explain.
 
-   **Owner to confirm** that any exported room automatically becoming a valid destination is the intended rule. Two cleanups for Step C:
+   **Owner confirmed (2026-10-16):** yes. NPCs *can* direct players to any room; persona and knowledge keep them to the rooms they'd actually know. Two cleanups for Step C:
    - `_find_neighborhood_room`'s docstring still says "six known rooms".
    - `_find_exit_path`'s `max_depth=4` will need raising once a sector is wider than four hops.
 6. **Relaxing the ambient parser: fine.** The only readers of `room:` are `world/build_ambient.py` and `ops/generate_obsidian.py`. Retire the second one in the same step, or teach it to read placements from the sector file.

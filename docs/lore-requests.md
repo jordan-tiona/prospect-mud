@@ -4,17 +4,26 @@ Any lane that needs lore it doesn't have adds an entry here instead of inventing
 
 Format (see `docs/game-plan.md` Section 4):
 
-**IDs are prefixed by the requesting lane** (`LR-DEV-0001`, `LR-TOOLS-0001`, `LR-TESTS-0001`, `LR-REVIEW-0001`), numbered within that lane. Lanes work on separate branches and can't see each other's new entries until merge, so unprefixed numbers collide (LR-0001 and LR-0002 below were both created as LR-0001). Take the next number after the highest existing one for your own lane.
+**IDs are prefixed by the requesting lane** (`LR-OWNER-0001`, `LR-DEV-0001`, `LR-TOOLS-0001`, `LR-TESTS-0001`, `LR-REVIEW-0001`), numbered within that lane. Lanes work on separate branches and can't see each other's new entries until merge, so unprefixed numbers collide (LR-0001 and LR-0002 below were both created as LR-0001). Take the next number after the highest existing one for your own lane.
 
 ```
 ## LR-<LANE>-0001: <short title>
-- Requested by: dev | tools | tests | playtest-review
+- Requested by: owner | dev | tools | tests | playtest-review
 - Needed for: <feature, file, or finding>
 - What's needed: <specific question or content>
 - Blocking: yes | no
 - Status: open | drafted | approved | rejected
 - Resolution: <bible section or content file, once approved>
 ```
+
+**Batch requests** (MUD editor, `docs/mud-editor-sector-format.md` Section 8.1) ask for several candidates to choose from rather than one specific answer. Use the same fields, plus:
+
+```
+- Batch: <count> <rooms | ambient NPCs | objects | ...> for <area>
+- Constraints: <anything specific; room descriptions don't mention directions or exits unless stated here>
+```
+
+Lore delivers each candidate as a Draft content file in its usual folder, with `request: LR-<LANE>-<n>` in its metadata header. The editor groups candidates by that line. The owner places the ones they want and dismisses the rest; unchosen candidates aren't rejections of the request.
 
 ---
 
