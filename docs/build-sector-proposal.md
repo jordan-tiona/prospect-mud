@@ -1,6 +1,6 @@
 # Proposal: `world.build_sector`, building the world from sector manifests
 
-**Status:** Proposal, Tools lane (2026-10-16), **for Dev-lane review**. No game code has changed yet. This is milestone 4 of the MUD Editor (`docs/mud-editor-sector-format.md` Section 7).
+**Status:** Proposal, Tools lane (2026-10-16). **Dev-reviewed 2026-10-16: approved for Step A** with the changes in Section 8, which are now folded into Section 3 and Step C below. One question still needs the owner: Section 5. No game code has changed yet. This is milestone 4 of the MUD Editor (`docs/mud-editor-sector-format.md` Section 7).
 
 **Why Dev review:** it replaces how the world gets built, touches modules that game code imports (`world/build_rooms.py`, `world/actions.py`), and includes one small behaviour change (Section 5). The Tools lane may write `world/build_*.py`, but must not change game behaviour without a Dev-lane review.
 
@@ -49,6 +49,8 @@ Each exit gets a new tag (`<from>__<key>`, category `sector_exit`). Today's exit
 2. Otherwise, **adopt** an untagged exit in the source room with the same destination (today's `_get_or_create_exit` rule), and tag it.
 3. Otherwise, create a new exit.
 
+**Guard (Dev review):** if two or more untagged exits in the source room lead to the same destination, adopt none of them. Report it as a conflict and create nothing for that exit.
+
 Then the build sets `key`, `destination` and aliases. Matching by tag means changing an exit's direction in the editor updates the existing exit, instead of creating a new one next to the old.
 
 ### 3.3 Entities
@@ -56,7 +58,7 @@ Then the build sets `key`, `destination` and aliases. Matching by tag means chan
 These are matched by tag (`<entity_id>`, the kind's existing tag category). The build:
 - creates the object in its room if it's missing
 - swaps the typeclass if it differs
-- moves the object to its room if it's elsewhere (`move_to(quiet=True)`)
+- moves the object to its room if it's elsewhere (`move_to(quiet=True)`), **unless a character is carrying it** (e.g. a picked-up gardening kit). In that case it's reported as "held by <character>" and left alone, matching 3.5's rule that nothing a character carries is touched (Dev review; today's `build_garden_props` does take it back)
 - sets `key`, the attributes listed in the manifest, poses and locks
 
 | Manifest field | Applied as |
@@ -70,7 +72,7 @@ Talk NPCs get `db.npc_id` from `attributes`, and so are still found by the promp
 
 ### 3.4 Removing things the manifest no longer sets
 
-Today's builders only ever *add*: a removed alias or a deleted description stays on the object forever. The new build records what it set on each object in `db.sector_managed`, a dict of `{"attributes": [...], "aliases": [...]}`. On the next run it removes only managed values that the manifest no longer lists. Anything set some other way (by hand, or by a game mechanic) is never touched.
+Today's builders only ever *add*: a removed alias or a deleted description stays on the object forever. The new build records what it set on each object in `db.sector_managed`, a dict of `{"attributes": [...], "aliases": [...]}`. On the next run it removes only managed values that the manifest no longer lists. **On an object with no `db.sector_managed` yet (anything the old scripts built), the first run only records what it set and removes nothing** (Dev review). Anything set some other way (by hand, or by a game mechanic) is never touched.
 
 ### 3.5 Orphans (`docs/engineering-pitfalls.md` #3 and #4)
 
@@ -82,9 +84,18 @@ Every object the build creates or adopts also gets a sector tag (`elsewhere`, ca
 The second rule catches old objects built before sector tags existed. Pitfall #3 is the reason for it: a cleanup tool has to find what's actually in the database, not only what the current config knows about.
 
 Orphans are **reported** on every run. They're deleted only with `prune=True`, and even then:
-- a room that still contains a puppeted character or any player-owned object isn't deleted. It's reported as blocked instead;
+- **a room is deleted only if it's empty**, apart from other orphans being pruned in the same run. Otherwise it's reported as blocked. Deleting a room moves its contents to their `home` or deletes them, and that includes skitters, dropped items and parcels;
+- **a room that anything uses as its `home`** (`ObjectDB.objects.filter(db_home=room)`) is blocked;
 - player characters, accounts and anything carried by a character are never touched;
 - skitters (`skitter_entity` category) are outside sector ownership and are ignored.
+
+**Rooms the engine needs (Dev review).** Game code finds some rooms by tag:
+- `medical_bay` (chargen spawn)
+- `daven_office` (`typeclasses/objects.py`)
+- the skitter spawn rooms (`world/skitters.py`)
+- the tutorial rooms (`world/tutorial.py`)
+
+These go in a Dev-owned `REQUIRED_ROOM_IDS` list in `entity_kinds.py`. `check.py` reports an error when a sector is missing one, so export refuses, and a missing required room can never reach pruning.
 
 ### 3.6 Running it
 
@@ -109,8 +120,8 @@ As with every database-writing script, it's run only with the server stopped. If
 
 **Step C: switch over (Dev-reviewed change, after B).**
 - Each old builder's `build()` becomes a thin wrapper: `build_sector.build("elsewhere", kinds={...})`. Its hard-coded lists (`ROOMS`, `SPOKES`, `CHAINS`, `NPCS`, `AMBIENT_*_IDS`, `ROOM_IDS`, `QUEST_PROPS`, and the in-code prose and room lines) are deleted. Constants and return shapes stay, e.g. `build_npcs.build()` still returns `{npc_id: npc}`.
-- `actions._find_neighborhood_room` reads titles from the manifest (Section 5).
-- Ambient content parsers stop requiring a `room:` metadata field, since placement comes from the sector now.
+- `actions._find_neighborhood_room` reads titles from the manifest (Section 5). Fix its "six known rooms" docstring, and raise `_find_exit_path`'s `max_depth=4` once a sector is wider than four hops.
+- Ambient content parsers stop requiring a `room:` metadata field, since placement comes from the sector now. `ops/generate_obsidian.py` is that field's only other reader; it's retired once the editor's viewer exists (owner decision), or taught to read placements from the sector file if Step C lands first.
 - Live run: dry run first, then the real build. Then the existing equivalence test is retired in favour of Step A's old-vs-new test.
 
 The wrappers can be removed later, test module by test module (a Tests-lane task). That isn't needed for the switch.

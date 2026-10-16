@@ -91,7 +91,7 @@ class ImporterTests(unittest.TestCase):
 
 
 class MovedProseTests(unittest.TestCase):
-    """The in-code text moved into content/objects/ must match the code verbatim."""
+    """Approved text in content/objects/ must match the in-code copy the game still reads, until build_sector replaces the old scripts."""
 
     def content(self, object_id):
         return load_content(ROOT, f'objects/{object_id}.md')
@@ -99,6 +99,11 @@ class MovedProseTests(unittest.TestCase):
     def assert_object(self, object_id, key, room_line, desc=None):
         content = self.content(object_id)
         self.assertEqual(content.fields['object_id'], object_id)
+        if content.fields.get('approval') != 'Approved':
+            # A Lore revision awaiting approval may differ from the in-code copy:
+            # the game keeps the last approved text until Dev/Tools copy the new
+            # one across after approval (see LR-0001's resolution).
+            return
         self.assertEqual(content.heading, key)
         self.assertEqual(content.sections['Short Description'], room_line)
         if desc is not None:

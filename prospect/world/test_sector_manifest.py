@@ -8,6 +8,10 @@ attributes and locks, and nothing extra on either side.
 The manifest is resolved with ops/editor/export.py's build_manifest(),
 which skips the approval gate (export itself refuses while content is
 still Draft) - this test is about structure and text, not approval.
+Text is only compared for Approved content: a Lore revision awaiting
+approval is expected to differ from the old scripts' copy, which the
+game keeps showing until the approved text is copied across. Structure
+(typeclass, tag, location, aliases, locks) is compared for everything.
 
 Once world.build_sector replaces the old scripts, this becomes the
 "old vs new builder" comparison; until then it compares the manifest
@@ -32,7 +36,7 @@ if str(_EDITOR_DIR) not in sys.path:
     sys.path.insert(0, str(_EDITOR_DIR))
 
 import export as sector_export  # noqa: E402  (ops/editor/export.py)
-from world_model import ROOT  # noqa: E402
+from world_model import ROOT, load_content, load_sector  # noqa: E402
 
 ATTRIBUTES = ("desc", "glance", "room_line", "spoke_lines", "npc_id")
 
@@ -61,6 +65,12 @@ class SectorManifestMatchesLegacyBuildTests(TestCase):
         self.manifest = sector_export.build_manifest(ROOT, "elsewhere")
         self.rooms = self.manifest["rooms"]
         self.room_tag_category = next(iter(self.rooms.values()))["tag_category"]
+        sector = load_sector(ROOT, "elsewhere")
+        self.approved = {
+            object_id
+            for object_id, item in {**sector["rooms"], **sector["entities"]}.items()
+            if load_content(ROOT, item["content"]).fields.get("approval") == "Approved"
+        }
 
     def _room_tag(self, obj):
         return obj.tags.get(category=self.room_tag_category, return_list=True)[0]
@@ -73,8 +83,9 @@ class SectorManifestMatchesLegacyBuildTests(TestCase):
                 room = _one(room_id, expected["tag_category"])
                 self.assertEqual(room.typeclass_path, expected["typeclass"])
                 self.assertEqual(room.key, expected["title"])
-                self.assertEqual(room.db.desc, expected["desc"])
-                self.assertEqual(room.db.glance, expected["glance"])
+                if room_id in self.approved:
+                    self.assertEqual(room.db.desc, expected["desc"])
+                    self.assertEqual(room.db.glance, expected["glance"])
 
     def test_exits(self):
         built = set()
@@ -93,11 +104,12 @@ class SectorManifestMatchesLegacyBuildTests(TestCase):
                 obj = _one(entity_id, expected["tag_category"])
                 self.assertEqual(obj.typeclass_path, expected["typeclass"])
                 self.assertEqual(self._room_tag(obj.location), expected["room"])
-                self.assertEqual(obj.key, expected["key"])
                 self.assertEqual(sorted(obj.aliases.all()), sorted(a.lower() for a in expected["aliases"]))  # Evennia lowercases aliases
-                for name in ATTRIBUTES:
-                    self.assertEqual(obj.attributes.get(name), expected["attributes"].get(name), name)
-                self.assertEqual(obj.db.ambient_poses, expected.get("poses"))
+                if entity_id in self.approved:
+                    self.assertEqual(obj.key, expected["key"])
+                    for name in ATTRIBUTES:
+                        self.assertEqual(obj.attributes.get(name), expected["attributes"].get(name), name)
+                    self.assertEqual(obj.db.ambient_poses, expected.get("poses"))
                 if "locks" in expected:
                     for part in expected["locks"].split(";"):
                         access_type = part.split(":", 1)[0]
