@@ -1,0 +1,198 @@
+# MUD Editor: sector format and export manifest
+
+**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Nothing here is implemented yet. Changes to the build pipeline (Section 7) also need a Dev-lane review before code lands.
+
+**Background:** bible §18, "Planned content-authoring tool". This spec is the data model for that tool. It does not approve any lore and doesn't change how prose is authored.
+
+## 1. Three kinds of data, three owners
+
+| Kind | Examples | Lives in | Edited by |
+|---|---|---|---|
+| **Prose** | Room glance/description, NPC personas, ambient poses, object descriptions, NPC/object display names | `content/**/*.md` (the format it has today) | Lore lane / project owner, as Markdown. **The editor only reads it, never writes it.** |
+| **Structure** | Which rooms make up a sector, room titles, exits, where entities are placed, editor map layout | `sectors/<sector_id>/sector.json` (new) | Project owner, in the editor |
+| **Mechanics** | Typeclasses, lock funcs, commitment scenarios, skitter spawning, NPC actions | Game code | Dev lane. Sector files can only *name* mechanics from an allowlist (Section 5). They can't define them. |
+
+Engine-authored runtime state, such as per-player quest state, skitter kills and NPC memory, isn't part of either format.
+
+## 2. Terms
+
+- **Sector:** a self-contained map that can be crossed entirely by walking its exits, with no teleport. All of Elsewhere is one sector. Each future habitat, or an area of Prospect's surface, would be its own sector. The sector ID is organisational. Any in-world name or description of the place is still Lore's.
+- **Room:** a location in a sector. Its **title** belongs to the sector file (owner's call in the editor). Its glance and description come from `content/rooms/<room_id>.md`.
+- **Exit:** a directed connection between two rooms in the same sector, normally recorded as a pair with its return exit.
+- **Entity:** anything placed in a room: talk-capable NPCs, ambient NPCs, objects. Each one has a **kind** from the allowlist.
+- **Inter-sector travel** (lifts to the docks, ferries, surface access) is **out of scope**. Section 9 reserves a place for it.
+
+## 3. Files
+
+```
+sectors/<sector_id>/sector.json            # editor source of truth for structure (committed)
+prospect/world/data/sectors/<sector_id>.json  # export manifest, generated, committed, never hand-edited
+prospect/world/entity_kinds.py              # Dev-owned allowlist of entity kinds (Section 5)
+```
+
+One file per sector for now. Elsewhere today is 9 rooms and about 17 entities, and one JSON file stays comfortable well into the hundreds. If merge conflicts start to matter, it can split per room later without changing the manifest.
+
+Both files are JSON: UTF-8, 2-space indent, keys sorted where order doesn't matter, and a trailing newline. That way the editor's rewrites produce minimal git diffs. JSON has no comments, so notes go in `notes` fields.
+
+## 4. `sector.json` schema (format_version 1)
+
+The example uses current real data only.
+
+```json
+{
+  "format_version": 1,
+  "sector_id": "elsewhere",
+  "notes": "",
+  "rooms": {
+    "old_quarter_square": {
+      "title": "Old Quarter Square",
+      "content": "rooms/old_quarter_square.md",
+      "editor": {"x": 0, "y": 0},
+      "notes": ""
+    },
+    "corner_cafe": {
+      "title": "Corner Café",
+      "content": "rooms/corner_cafe.md",
+      "editor": {"x": 0, "y": -200}
+    }
+  },
+  "exits": [
+    {
+      "from": "old_quarter_square", "to": "corner_cafe",
+      "key": "north", "aliases": ["n"],
+      "return": {"key": "south", "aliases": ["s"]}
+    }
+  ],
+  "entities": {
+    "mara_voss": {
+      "kind": "talk_npc",
+      "room": "corner_cafe",
+      "content": "npcs/mara_voss.md"
+    },
+    "square_noticeboard": {
+      "kind": "ambient_object",
+      "room": "old_quarter_square",
+      "content": "ambient/objects/square_noticeboard.md"
+    },
+    "misdelivered_parcel_hint": {
+      "kind": "quest_prop",
+      "room": "corner_cafe",
+      "content": "objects/misdelivered_parcel_hint.md",
+      "params": {"visibility": "commitment_hint_visible", "commitment_type": "deliver_parcel"}
+    }
+  }
+}
+```
+
+Rules:
+
+- **IDs** (`[a-z0-9_]+`) are unique per sector across rooms and entities. They double as the Evennia tag that matches an existing database object, so **an ID never changes once built**. Renaming happens in prose or the title, not the ID.
+- **`content`** is a path relative to `content/`. It's optional while prose doesn't exist yet. The editor shows such an entity as "awaiting prose" and export reports it.
+- **Exits:** every exit is one record. `"return": null` marks an intentional one-way exit, and a missing `return` is a validation error. That rules out the accidental one-way drift that hand-kept `SPOKES`/`CHAINS` lists allow. The hub-and-spoke assumption in `build_rooms.py` goes away, and every connection is explicit.
+- **`editor`** holds map layout and other editor-only data. Export strips it.
+- **`params`** may only contain keys that the entity's kind declares (Section 5).
+- **Display names** of NPCs and objects aren't stored here. They come from the content file's `# Heading`, as `build_ambient.py` already does. Talk NPCs' first-name alias is derived the same way `build_npcs.py` does it today.
+
+## 5. Entity kinds (Dev-owned allowlist)
+
+`prospect/world/entity_kinds.py` defines each kind as plain data:
+- typeclass
+- tag category (so existing database objects keep matching)
+- which content sections it needs
+- which `params` it accepts and their allowed values
+
+The editor and the exporter read it without importing the game, the same way `ops/generate_obsidian.py` reads the build scripts' lists. A new kind, or a new allowed value such as a new lock func, is a Dev-lane change. The editor can only choose from what exists.
+
+Kinds needed to cover today's world:
+
+| Kind | Typeclass | Tag category (existing) | Prose from | Today built by |
+|---|---|---|---|---|
+| `room` (implicit) | `typeclasses.rooms.Room` | `phase1_neighborhood` | `## Glance`, `## Description` | `build_rooms.py` + `build_ambient.py` |
+| `talk_npc` | `typeclasses.npcs.TalkativeNPC` | `phase1_npcs` | persona heading + `desc` metadata | `build_npcs.py` |
+| `ambient_npc` | `typeclasses.npcs.NPC` | `phase1_ambient` | heading, `## Poses`, `## Description` | `build_ambient.py` |
+| `ambient_object` | `typeclasses.objects.RoomObject` | `phase1_ambient` | heading, `## Short Description`, `## Description` | `build_ambient.py` |
+| `quest_prop` | `typeclasses.objects.CommitmentHintObject` | `quest_prop` | *currently in code* | `build_quest_props.py` |
+| `revision_display` | `typeclasses.objects.RevisionDisplayObject` | `noticeboard_prop` | *currently in code* | `build_noticeboard.py` |
+| `signpost` | `typeclasses.objects.SignpostObject` | `signpost_prop` | *currently in code* | `build_signpost.py` |
+| `gardening_kit` | `typeclasses.objects.GardeningKit` | `garden_prop` | *currently in code* | `build_garden_props.py` |
+| `planting_bed` | `typeclasses.objects.PlantingBed` | `garden_prop` | *currently in code* | `build_garden_props.py` |
+
+**Prose that's currently in code** (quest-prop, garden-prop, noticeboard and signpost text) has to move into `content/` before those entities can be exported, because export requires Approved content for every entity (Section 6). The sector file itself never carries prose. **Ownership (decided 2026-10-16):**
+- **Dev** owns the object's mechanics and states what text it needs, via a `docs/lore-requests.md` entry.
+- **Lore** owns the words players read.
+- **Tools** places the object and links its content.
+
+For the text already in code, Tools moves it **verbatim** into content files marked `approval: Draft`, with no rewording, and files one lore request for Lore review and owner approval. From then on, new objects don't carry player-facing text in Python.
+
+Text the engine **generates at runtime** stays in Dev-owned code: the signpost's computed route, and the café display's per-player revision. Only static descriptions and room lines move.
+
+**Signpost `SPOKE_LINES`** duplicate what the exits already say. Deriving them from exits and room titles would be a behaviour change, so it goes to the Dev lane and isn't part of this work.
+
+**Skitters** aren't placed entities. The eligible spawn rooms (`world/skitters.py`'s `ELIGIBLE_ROOM_TAGS`) are mechanics. The editor may later *show* them as read-only overlay data.
+
+## 6. Export manifest
+
+`prospect/world/data/sectors/<sector_id>.json` is what the engine builds from. It's generated by the editor's export (also runnable from the command line), committed to git, and never hand-edited. It's flat and fully resolved:
+
+- `format_version`, `sector_id`, and `sources`: a SHA-256 of `sector.json` and of every content file used. There's no timestamp, so an export with no changes produces an identical file.
+- `rooms`: id, title, desc, glance.
+- `exits`: expanded into one-way records `{id, from, to, key, aliases}`, with the ID derived deterministically from from/to/key.
+- `entities`: id, kind, typeclass, tag category, room, key, aliases, desc, room_line, poses and resolved locks, as each kind needs.
+
+**Prose is copied into the manifest** (approved text only, HTML comments stripped). The manifest's git diff is then exactly "what changes in the live world", and building doesn't read `content/` at all. Talk NPC personas are the exception: the prompt builder keeps reading `content/npcs/*.md` at runtime as it does today. The manifest only places the NPC and carries its `desc`.
+
+The trade-off is that a Lore edit to a room description reaches the game only after a re-export. That's deliberate: **export is the publish step.** `check` reports a manifest as stale when its `sources` hashes no longer match. Tests don't fail on staleness, so Lore-lane commits never break the test suite.
+
+### Export validation
+
+Export runs the same checks as the read-only `check` command and **refuses to write** on errors:
+
+- **Errors:**
+  - unknown kind or param
+  - a `room`/`from`/`to` that points at a missing room
+  - an exit with no `return` key
+  - duplicate IDs
+  - two exits from one room with the same key or alias
+  - a content file that's referenced but missing, or whose header ID doesn't match
+  - a content file with no metadata
+- **Approval gate (error):** every room and entity in the sector must point at a content file whose header is `approval: Approved`. A missing `content` reference, a missing file or a non-Approved file blocks the export. A placeholder reaching the game always means content that was never requested from Lore, so it should never ship silently (owner decision, 2026-10-16). The editor's "awaiting prose" list shows what to request.
+- **Warnings:**
+  - `TODO(lore)` text that would reach players
+  - content files no sector uses
+  - rooms with no exits
+
+## 7. Building from the manifest (needs Dev-lane review)
+
+The hand-written lists in `build_rooms.py`, `build_npcs.py`, `build_ambient.py`, `build_quest_props.py`, `build_noticeboard.py`, `build_signpost.py` and `build_garden_props.py` get replaced by one `world.build_sector.build("<sector_id>")`:
+
+- It creates or updates by tag, as today, keeping the existing tag categories so nothing already built is duplicated.
+- It's idempotent, and it prints what it created, updated or left unchanged.
+- It handles removals (per `docs/engineering-pitfalls.md`, reset tools that only know current config):
+  - Any object carrying one of this sector's tag categories that's missing from the manifest gets reported as an **orphan**.
+  - Orphans are only deleted with an explicit `prune=True`.
+  - Exits are matched by their manifest ID tag, not by destination alone, so changing an exit's direction doesn't leave the old one behind.
+- It's run with the server stopped, as all database-writing scripts are today.
+- `build_skitters.py` stays as it is. It's mechanics.
+
+**Migration guarantee:** the first `elsewhere` manifest comes from a one-off importer that reads today's build-script lists and content files. A test builds the world from the manifest and from the old scripts, and asserts that both produce the same rooms, exits, entities, attributes, locks and tags. The old scripts are removed only after that test passes.
+
+## 8. Lore lane interaction
+
+- Lore keeps writing `content/` Markdown exactly as now and never edits sector files or manifests.
+- A new content file that no sector references shows up in the editor as **unplaced**. The owner places it.
+- The editor can produce a read-only map (taking over from `ops/generate_obsidian.py`), so Lore can see layout and exits while writing prose that mentions directions.
+- If the owner changes a room title, `check` warns about content files that still mention the old title. It doesn't touch them.
+
+## 9. Reserved / out of scope for format_version 1
+
+- Inter-sector links (a future `"portals"` list naming a room in another sector, with travel mechanics owned by Dev).
+- **Wandering entities.** Every entity is built in exactly one `room`. Content files' `room:` metadata no longer drives placement, so Iri's "may also appear in the Residential Courtyard" note has no effect and is due to be removed from her persona by the Lore lane. A future kind could add a list of rooms for an entity to move between, owned by Dev.
+- Sub-areas within a sector (e.g. grouping the Old Quarter's rooms) as editor-only labels. They're easy to add under `editor` later if wanted.
+- Engine runtime state, NPC actions, commitment scenarios.
+
+## 10. Open questions for the project owner
+
+1. ~~Unapproved prose at export.~~ **Decided 2026-10-16: export blocks.** See Section 6.
+2. ~~Moving in-code prose.~~ **Decided 2026-10-16:** Tools moves it verbatim as Draft, and Lore reviews it. See Section 5.
+3. ~~Iri's dual-room note.~~ **Decided 2026-10-16: one room per entity.** Wandering entities are a future want (Section 9).
+4. ~~Directory names.~~ **Decided 2026-10-16:** `sectors/` sits at the top level of the `prospect-mud` repo, next to `content/`, and the manifest goes in `prospect/world/data/sectors/` (engine input).

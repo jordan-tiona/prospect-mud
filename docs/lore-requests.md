@@ -16,4 +16,10 @@ Format (see `docs/game-plan.md` Section 4):
 
 ---
 
-No open requests yet.
+## LR-0001: Remove Iri Vael's dual-room note
+- Requested by: tools
+- Needed for: MUD Editor sector format (`docs/mud-editor-sector-format.md` Section 9). Each entity is built in exactly one room, and content-file `room:` metadata no longer drives placement.
+- What's needed: Drop "(may also appear in the Residential Courtyard)" from `content/npcs/iri_vael.md`'s `room:` metadata and from any persona prose that implies she's sometimes elsewhere. Project owner has already decided she's in the Civic Office only.
+- Blocking: no
+- Status: open
+- Resolution:
