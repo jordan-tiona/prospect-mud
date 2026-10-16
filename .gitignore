@@ -7,3 +7,8 @@ prospect/server/evennia.db3
 prospect/server/logs/
 prospect/server/.restart
 prospect/server/*.pid
+
+# MUD editor: saved-version history and autosaves (ops/editor/store.py)
+sectors/*/.history/
+sectors/*/.autosave/
+sectors/*/.*.tmp

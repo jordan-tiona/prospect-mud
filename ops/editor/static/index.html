@@ -3,28 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="editor-token" content="__EDITOR_TOKEN__">
   <title>MUD Editor</title>
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
   <header class="bar">
     <strong class="brand">MUD Editor</strong>
-    <span class="tag-ro" title="Milestone 5a: nothing in this view writes to disk">read-only</span>
     <label class="sector-pick">Sector <select id="sector"></select></label>
     <button id="issues-btn" class="pill" type="button">Check</button>
     <span id="manifest" class="pill static"></span>
     <button id="unplaced-btn" class="pill" type="button">Unplaced</button>
     <span class="spacer"></span>
+    <span id="autosave-note" class="muted small"></span>
+    <button id="undo" type="button" title="Undo (Ctrl+Z)">Undo</button>
+    <button id="redo" type="button" title="Redo (Ctrl+Y)">Redo</button>
+    <button id="save" type="button" title="Save sector.json (Ctrl+S)">Saved</button>
+    <button id="export" type="button">Export</button>
     <button id="reload" type="button" title="Re-read the sector and content files">Reload</button>
   </header>
+  <div id="banner" class="banner" hidden></div>
   <main>
     <section id="map-wrap" aria-label="Sector map">
       <svg id="map" role="img" aria-label="Rooms and exits"></svg>
-      <div class="hint">Drag to pan · scroll to zoom · <kbd>F</kbd> to fit · <kbd>Esc</kbd> for overview</div>
+      <div class="hint">Drag rooms to move · drag the background to pan · scroll to zoom · <kbd>F</kbd> fit · <kbd>Esc</kbd> overview</div>
       <div id="error" class="load-error" hidden></div>
     </section>
     <aside id="panel" aria-live="polite"></aside>
   </main>
+  <script src="/core.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

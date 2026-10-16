@@ -11,6 +11,7 @@ source "$ROOT/.venv/Scripts/activate"
 
 if [ $# -eq 0 ]; then
     (cd "$ROOT/ops/editor" && python -m unittest -q test_editor test_serve)
+    if command -v node >/dev/null; then node --test "$ROOT/ops/editor/test_core.js"; else echo "node not found: skipping ops/editor/test_core.js"; fi
     set -- commands world typeclasses
 fi
 

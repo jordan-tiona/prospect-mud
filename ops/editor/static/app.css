@@ -198,3 +198,57 @@ kbd {
 .kv dd.mono { font: 12px var(--mono); }
 .muted { color: var(--muted); }
 details summary { cursor: pointer; color: var(--accent); }
+
+/* ---------------------------------------------------------- editing (5b) */
+button:disabled { opacity: .45; cursor: default; border-color: var(--line); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { color: var(--err); }
+button.danger:hover { border-color: var(--err); }
+.link.danger { color: var(--err); }
+.small { font-size: 12px; }
+.spacer { flex: 1; }
+
+.banner {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.banner.info { border-left: 4px solid var(--accent); }
+.banner.warn { border-left: 4px solid var(--warn); }
+.banner.err { border-left: 4px solid var(--err); }
+.banner span { flex: 1; }
+.banner button { margin-left: 6px; }
+
+.room.placeholder rect.box { stroke-dasharray: 2 6; stroke: var(--warn); }
+.exit-line.hl { stroke: var(--select); stroke-width: 3; }
+.exit-line.dim { opacity: .35; }
+.exit-label text { fill: var(--muted); font: 17px var(--font); }
+.exit-label rect { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
+.exit-label.hl text { fill: var(--ink); font-weight: 600; }
+.exit-label.dim { opacity: .55; }
+.room { cursor: move; }
+
+#panel input, #panel select, #panel textarea {
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+#panel textarea { resize: vertical; }
+#panel input:focus, #panel select:focus, #panel textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.form { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 4px; }
+.form label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+.form label.check { flex-direction: row; align-items: center; gap: 6px; }
+.form label.check input { width: auto; }
+.form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.form .actions { display: flex; gap: 8px; }
+.list li.editing { display: block; }
+details.add { margin: 8px 0; }
+details.add > summary { margin-bottom: 4px; }
+.form-kv dd select { width: 100%; }
