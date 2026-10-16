@@ -12,6 +12,8 @@ Run with:
     evennia test world
 """
 
+from unittest.mock import patch
+
 from django.test import TestCase
 from evennia import create_object
 
@@ -33,7 +35,9 @@ from world.actions import (
     validate_and_apply,
 )
 from world.build_npcs import build as build_npcs
+from world.build_rooms import BUILD_TAG_CATEGORY as ROOM_TAG_CATEGORY
 from world.build_rooms import build as build_rooms
+from world.build_sector import room_titles
 from world.commitments import commitment_context_for, get_fulfilled_commitment
 from world.reputation import get_reputation
 from world.rumors import has_reputation_credit
@@ -109,6 +113,54 @@ class ActionValidatorTests(TestCase):
         result = validate_and_apply(self.iri, self.actor, "give_directions", {"destination": "Freehold"})
         self.assertFalse(result.applied)
         self.assertIn("not in neighborhood", result.reason)
+
+    # Duplicate titles: the closest room wins, the first in manifest order on
+    # a tie. Two extra rooms share a placeholder title; each is reached by
+    # its own exit key, so the narration shows which one was picked.
+
+    def _twin_rooms(self, first_exit_from, second_exit_from):
+        """Two rooms titled "Twin Room" (manifest order: first, second), each
+        reached from the given room (None = unreachable) by an exit named
+        "to first" / "to second". Returns a patch of room_titles."""
+        for tag, exit_from in (("twin_first", first_exit_from), ("twin_second", second_exit_from)):
+            room = create_object("typeclasses.rooms.Room", key="Twin Room")
+            room.tags.add(tag, category=ROOM_TAG_CATEGORY)
+            if exit_from is not None:
+                create_object(
+                    "typeclasses.exits.Exit", key=f"to {tag.split('_')[1]}", location=exit_from, destination=room
+                )
+        titles = room_titles() + [("twin_first", "Twin Room"), ("twin_second", "Twin Room")]
+        return patch("world.build_sector.room_titles", return_value=titles)
+
+    def test_give_directions_duplicate_title_picks_closest(self):
+        # first is two hops away (via the square), second is next door
+        self.actor.move_to(self.cafe, quiet=True)
+        with self._twin_rooms(self.square, self.cafe):
+            result = validate_and_apply(self.iri, self.actor, "give_directions", {"destination": "Twin Room"})
+        self.assertTrue(result.applied)
+        self.assertIn("to second", result.narration)
+        self.assertNotIn("to first", result.narration)
+
+    def test_give_directions_duplicate_title_tie_picks_first_in_manifest(self):
+        self.actor.move_to(self.cafe, quiet=True)
+        with self._twin_rooms(self.cafe, self.cafe):
+            result = validate_and_apply(self.iri, self.actor, "give_directions", {"destination": "Twin Room"})
+        self.assertTrue(result.applied)
+        self.assertIn("to first", result.narration)
+
+    def test_give_directions_duplicate_title_skips_unreachable(self):
+        self.actor.move_to(self.cafe, quiet=True)
+        with self._twin_rooms(None, self.square):
+            result = validate_and_apply(self.iri, self.actor, "give_directions", {"destination": "Twin Room"})
+        self.assertTrue(result.applied)
+        self.assertIn("to second", result.narration)
+
+    def test_give_directions_duplicate_title_none_reachable_dropped(self):
+        self.actor.move_to(self.cafe, quiet=True)
+        with self._twin_rooms(None, None):
+            result = validate_and_apply(self.iri, self.actor, "give_directions", {"destination": "Twin Room"})
+        self.assertFalse(result.applied)
+        self.assertIn("no known path", result.reason)
 
     # -- unknown action ----------------------------------------------------
 

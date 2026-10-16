@@ -642,28 +642,27 @@ def _npc_sector(npc):
     return sectors[0] if sectors else DEFAULT_SECTOR
 
 
-def _find_neighborhood_room(destination_name: str, sector_id=None):
+def _find_neighborhood_rooms(destination_name: str, sector_id=None):
     """Match free-text destination against the room titles in the NPC's
     sector manifest, case- and accent-insensitively - by name, since
     that's how players ask (owner, 2026-10-16). Any room in the sector
     is a valid destination; persona and knowledge limit which ones an
     NPC actually offers (docs/build-sector-proposal.md Section 5).
-    Returns the room object, or None if no room has that title.
-
-    Duplicate titles: the first match in manifest order wins for now.
-    TODO(dev): owner and Dev to design picking the closest match when
-    several rooms share a title (docs/build-sector-proposal.md Section 5).
+    Returns every built room with that title, in manifest order (several
+    rooms can share a title); [] if none.
     """
     from evennia import search_tag
 
     from world.build_sector import DEFAULT_SECTOR, room_titles
 
     destination_name = _fold_accents((destination_name or "").strip().lower())
+    rooms = []
     for tag, name in room_titles(sector_id or DEFAULT_SECTOR):
         if _fold_accents(name.lower()) == destination_name:
             matches = search_tag(key=tag, category=ROOM_TAG_CATEGORY)
-            return matches[0] if matches else None
-    return None
+            if matches:
+                rooms.append(matches[0])
+    return rooms
 
 
 def _find_exit_path(start_room, target_room, max_depth=4):
@@ -698,17 +697,21 @@ def _find_exit_path(start_room, target_room, max_depth=4):
 
 def _validate_give_directions(npc, actor, arguments: dict) -> ActionResult:
     destination_name = arguments.get("destination", "")
-    target_room = _find_neighborhood_room(destination_name, _npc_sector(npc))
-    if target_room is None:
+    candidates = _find_neighborhood_rooms(destination_name, _npc_sector(npc))
+    if not candidates:
         return ActionResult(False, "", reason=f"destination not in neighborhood: {destination_name!r}")
 
     start_room = actor.location
     if start_room is None:
         return ActionResult(False, "", reason="actor has no location")
 
-    path = _find_exit_path(start_room, target_room)
-    if path is None:
-        return ActionResult(False, "", reason=f"no known path from {start_room} to {target_room}")
+    # Several rooms can share a title: the player means the closest one
+    # (fewest exits from where they stand); on a tie, the first in manifest
+    # order - min() keeps the first of equals (owner, 2026-10-16).
+    routes = [path for room in candidates if (path := _find_exit_path(start_room, room)) is not None]
+    if not routes:
+        return ActionResult(False, "", reason=f"no known path from {start_room} to {destination_name!r}")
+    path = min(routes, key=len)
 
     if not path:
         return ActionResult(True, f"{npc.key} says you're already there.")
