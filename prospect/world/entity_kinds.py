@@ -21,6 +21,8 @@ Per kind:
     needs_heading     - content file's '# Heading' is the object's key
     params            - {name: {"values": [...], "required": bool}}
     locks             - optional lock string template, formatted from params
+    probe             - False for kinds whose look text is per-player and that
+                        ignore db.probe_desc (commands/probe.py); default True
 """
 
 ROOM_KIND = {
@@ -102,6 +104,7 @@ KINDS = {
         },
     },
     "revision_display": {
+        "probe": False,  # per-looker look text; probe shows it too
         "typeclass": "typeclasses.objects.RevisionDisplayObject",
         "tag_category": "noticeboard_prop",
         "content_dir": "objects",
@@ -111,6 +114,7 @@ KINDS = {
         "params": {},
     },
     "signpost": {
+        "probe": False,  # per-looker look text; probe shows it too
         "typeclass": "typeclasses.objects.SignpostObject",
         "tag_category": "signpost_prop",
         "content_dir": "objects",
@@ -120,6 +124,7 @@ KINDS = {
         "params": {},
     },
     "skitter_ledger": {
+        "probe": False,  # per-looker look text; probe shows it too
         "typeclass": "typeclasses.objects.SkitterLedgerObject",
         "tag_category": "skitter_ledger_prop",
         "content_dir": "objects",
@@ -138,6 +143,7 @@ KINDS = {
         "params": {},
     },
     "planting_bed": {
+        "probe": False,  # per-looker look text; probe shows it too
         "typeclass": "typeclasses.objects.PlantingBed",
         "tag_category": "garden_prop",
         "content_dir": "objects",

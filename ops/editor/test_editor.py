@@ -47,6 +47,23 @@ A thing is here.
 It is a thing.
 """
 
+PERSONA_FILE = """<!--
+npc_id: someone
+room: Room B
+approval: Approved
+prompt_version: 1
+knowledge_scope (bible sections, Established content only):
+  1.1
+actions: give_directions
+pronouns: they/them
+probe_desc: A closer look at someone.
+-->
+
+# Someone
+
+You are someone.
+"""
+
 BASE_SECTOR = {
     'format_version': 1,
     'sector_id': 'test',
@@ -231,6 +248,7 @@ class CheckTests(unittest.TestCase):
 class ExportTests(CheckTests.__base__):
     setUp = CheckTests.setUp
     write = CheckTests.write
+    run_check = CheckTests.run_check
 
     def export(self):
         write_json(self.root / 'sectors/test/sector.json', self.sector)
@@ -282,6 +300,34 @@ class ExportTests(CheckTests.__base__):
         issues, path = self.export()
         self.assertIsNone(path)
         self.assertEqual(codes(issues, check.ERROR), ['parse_error'])
+
+    def test_probe_text_is_carried_when_authored(self):
+        # ambient object: `## Probe Description`
+        self.write('ambient/objects/thing.md', OBJECT_FILE.format(id='thing', name='a thing')
+                   + '\n## Probe Description\n\nUp close, it is still a thing.\n')
+        # generic object (content/objects/): the same section
+        self.write('objects/hint.md', OBJECT_FILE.format(id='hint', name='a hint')
+                   + '\n## Probe Description\n\nA closer look at the hint.\n')
+        self.sector['entities']['hint'] = {'kind': 'quest_prop', 'room': 'room_a', 'content': 'objects/hint.md',
+                                           'params': {'visibility': 'module_exchange_hint_visible'}}
+        # persona: a `probe_desc:` metadata line, never the body
+        self.write('npcs/someone.md', PERSONA_FILE)
+        self.sector['entities']['someone'] = {'kind': 'talk_npc', 'room': 'room_b', 'content': 'npcs/someone.md'}
+        _issues, path = self.export()
+        entities = read_json(path)['entities']
+        self.assertEqual(entities['thing']['attributes']['probe_desc'], 'Up close, it is still a thing.')
+        self.assertEqual(entities['hint']['attributes']['probe_desc'], 'A closer look at the hint.')
+        self.assertEqual(entities['someone']['attributes']['probe_desc'], 'A closer look at someone.')
+
+    def test_no_probe_text_means_no_probe_attribute(self):
+        _issues, path = self.export()
+        self.assertNotIn('probe_desc', read_json(path)['entities']['thing']['attributes'])
+
+    def test_probe_text_on_a_kind_that_ignores_it_is_warned(self):
+        self.write('objects/sign.md', OBJECT_FILE.format(id='sign', name='a sign')
+                   + '\n## Spoke Lines\n\n- North: somewhere.\n\n## Probe Description\n\nNever shown.\n')
+        self.sector['entities']['sign'] = {'kind': 'signpost', 'room': 'room_a', 'content': 'objects/sign.md'}
+        self.assertEqual(codes(self.run_check(), check.WARNING), ['probe_unused'])
 
     def test_quest_prop_locks_from_params(self):
         self.write('objects/hint.md', OBJECT_FILE.format(id='hint', name='a hint'))

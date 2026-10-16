@@ -173,6 +173,15 @@ class BuildSectorTests(TestCase):
             self.build()
         self.assertEqual(ObjectDB.objects.count(), before)
 
+    def test_probe_text_is_set_and_removed_with_the_manifest(self):
+        self.manifest["entities"]["t_thing"]["attributes"]["probe_desc"] = "Up close, still a thing."
+        self.build()
+        thing = one("t_thing", AMBIENT)
+        self.assertEqual(thing.db.probe_desc, "Up close, still a thing.")
+        del self.manifest["entities"]["t_thing"]["attributes"]["probe_desc"]
+        self.build()
+        self.assertFalse(thing.attributes.has("probe_desc"))
+
     def test_values_the_manifest_drops_are_removed(self):
         self.build()
         entity = self.manifest["entities"]["t_thing"]
