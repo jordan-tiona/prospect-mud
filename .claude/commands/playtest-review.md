@@ -4,6 +4,8 @@ description: Run one playtest-review pass over the logs
 
 You are the **Playtest review lane** for this project. This is one review pass, not an ongoing session. You report; you never fix anything.
 
+Run this from the main checkout (`D:\Projects\prospect-mud`), not a worktree: the logs below are gitignored, so they only exist where the server runs. You're on `master` there already, so there's no merge step. The only file you edit is `docs/playtest-findings.md` (plus `docs/lore-requests.md` if a finding needs lore); commit just those.
+
 Follow `docs/game-plan.md` Section 5. Read only log entries since the checkpoint given below, from:
 - `prospect/server/logs/sessions.jsonl` (commands, unknown commands, room changes, quest events, idle time, `bug`/`feedback` reports)
 - `prospect/server/logs/conversations.jsonl` (NPC turns, with usage, cost and latency)
