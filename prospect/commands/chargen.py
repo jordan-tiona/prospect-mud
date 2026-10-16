@@ -64,7 +64,15 @@ text for system prompts/summaries/errors, same as before.
 from django.conf import settings
 from evennia.utils import class_from_module, utils
 
-from world.chargen import SPECIES_CHOICES, apply_identity, place_in_medical_bay, validate_sex, validate_species
+from typeclasses.objects import indent_paragraphs
+from world.chargen import (
+    SPECIES_CHOICES,
+    apply_identity,
+    load_species_entries,
+    place_in_medical_bay,
+    validate_sex,
+    validate_species,
+)
 from world.invites import consume_code
 
 COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
@@ -100,6 +108,18 @@ def _block(session, *lines, pause=None):
     session.msg("\n\n".join(lines) + "\n")
     if pause:
         yield pause
+
+
+def _species_entry(name, description):
+    """One people's entry, laid out like a room (typeclasses/rooms.py):
+    dark-yellow title, then the gray, paragraph-indented description,
+    with a blank line between them and a trailing blank line before the
+    Select prompt. Further per-species details (size, lifespan, ...) can
+    slot in below the description in their own colors."""
+    lines = [f"|Y{name}|n"]
+    if description:
+        lines.append(f"|W{indent_paragraphs(description)}|n")
+    return "\n\n".join(lines) + "\n"
 
 
 def _title(session, title):
@@ -329,12 +349,19 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
             return sex
 
     def _ask_species(self, session):
+        """Pick a people: choosing one shows its content/species.md entry
+        and asks to confirm; 'no' goes back to the list. The shared
+        preface is shown once per creation, not again on a correction."""
+        preface, entries = load_species_entries()
         session.msg(
             _voice(
                 "Next is your species. You may find the terminology unfamiliar, but there is "
                 "no need to hurry. Review the available entries before making your selection."
             )
         )
+        if preface and not getattr(self, "_species_preface_shown", False):
+            session.msg(f"|W{indent_paragraphs(preface)}|n\n")
+            self._species_preface_shown = True
         while True:
             raw = yield _SPECIES_MENU
             species = validate_species(raw)
@@ -346,9 +373,22 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
                     )
                 )
                 continue
+            session.msg(_species_entry(species, entries.get(species)))
+            if not (yield from self._confirm_species(session, species)):
+                continue
             session.msg(_voice(f"{species}. Thank you."))
             yield 3.1
             return species
+
+    def _confirm_species(self, session, species):
+        while True:
+            raw = yield f"Select {species}? [Yes/No]"
+            answer = (raw or "").strip().lower()
+            if answer in ("yes", "y"):
+                return True
+            if answer in ("no", "n"):
+                return False
+            session.msg("|RPlease answer 'yes' or 'no'.|n")
 
     def _show_summary(self, session, name, sex, species):
         yield from _block(

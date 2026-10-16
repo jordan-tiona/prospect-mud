@@ -8,7 +8,13 @@ The seven playable peoples are canon (CLAUDE.md, design bible
 section 5) - a fixed, validated list, not free text.
 """
 
+import re
+
 from evennia import search_tag
+
+from world.content_files import read_content_file, strip_html_comments
+
+SPECIES_CONTENT_FILE = "species.md"
 
 SPECIES_CHOICES = [
     "Kethari",
@@ -43,6 +49,46 @@ def validate_species(raw: str) -> str | None:
         if species.lower() == lowered:
             return species
     return None
+
+
+_APPROVAL_RE = re.compile(r"^\s*approval:\s*(\S+)", re.MULTILINE)
+_FIRST_COMMENT_RE = re.compile(r"<!--(.*?)-->", re.DOTALL)
+_SECTION_RE = re.compile(r"^## +(.+?)\s*$", re.MULTILINE)
+_TITLE_RE = re.compile(r"^# +.*$", re.MULTILINE)
+
+
+def parse_species_text(raw: str) -> tuple[str, dict[str, str]]:
+    """Parse content/species.md into (preface, {species: entry}).
+
+    Only an `approval: Approved` file is shown to players; anything else
+    parses to ("", {}). All HTML comments are stripped (CLAUDE.md's
+    content-file rule) - species.md's comments hold Provisional anatomy
+    notes that must never be displayed. Entries are keyed by their
+    `## ` heading, kept only when it's one of SPECIES_CHOICES."""
+    header = _FIRST_COMMENT_RE.search(raw or "")
+    approval = _APPROVAL_RE.search(header.group(1)) if header else None
+    if not approval or approval.group(1) != "Approved":
+        return "", {}
+
+    text = _TITLE_RE.sub("", strip_html_comments(raw), count=1)
+    parts = _SECTION_RE.split(text)
+    preface = parts[0].strip()
+    entries = {}
+    for heading, body in zip(parts[1::2], parts[2::2]):
+        if heading in SPECIES_CHOICES and body.strip():
+            entries[heading] = re.sub(r"\n{3,}", "\n\n", body).strip()
+    return preface, entries
+
+
+def load_species_entries() -> tuple[str, dict[str, str]]:
+    """(preface, {species: entry}) from content/species.md, read fresh on
+    every call so content edits apply without a reload. A missing file
+    gives ("", {}) - creation still works, just without descriptions."""
+    try:
+        raw = read_content_file(SPECIES_CONTENT_FILE)
+    except OSError:
+        return "", {}
+    return parse_species_text(raw)
 
 
 def validate_sex(raw: str) -> str | None:

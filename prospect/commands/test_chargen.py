@@ -19,11 +19,13 @@ Run with:
 """
 
 import itertools
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from django.test import TestCase, override_settings
 
 from commands.chargen import CmdScriptedCreate
+from typeclasses.objects import indent_paragraphs
+from world.chargen import load_species_entries
 from world.build_rooms import build as build_rooms
 from world.invites import generate_codes
 
@@ -92,6 +94,7 @@ class ScriptedCreateTests(TestCase):
                     "Tester1",
                     "female",
                     "Kethari",
+                    "yes",
                     "confirm",
                     "ScriptedPass123!",
                     "ScriptedPass123!",
@@ -117,6 +120,7 @@ class ScriptedCreateTests(TestCase):
                     "Tester2",
                     "male",
                     "Sylari",
+                    "yes",
                     "confirm",
                     "SuperSecret99!",
                     "SuperSecret99!",
@@ -136,9 +140,11 @@ class ScriptedCreateTests(TestCase):
                     "Tester3",
                     "male",
                     "Sylari",
+                    "yes",
                     "correct",  # decline the identity summary
                     "species",  # only species was wrong
                     "Voldren",  # corrected species
+                    "yes",
                     "confirm",  # accept this time
                     "SomePass123!",
                     "SomePass123!",
@@ -165,6 +171,7 @@ class ScriptedCreateTests(TestCase):
                     "female",
                     "Not A Species",  # invalid - reprompted
                     "Naevari",
+                    "yes",
                     "confirm",
                     "AnotherPass123!",
                     "AnotherPass123!",
@@ -177,6 +184,64 @@ class ScriptedCreateTests(TestCase):
         character = _character_from(account)
         self.assertEqual(character.db.sex, "female")
         self.assertEqual(character.db.species, "Naevari")
+
+    # -- species entries (content/species.md) --------------------------------
+
+    def _run(self, responses):
+        try:
+            _drive(self.cmd.func(), responses)
+        except StopIteration:
+            pass
+
+    def test_declining_an_entry_returns_to_the_list(self):
+        self._run(["Tester7", "male", "Sylari", "no", "3", "yes", "confirm", "SomePass123!", "SomePass123!"])
+
+        account = self.session.sessionhandler.login.call_args[0][1]
+        self.assertEqual(_character_from(account).db.species, "Aevyrin")
+        # Both entries were shown: the declined one, then the chosen one.
+        self.assertIn("|YSylari|n", self.session.transcript)
+        self.assertIn("|YAevyrin|n", self.session.transcript)
+
+    def test_entry_is_laid_out_like_a_room(self):
+        _preface, entries = load_species_entries()
+        self._run(["Tester8", "male", "Kethari", "yes", "confirm", "SomePass123!", "SomePass123!"])
+
+        expected = f"|YKethari|n\n\n|W{indent_paragraphs(entries['Kethari'])}|n\n"
+        self.assertIn(expected, self.session.msgs)
+
+    def test_unclear_answer_to_select_reprompts(self):
+        self._run(["Tester9", "male", "Kethari", "maybe", "yes", "confirm", "SomePass123!", "SomePass123!"])
+
+        self.assertIn("Please answer 'yes' or 'no'", self.session.transcript)
+        account = self.session.sessionhandler.login.call_args[0][1]
+        self.assertEqual(_character_from(account).db.species, "Kethari")
+
+    def test_preface_is_shown_once_even_after_a_species_correction(self):
+        preface, _entries = load_species_entries()
+        self._run([
+            "Tester10", "male", "Sylari", "yes",
+            "correct", "species", "Voldren", "yes",
+            "confirm", "SomePass123!", "SomePass123!",
+        ])
+
+        shown = [m for m in self.session.msgs if indent_paragraphs(preface) in m]
+        self.assertEqual(len(shown), 1)
+
+    def test_no_comment_text_reaches_the_player(self):
+        # species.md's HTML comments hold Provisional anatomy notes.
+        self._run(["Tester11", "male", "Neshyr", "yes", "confirm", "SomePass123!", "SomePass123!"])
+
+        self.assertNotIn("<!--", self.session.transcript)
+        self.assertNotIn("Provisional", self.session.transcript)
+        self.assertNotIn("sharklike", self.session.transcript)
+
+    def test_creation_still_works_without_species_entries(self):
+        with patch("commands.chargen.load_species_entries", return_value=("", {})):
+            self._run(["Tester12", "male", "Otheryn", "yes", "confirm", "SomePass123!", "SomePass123!"])
+
+        account = self.session.sessionhandler.login.call_args[0][1]
+        self.assertEqual(_character_from(account).db.species, "Otheryn")
+        self.assertIn("|YOtheryn|n\n", self.session.msgs)
 
 
 @override_settings(INVITE_ONLY_REGISTRATION=True)
@@ -197,6 +262,7 @@ class InviteGateTests(TestCase):
                     name,
                     "female",
                     "Kethari",
+                    "yes",
                     "confirm",
                     "ScriptedPass123!",
                     "ScriptedPass123!",

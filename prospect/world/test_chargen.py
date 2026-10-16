@@ -17,10 +17,59 @@ from world.build_rooms import build as build_rooms
 from world.chargen import (
     SPECIES_CHOICES,
     apply_identity,
+    load_species_entries,
+    parse_species_text,
     place_in_medical_bay,
     validate_sex,
     validate_species,
 )
+
+_SPECIES_FIXTURE = """<!--
+content_id: species_descriptions
+approval: {approval}
+-->
+
+# Title line
+
+<!-- a note -->
+
+Preface text.
+
+## Kethari
+
+Entry one.
+
+<!-- Provisional note that must not show -->
+
+## Sylari
+
+Entry two.
+
+Second paragraph.
+
+## Not A Listed People
+
+Ignored.
+"""
+
+
+class SpeciesEntriesTests(TestCase):
+    def test_parses_preface_and_entries_without_comments(self):
+        preface, entries = parse_species_text(_SPECIES_FIXTURE.format(approval="Approved"))
+        self.assertEqual(preface, "Preface text.")
+        self.assertEqual(entries, {"Kethari": "Entry one.", "Sylari": "Entry two.\n\nSecond paragraph."})
+
+    def test_unapproved_file_shows_nothing(self):
+        self.assertEqual(parse_species_text(_SPECIES_FIXTURE.format(approval="Draft")), ("", {}))
+        self.assertEqual(parse_species_text("## Kethari\n\nNo header."), ("", {}))
+
+    def test_real_file_covers_every_people_with_no_comment_text(self):
+        preface, entries = load_species_entries()
+        self.assertTrue(preface)
+        self.assertEqual(sorted(entries), sorted(SPECIES_CHOICES))
+        for text in [preface, *entries.values()]:
+            self.assertNotIn("<!--", text)
+            self.assertNotIn("-->", text)
 
 
 class ValidateSpeciesTests(TestCase):

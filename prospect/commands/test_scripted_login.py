@@ -127,6 +127,7 @@ class ScriptedLoginTests(TestCase):
                     "NewPlayer1",
                     "female",
                     "Kethari",
+                    "yes",
                     "confirm",
                     "LoginFlowPass123!",
                     "LoginFlowPass123!",
