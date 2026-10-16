@@ -160,7 +160,7 @@ Export runs the same checks as the read-only `check` command and **refuses to wr
   - two exits from one room with the same key or alias
   - a content file that's referenced but missing, or whose header ID doesn't match
   - a content file with no metadata
-- **Approval gate (error):** every room and entity in the sector must point at a content file whose header is `approval: Approved`. A missing `content` reference, a missing file or a non-Approved file blocks the export. A placeholder reaching the game always means content that was never requested from Lore, so it should never ship silently (owner decision, 2026-10-16). The editor's "awaiting prose" list shows what to request.
+- **Approval gate (error):** every room and entity in the sector must point at a content file whose header is `approval: Approved`. A missing `content` reference, a missing file or a non-Approved file blocks the export. So does any other metadata line whose value starts with `Draft`, such as `probe_description: Draft (LR-DEV-0001, ...)`: an approved file can still carry a section or field awaiting approval (`draft_field`). A placeholder reaching the game always means content that was never requested from Lore, so it should never ship silently (owner decision, 2026-10-16). The editor's "awaiting prose" list shows what to request.
 - **Warnings:**
   - `TODO(lore)` text that would reach players
   - content files no sector uses

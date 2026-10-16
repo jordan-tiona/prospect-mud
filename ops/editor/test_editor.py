@@ -185,6 +185,8 @@ class CheckTests(unittest.TestCase):
         cases = {
             'content_id_mismatch': OBJECT_FILE.format(id='other', name='a thing'),
             'not_approved': OBJECT_FILE.format(id='thing', name='a thing').replace('Approved', 'Draft'),
+            'draft_field': OBJECT_FILE.format(id='thing', name='a thing').replace(
+                'approval: Approved', 'approval: Approved\nprobe_description: Draft (LR-X-0001); pending'),
             'missing_section': OBJECT_FILE.format(id='thing', name='a thing').split('## Description')[0],
             'missing_heading': OBJECT_FILE.format(id='thing', name='a thing').replace('# a thing\n', ''),
             'no_metadata': '# a thing\n\n## Short Description\n\nx\n\n## Description\n\ny\n',
@@ -383,7 +385,7 @@ class RealSectorTests(unittest.TestCase):
     def test_elsewhere_only_blocked_by_approval(self):
         # Structure must be sound; the remaining errors are content still awaiting approval.
         issues = check.check(ROOT, ['elsewhere'])
-        self.assertEqual([c for c in codes(issues, check.ERROR) if c != 'not_approved'], [])
+        self.assertEqual([c for c in codes(issues, check.ERROR) if c not in ('not_approved', 'draft_field')], [])
 
 
 class ParseContentTests(unittest.TestCase):

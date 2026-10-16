@@ -24,10 +24,23 @@ class BuildNpcsDescTests(TestCase):
         self.assertIn("Daven Varek is a Kethari", self.npcs["daven_varek"].db.desc)
 
     def test_npc_with_no_authored_desc_is_left_alone(self):
-        # mara_voss.md has no `desc` metadata field yet - build() must
-        # not overwrite whatever (or nothing) is already there with a
-        # blank string.
-        self.assertIsNone(self.npcs["mara_voss"].db.desc)
+        # Every persona has a `desc` now, so strip one from the manifest:
+        # build() must not set a blank string where none is authored.
+        from unittest.mock import patch
+
+        from world import build_sector
+
+        real_load = build_sector.load_manifest
+
+        def without_desc(sector_id):
+            manifest = real_load(sector_id)  # already a deep copy
+            manifest["entities"]["mara_voss"]["attributes"].pop("desc", None)
+            return manifest
+
+        self.npcs["mara_voss"].delete()
+        with patch.object(build_sector, "load_manifest", without_desc):
+            npcs = build()
+        self.assertIsNone(npcs["mara_voss"].db.desc)
 
     def test_rerun_does_not_duplicate_npcs_and_keeps_desc(self):
         from evennia import search_tag

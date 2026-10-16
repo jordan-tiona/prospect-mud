@@ -54,6 +54,12 @@ def _content_issues(root, where, relative, kind, object_id):
     if approval != 'Approved':
         issues.append(Issue(ERROR, 'not_approved', where,
                             f'content/{relative} approval is {approval!r}, not Approved'))
+    # Per-field approval, e.g. `probe_description: Draft (LR-DEV-0001, ...)`:
+    # an approved file can still carry a draft section or metadata line.
+    for field, value in content.fields.items():
+        if field != 'approval' and str(value).startswith('Draft'):
+            issues.append(Issue(ERROR, 'draft_field', where,
+                                f'content/{relative} marks {field} as {value!r}; needs owner approval first'))
     for section in kind['required_sections']:
         if not content.sections.get(section):
             issues.append(Issue(ERROR, 'missing_section', where, f'content/{relative} has no "## {section}"'))
