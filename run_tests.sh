@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 source "$ROOT/.venv/Scripts/activate"
 
 if [ $# -eq 0 ]; then
-    (cd "$ROOT/ops/editor" && python -m unittest -q test_editor)
+    (cd "$ROOT/ops/editor" && python -m unittest -q test_editor test_serve)
     set -- commands world typeclasses
 fi
 

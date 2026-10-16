@@ -1,6 +1,6 @@
 # MUD Editor: sector format and export manifest
 
-**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Implemented: `ops/editor/check.py` and `ops/editor/export.py`; `sectors/elsewhere/sector.json` (imported once from the old build scripts, now owned by the editor); the Elsewhere manifest `prospect/world/data/sectors/elsewhere.json`; and `world/build_sector.py`, which every `world/build_*.py` now wraps (Steps A-C of `docs/build-sector-proposal.md`). Not built yet: the editor UI (milestone 5).
+**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Implemented: `ops/editor/check.py` and `ops/editor/export.py`; `sectors/elsewhere/sector.json` (imported once from the old build scripts, now owned by the editor); the Elsewhere manifest `prospect/world/data/sectors/elsewhere.json`; and `world/build_sector.py`, which every `world/build_*.py` now wraps (Steps A-C of `docs/build-sector-proposal.md`). Editor UI: milestone 5a (read-only viewer, `python ops/editor/serve.py`, http://127.0.0.1:8765) is built; 5b (structure editing and export) and 5c (candidate tray) aren't yet.
 
 **Background:** bible §18, "Planned content-authoring tool". This spec is the data model for that tool. It does not approve any lore and doesn't change how prose is authored.
 
