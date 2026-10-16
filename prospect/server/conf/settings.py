@@ -73,6 +73,22 @@ LLM_REASONING_EFFORT = os.environ.get("PROSPECT_LLM_REASONING_EFFORT", "none")
 # (`max_reply_tokens`), read by world/npc_profile.py.
 LLM_MAX_TOKENS = int(os.environ.get("PROSPECT_LLM_MAX_TOKENS", "150"))
 
+# Cost/abuse safeguards (game-plan.md 6.2). Tuning knobs, expected to
+# move during playtesting rather than being load-bearing constants.
+#
+# A player's `say` line only reaches the model if it's no longer than
+# this many characters - checked in commands/say.py's engage_npc,
+# before any model call. The ordinary (non-NPC) broadcast of the line
+# to the room still happens regardless; this only gates the model call.
+LLM_MAX_INPUT_CHARS = int(os.environ.get("PROSPECT_LLM_MAX_INPUT_CHARS", "300"))
+
+# Minimum seconds between one player's model-calling turns, across all
+# NPCs (not per NPC - see commands/say.py's engage_npc). Distinct from
+# that same function's `pending` guard, which only blocks a genuinely
+# overlapping second call before the first has replied; this blocks a
+# rapid-fire sequence of separate, already-resolved turns.
+LLM_COOLDOWN_SECONDS = float(os.environ.get("PROSPECT_LLM_COOLDOWN_SECONDS", "4"))
+
 # Every stock Evennia command resolves its own base class from this
 # setting at import time (see e.g. evennia.commands.default.general's
 # `COMMAND_DEFAULT_CLASS = class_from_module(settings.COMMAND_DEFAULT_CLASS)`).

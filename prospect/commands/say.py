@@ -31,8 +31,10 @@ happens in _handle_llm_reply() once the deferred fires.
 """
 
 import json
+import time
 import uuid
 
+from django.conf import settings
 from evennia.commands.default.general import CmdSay as DefaultCmdSay
 from evennia.utils import logger
 from twisted.internet.threads import deferToThread
@@ -158,6 +160,12 @@ def _get_pending(npc) -> set:
     if npc.ndb.pending is None:
         npc.ndb.pending = set()
     return npc.ndb.pending
+
+
+def _get_last_message(npc) -> dict:
+    if npc.ndb.last_player_message is None:
+        npc.ndb.last_player_message = {}
+    return npc.ndb.last_player_message
 
 
 def _assistant_turn_messages(raw_text, calls, tool_results):
@@ -534,16 +542,46 @@ def engage_npc(target, caller, message):
     hears. The player's line has already been broadcast to the room
     as an ordinary `say` by the time this runs.
 
-    Guards against overlapping calls: if this player already has a
-    model call in flight for this NPC (they said something else before
-    the first reply came back), a second deferToThread call isn't
-    queued on top of it - that just piles latency onto an already-slow
-    local model and produces replies in a confusing, possibly
-    out-of-order sequence. The player is told to wait instead.
+    Four gates run before any model call, each a pure cost/abuse
+    safeguard (game-plan.md 6.2) with no effect on the ordinary speech
+    broadcast that already happened in CmdSay.func() - a rejected turn
+    still speaks in the room, it just never reaches the model:
+
+    - overlapping calls: if this player already has a model call in
+      flight for this NPC (they said something else before the first
+      reply came back), a second deferToThread call isn't queued on
+      top of it - that just piles latency onto an already-slow model
+      and produces replies in a confusing, possibly out-of-order
+      sequence.
+    - input length: LLM_MAX_INPUT_CHARS.
+    - cooldown: LLM_COOLDOWN_SECONDS between this player's model-calling
+      turns, across all NPCs (not per NPC, unlike the other three gates
+      here) - catches a rapid sequence of separate, already-resolved
+      turns that the overlap guard above doesn't.
+    - duplicate message: the same player sending the exact same line to
+      the same NPC twice in a row gets a canned reply instead of
+      spending a second model call on it.
     """
     pending = _get_pending(target)
     if caller.dbref in pending:
         caller.msg(f"{target.key} is still thinking about what you said - give them a moment.")
+        return
+
+    if len(message) > settings.LLM_MAX_INPUT_CHARS:
+        caller.msg(
+            f"That's too much to say all at once - try to keep it under "
+            f"{settings.LLM_MAX_INPUT_CHARS} characters."
+        )
+        return
+
+    last_call = caller.ndb.last_llm_call_time
+    if last_call is not None and time.time() - last_call < settings.LLM_COOLDOWN_SECONDS:
+        caller.msg(f"Give {target.key} a moment before saying something else.")
+        return
+
+    last_messages = _get_last_message(target)
+    if last_messages.get(caller.dbref) == message:
+        caller.msg(f"You already just said that to {target.key}.")
         return
 
     profile = parse_persona(target.db.npc_id)
@@ -579,6 +617,8 @@ def engage_npc(target, caller, message):
     }
 
     pending.add(caller.dbref)
+    caller.ndb.last_llm_call_time = time.time()
+    last_messages[caller.dbref] = message
     deferred = deferToThread(chat, messages, tools=tools, max_tokens=profile.max_reply_tokens)
     deferred.addCallback(
         _handle_llm_reply, target, caller, history, message, log_context, pending,

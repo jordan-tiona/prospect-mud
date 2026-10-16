@@ -30,6 +30,13 @@ class LLMReply:
     # to report the outcome back in a follow-up call (see
     # commands/say.py's _get_action_reaction).
     tool_calls: list = field(default_factory=list)
+    # {"prompt_tokens": int, "completion_tokens": int, "total_tokens": int},
+    # or {} if the backend's response carried no usage field at all.
+    # Needed by structured logging and the per-player/global token
+    # budgets (game-plan.md 6.2) - without this, those have no real
+    # number to count against, only the max_tokens *cap* sent with the
+    # request, which isn't what the model actually used.
+    usage: dict = field(default_factory=dict)
 
 
 def _get_client() -> OpenAI:
@@ -38,6 +45,17 @@ def _get_client() -> OpenAI:
         api_key=settings.LLM_API_KEY,
         timeout=settings.LLM_TIMEOUT_SECONDS,
     )
+
+
+def _usage_dict(response) -> dict:
+    usage = getattr(response, "usage", None)
+    if usage is None:
+        return {}
+    return {
+        "prompt_tokens": usage.prompt_tokens,
+        "completion_tokens": usage.completion_tokens,
+        "total_tokens": usage.total_tokens,
+    }
 
 
 def _parse_tool_calls(message) -> list:
@@ -124,4 +142,5 @@ def chat(
         model=response.model,
         raw=response.model_dump(),
         tool_calls=_parse_tool_calls(choice.message),
+        usage=_usage_dict(response),
     )

@@ -24,6 +24,9 @@ def _mock_response():
     response.choices[0].message.tool_calls = None
     response.model = "test-model"
     response.model_dump.return_value = {}
+    response.usage.prompt_tokens = 10
+    response.usage.completion_tokens = 5
+    response.usage.total_tokens = 15
     return response
 
 
@@ -51,3 +54,37 @@ class ChatRequestShapingTests(SimpleTestCase):
 
         kwargs = mock_client.chat.completions.create.call_args.kwargs
         self.assertEqual(kwargs["max_tokens"], 42)
+
+
+class UsageCaptureTests(SimpleTestCase):
+    """
+    world/conversation_log.py and the per-player/global token budgets
+    (game-plan.md 6.2) both need the model's *actual* token usage, not
+    just the max_tokens cap sent with the request - this is what
+    carries that number out of llm_client.chat() for them to use.
+    """
+
+    @patch("world.llm_client._get_client")
+    def test_usage_is_captured_from_the_response(self, mock_get_client):
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = _mock_response()
+        mock_get_client.return_value = mock_client
+
+        reply = chat([{"role": "user", "content": "hi"}])
+
+        self.assertEqual(
+            reply.usage,
+            {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        )
+
+    @patch("world.llm_client._get_client")
+    def test_missing_usage_on_the_response_yields_an_empty_dict(self, mock_get_client):
+        mock_client = MagicMock()
+        response = _mock_response()
+        response.usage = None
+        mock_client.chat.completions.create.return_value = response
+        mock_get_client.return_value = mock_client
+
+        reply = chat([{"role": "user", "content": "hi"}])
+
+        self.assertEqual(reply.usage, {})

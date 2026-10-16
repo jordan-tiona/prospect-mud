@@ -20,7 +20,7 @@ Run with:
 
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from evennia import create_object
 from twisted.internet import defer
 
@@ -123,7 +123,15 @@ class TrimHistoryTests(TestCase):
         self.assertEqual(history[0]["role"], "user")
 
 
+@override_settings(LLM_COOLDOWN_SECONDS=0)
 class SayCommandTests(TestCase):
+    """
+    LLM_COOLDOWN_SECONDS is forced to 0 for this whole class: most of
+    these tests say several lines in a row to exercise addressing/
+    history/logging behavior, not the cooldown gate itself (that gate
+    has its own dedicated tests in CostSafeguardTests below).
+    """
+
     def setUp(self):
         rooms = build_rooms()
         npcs = build_npcs()
@@ -899,3 +907,111 @@ class SayCommandTests(TestCase):
         self.assertEqual(first_kwargs["turn_id"], 1)
         self.assertEqual(second_kwargs["turn_id"], 2)
         self.assertEqual(first_kwargs["conversation_id"], second_kwargs["conversation_id"])
+
+
+@override_settings(LLM_COOLDOWN_SECONDS=0)
+class CostSafeguardTests(SayCommandTests):
+    """
+    The pre-model-call gates added for game-plan.md 6.2: input length
+    cap, per-player cooldown, and same-message dedup. Reuses
+    SayCommandTests.setUp (built rooms/NPCs/actor). Each test below
+    overrides LLM_COOLDOWN_SECONDS back to whatever it actually needs
+    to exercise, since the class default of 0 (inherited from
+    SayCommandTests) would otherwise mask the cooldown gate entirely.
+    """
+
+    @override_settings(LLM_MAX_INPUT_CHARS=10)
+    @patch("commands.say.chat")
+    def test_message_over_the_length_cap_skips_the_model_call(self, mock_chat):
+        self._say("this message is definitely longer than ten characters")
+
+        mock_chat.assert_not_called()
+        self.assertTrue(any("too much" in m.lower() for m in self.messages))
+
+    @override_settings(LLM_MAX_INPUT_CHARS=10)
+    @patch("commands.say.chat")
+    def test_message_within_the_length_cap_still_goes_through(self, mock_chat):
+        mock_chat.return_value = _reply("Hi!")
+        self._say("hi there")
+
+        mock_chat.assert_called_once()
+
+    @override_settings(LLM_COOLDOWN_SECONDS=100)
+    @patch("commands.say.chat")
+    def test_second_call_within_the_cooldown_is_rejected(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("hello there")
+        mock_chat.reset_mock()
+
+        self._say("how are you")
+
+        mock_chat.assert_not_called()
+        self.assertTrue(any("a moment" in m.lower() for m in self.messages))
+
+    @override_settings(LLM_COOLDOWN_SECONDS=100)
+    @patch("commands.say.chat")
+    def test_cooldown_is_not_per_npc_but_global_to_the_player(self, mock_chat):
+        # A player can't dodge the cooldown by pestering a different
+        # NPC instead - the whole point is limiting how often this
+        # player triggers *any* model call.
+        self.tarin.move_to(self.cafe, quiet=True)
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("to Mara, hello there")
+        mock_chat.reset_mock()
+
+        self._say("to Tarin, got a minute?")
+
+        mock_chat.assert_not_called()
+
+    @override_settings(LLM_COOLDOWN_SECONDS=4)
+    @patch("commands.say.time")
+    @patch("commands.say.chat")
+    def test_call_after_the_cooldown_elapses_is_allowed(self, mock_chat, mock_time):
+        mock_time.time.side_effect = [1000.0, 1010.0, 1010.0]
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("hello there")
+        mock_chat.reset_mock()
+
+        mock_chat.return_value = _reply("Doing well.")
+        self._say("how are you")
+
+        mock_chat.assert_called_once()
+
+    @patch("commands.say.chat")
+    def test_identical_message_to_the_same_npc_is_rejected(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("hello there")
+        mock_chat.reset_mock()
+
+        self._say("hello there")
+
+        mock_chat.assert_not_called()
+        self.assertTrue(any("already" in m.lower() for m in self.messages))
+
+    @patch("commands.say.chat")
+    def test_different_message_after_a_duplicate_still_goes_through(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("hello there")
+        mock_chat.reset_mock()
+
+        mock_chat.return_value = _reply("Doing well.")
+        self._say("how are you")
+
+        mock_chat.assert_called_once()
+
+    @patch("commands.say.chat")
+    def test_duplicate_check_is_scoped_per_npc(self, mock_chat):
+        # Unlike the cooldown gate above, saying the exact same line to
+        # a *different* NPC right after is a legitimate new question,
+        # not a duplicate. Both use the explicit "to <name>," form so
+        # the addressing prefix is stripped the same way on both calls
+        # and the NPC actually hears the identical remainder text.
+        self.tarin.move_to(self.cafe, quiet=True)
+        mock_chat.return_value = _reply("Hey.")
+        self._say("to Tarin, got a minute?")
+        mock_chat.reset_mock()
+
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("to Mara, got a minute?")
+
+        mock_chat.assert_called_once()
