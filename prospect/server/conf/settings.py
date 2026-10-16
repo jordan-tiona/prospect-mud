@@ -94,14 +94,15 @@ LLM_MAX_INPUT_CHARS = int(os.environ.get("PROSPECT_LLM_MAX_INPUT_CHARS", "300"))
 # rapid-fire sequence of separate, already-resolved turns.
 LLM_COOLDOWN_SECONDS = float(os.environ.get("PROSPECT_LLM_COOLDOWN_SECONDS", "4"))
 
-# Per-player daily token budget (world/llm_budget.py) - granted in 24
-# cumulative hourly chunks rather than all at once, so a budget this
-# size, divided across a full day, caps how much any one player can
-# burn through in a single sitting without a hard cutoff tied to a
-# fixed hour. Once exceeded, that player gets an in-character "come
-# back tomorrow" fallback instead of further model calls, until the
-# daily reset at UTC midnight.
-LLM_PLAYER_DAILY_TOKEN_BUDGET = int(os.environ.get("PROSPECT_LLM_PLAYER_DAILY_TOKEN_BUDGET", "120000"))
+# Per-player daily spend budget in dollars (world/llm_budget.py),
+# priced from each call's real token usage with the rates below. A
+# quarter unlocks at UTC midnight, the rest in hourly chunks, so no
+# one sitting can burn the whole day. Once exceeded, that player gets
+# an in-character "come back tomorrow" fallback instead of further
+# model calls until the daily reset at UTC midnight. Developer/admin
+# accounts are exempt. $0.50 (project owner, 2026-10-16) is a starting
+# point to watch, not a sustainable per-player cost.
+LLM_PLAYER_DAILY_SPEND_USD = float(os.environ.get("PROSPECT_LLM_PLAYER_DAILY_SPEND_USD", "0.50"))
 
 # OpenRouter's per-token rates for the configured model (openai/gpt-4.1-mini
 # as of 2026-10-16: https://openrouter.ai/openai/gpt-4.1-mini-2025-04-14/api) -

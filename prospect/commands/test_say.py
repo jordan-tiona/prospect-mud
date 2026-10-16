@@ -28,6 +28,7 @@ from commands.say import MAX_HISTORY_EXCHANGES, _build_followup_messages, _trim_
 from world.actions import get_quest_state
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
+from world.llm_budget import call_cost_usd
 from world.llm_client import LLMReply, LLMUnavailableError
 from world.npc_profile import parse_persona
 
@@ -1091,7 +1092,7 @@ class CostSafeguardTests(_SayTestBase):
 
         self._say("hello there")
 
-        self.assertEqual(self.actor.db.llm_tokens_used_today, 120)
+        self.assertAlmostEqual(self.actor.db.llm_spend_today_usd, call_cost_usd(mock_chat.return_value.usage))
 
     @patch("commands.say.chat")
     def test_duplicate_check_is_scoped_per_npc(self, mock_chat):

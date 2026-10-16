@@ -1,20 +1,27 @@
 """
-Per-player daily token budget and the global daily spend circuit
+Per-player daily spend budget and the global daily spend circuit
 breaker (game-plan.md 6.2, items 5-6) - both pure cost/abuse
 safeguards checked in commands/say.py's engage_npc before any model
 call, and both accounted for afterward from the real usage captured
 on LLMReply (world/llm_client.py's `usage`), not from the max_tokens
 cap sent with the request.
 
-The per-player budget is granted in PLAYER_BUDGET_CHUNKS cumulative
-hourly chunks, by UTC hour-of-day, rather than all at once - a
-player's session could start at any hour of the day, and granting the
-whole day's budget at the first hour mark would let an early starter
-burn through it in one sitting while a later one can't (project
-owner's call, 2026-10-16). Chunks are cumulative - never taken away
-once granted, i.e. unused chunks roll over within the same day - and
-the whole thing hard-resets to zero used at UTC midnight regardless
-of how much was left unused.
+The per-player budget is in dollars (settings.LLM_PLAYER_DAILY_SPEND_USD),
+priced from real usage by call_cost_usd - not tokens, since what it
+protects is spend, and a token count stops meaning anything when the
+model or its pricing changes (project owner, 2026-10-16: the original
+120k-token budget ran out in about six turns, with ~10k-token prompts).
+
+It unlocks gradually over the UTC day: PLAYER_BUDGET_UP_FRONT of it at
+midnight, the rest in equal hourly chunks, all of it by the final hour.
+A player could start at any hour; this stops an early starter burning
+the whole day in one sitting while still giving a 05:00 starter a
+usable session. Granted spend is never taken away (unused amounts roll
+over within the day), and usage hard-resets at UTC midnight.
+
+Developer/admin accounts are exempt from the per-player budget (not
+from the global breaker), so testing doesn't run into it - an explicit
+permission check, not a lock (docs/engineering-pitfalls.md #2).
 
 The circuit breaker is a single server-wide daily dollar total, not a
 per-player figure - its job is to catch a bug or runaway loop burning
@@ -24,45 +31,57 @@ playtest volume (see docs/game-plan.md 6.2). It's tracked on a
 GLOBAL_SCRIPTS singleton (see settings.GLOBAL_SCRIPTS) since this is
 server-wide state with no single player or NPC object to live on.
 """
-
 from datetime import datetime, timezone
 
 from django.conf import settings
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils import logger
 
-PLAYER_BUDGET_CHUNKS = 24
+PLAYER_BUDGET_UP_FRONT = 0.25
+PLAYER_BUDGET_HOURS = 24
+BUDGET_EXEMPT_PERMISSION = "Admin"  # Evennia's hierarchy: Developer includes Admin
 
 
 def _today_utc() -> str:
     return datetime.now(timezone.utc).date().isoformat()
 
 
-def _player_tokens_used_today(caller) -> int:
-    """Tokens this player has used today, resetting lazily on day rollover."""
+def _player_spend_today(caller) -> float:
+    """Dollars this player has spent today, resetting lazily on day rollover."""
     if caller.db.llm_budget_day != _today_utc():
-        return 0
-    return caller.db.llm_tokens_used_today or 0
+        return 0.0
+    return caller.db.llm_spend_today_usd or 0.0
 
 
-def player_budget_granted_so_far() -> int:
+def player_budget_granted_so_far() -> float:
     """
-    How many of the player's daily token budget have unlocked so far
-    today, given the current UTC hour - the last chunk unlocks at
-    23:00 UTC, so the full budget is only ever available for the
-    day's final hour, not from some fixed early cutoff.
+    How much of the player's daily spend budget has unlocked so far
+    today: PLAYER_BUDGET_UP_FRONT at midnight UTC, the rest in equal
+    hourly chunks, the full amount from 23:00 UTC.
     """
     hour = datetime.now(timezone.utc).hour
-    chunk = settings.LLM_PLAYER_DAILY_TOKEN_BUDGET / PLAYER_BUDGET_CHUNKS
-    return int((hour + 1) * chunk)
+    budget = settings.LLM_PLAYER_DAILY_SPEND_USD
+    dripped = (1 - PLAYER_BUDGET_UP_FRONT) * (hour + 1) / PLAYER_BUDGET_HOURS
+    return budget * (PLAYER_BUDGET_UP_FRONT + dripped)
+
+
+def budget_exempt(caller) -> bool:
+    account = getattr(caller, "account", None)
+    if account is None:
+        return False
+    return bool(account.is_superuser or account.check_permstring(BUDGET_EXEMPT_PERMISSION))
 
 
 def player_over_budget(caller) -> bool:
-    return _player_tokens_used_today(caller) >= player_budget_granted_so_far()
+    if budget_exempt(caller):
+        return False
+    return _player_spend_today(caller) >= player_budget_granted_so_far()
 
 
-def record_player_usage(caller, total_tokens: int) -> None:
-    caller.db.llm_tokens_used_today = _player_tokens_used_today(caller) + total_tokens
+def record_player_usage(caller, usage: dict) -> None:
+    """Add one call's real cost to the player's spend for today. Recorded
+    for exempt accounts too, so their usage can still be measured."""
+    caller.db.llm_spend_today_usd = _player_spend_today(caller) + call_cost_usd(usage)
     caller.db.llm_budget_day = _today_utc()
 
 

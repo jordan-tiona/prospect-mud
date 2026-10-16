@@ -319,7 +319,7 @@ def _handle_llm_reply(
     # the call already happened and cost real tokens regardless of
     # whether the reply ends up flagged, empty, or answered with a
     # follow-up reaction call of its own.
-    record_player_usage(caller, reply.usage.get("total_tokens", 0))
+    record_player_usage(caller, reply.usage)
     record_global_spend(reply.usage)
     latency_ms = (time.time() - call_started) * 1000
 
@@ -483,7 +483,7 @@ def _handle_action_reaction(
     # This follow-up call is a second real request with its own usage,
     # separate from the action-call turn's usage already recorded by
     # _handle_llm_reply before this was dispatched.
-    record_player_usage(caller, reply.usage.get("total_tokens", 0))
+    record_player_usage(caller, reply.usage)
     record_global_spend(reply.usage)
     # The whole turn's usage/cost/latency for logging (log_turn's own
     # docstring) covers both completions - from the very first call's

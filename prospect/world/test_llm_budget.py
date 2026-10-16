@@ -1,5 +1,5 @@
 """
-Unit tests for the per-player daily token budget and the global
+Unit tests for the per-player daily spend budget and the global
 daily spend circuit breaker (game-plan.md 6.2, items 5-6).
 
 Run with:
@@ -12,8 +12,10 @@ from unittest.mock import patch
 from django.conf import settings
 from django.test import TestCase, override_settings
 from evennia import GLOBAL_SCRIPTS, create_object
+from evennia.utils.create import create_account
 
 from world.llm_budget import (
+    budget_exempt,
     call_cost_usd,
     global_daily_limit_reached,
     player_budget_granted_so_far,
@@ -40,53 +42,81 @@ class PlayerBudgetTests(TestCase):
             "typeclasses.characters.Character", key="Tester", location=room, home=room
         )
 
-    @override_settings(LLM_PLAYER_DAILY_TOKEN_BUDGET=24000)
+    # 1M prompt tokens at $1.00/1M = $1.00: easy round numbers.
+    def _usage(self, dollars):
+        return {"prompt_tokens": int(dollars * 1_000_000), "completion_tokens": 0}
+
+    @override_settings(LLM_PLAYER_DAILY_SPEND_USD=1.0)
     @patch("world.llm_budget.datetime")
-    def test_granted_so_far_scales_with_the_hour(self, mock_datetime):
+    def test_granted_so_far_is_a_quarter_up_front_then_hourly(self, mock_datetime):
         mock_datetime.now.return_value = _utc(0)
-        self.assertEqual(player_budget_granted_so_far(), 1000)
+        self.assertAlmostEqual(player_budget_granted_so_far(), 0.25 + 0.75 / 24)
+
+        mock_datetime.now.return_value = _utc(11)
+        self.assertAlmostEqual(player_budget_granted_so_far(), 0.25 + 0.75 * 12 / 24)
 
         mock_datetime.now.return_value = _utc(23)
-        self.assertEqual(player_budget_granted_so_far(), 24000)
+        self.assertAlmostEqual(player_budget_granted_so_far(), 1.0)
 
-    @override_settings(LLM_PLAYER_DAILY_TOKEN_BUDGET=24000)
+    @override_settings(LLM_PLAYER_DAILY_SPEND_USD=1.0, LLM_INPUT_COST_PER_1M_TOKENS=1.0)
     @patch("world.llm_budget.datetime")
     def test_player_under_budget_is_not_blocked(self, mock_datetime):
         mock_datetime.now.return_value = _utc(12)
-        record_player_usage(self.actor, 500)
+        record_player_usage(self.actor, self._usage(0.10))
 
         self.assertFalse(player_over_budget(self.actor))
 
-    @override_settings(LLM_PLAYER_DAILY_TOKEN_BUDGET=24000)
+    @override_settings(LLM_PLAYER_DAILY_SPEND_USD=1.0, LLM_INPUT_COST_PER_1M_TOKENS=1.0)
     @patch("world.llm_budget.datetime")
     def test_player_at_or_over_the_granted_amount_is_blocked(self, mock_datetime):
-        mock_datetime.now.return_value = _utc(0)  # grants 1000
-        record_player_usage(self.actor, 1000)
+        mock_datetime.now.return_value = _utc(0)  # grants ~$0.28
+        record_player_usage(self.actor, self._usage(0.30))
 
         self.assertTrue(player_over_budget(self.actor))
 
-    @override_settings(LLM_PLAYER_DAILY_TOKEN_BUDGET=24000)
+    @override_settings(LLM_PLAYER_DAILY_SPEND_USD=1.0, LLM_INPUT_COST_PER_1M_TOKENS=1.0)
     @patch("world.llm_budget.datetime")
     def test_usage_rolls_over_within_the_same_day(self, mock_datetime):
-        # Chunks already granted are never taken away - usage recorded
+        # Spend already granted is never taken away - usage recorded
         # during an early, small-grant hour still counts fully against
         # a later, bigger grant the same day.
         mock_datetime.now.return_value = _utc(0)
-        record_player_usage(self.actor, 1000)  # uses up the whole hour-0 grant
+        record_player_usage(self.actor, self._usage(0.30))
+        self.assertTrue(player_over_budget(self.actor))
 
-        mock_datetime.now.return_value = _utc(5)  # grants 6000
+        mock_datetime.now.return_value = _utc(5)  # grants $0.4375
         self.assertFalse(player_over_budget(self.actor))
-        self.assertEqual(self.actor.db.llm_tokens_used_today, 1000)
+        self.assertAlmostEqual(self.actor.db.llm_spend_today_usd, 0.30)
 
-    @override_settings(LLM_PLAYER_DAILY_TOKEN_BUDGET=24000)
+    @override_settings(LLM_PLAYER_DAILY_SPEND_USD=1.0, LLM_INPUT_COST_PER_1M_TOKENS=1.0)
     @patch("world.llm_budget.datetime")
     def test_usage_resets_on_a_new_utc_day(self, mock_datetime):
         mock_datetime.now.return_value = _utc(23)
-        record_player_usage(self.actor, 24000)
+        record_player_usage(self.actor, self._usage(1.0))
         self.assertTrue(player_over_budget(self.actor))
 
         mock_datetime.now.return_value = _utc(0, day_offset=1)
         self.assertFalse(player_over_budget(self.actor))
+
+    @override_settings(LLM_PLAYER_DAILY_SPEND_USD=1.0, LLM_INPUT_COST_PER_1M_TOKENS=1.0)
+    def test_admin_and_developer_accounts_are_exempt_but_still_recorded(self):
+        for perm in ("Admin", "Developer"):
+            with self.subTest(perm):
+                account = create_account(f"Budget{perm}", email=None, password="TestPass123!")
+                account.permissions.add(perm)
+                self.actor.account = account
+                record_player_usage(self.actor, self._usage(5.0))
+                self.assertTrue(budget_exempt(self.actor))
+                self.assertFalse(player_over_budget(self.actor))
+                self.assertGreaterEqual(self.actor.db.llm_spend_today_usd, 5.0)
+
+    @override_settings(LLM_PLAYER_DAILY_SPEND_USD=1.0, LLM_INPUT_COST_PER_1M_TOKENS=1.0)
+    def test_ordinary_player_account_is_not_exempt(self):
+        account = create_account("BudgetPlayer", email=None, password="TestPass123!")
+        self.actor.account = account
+        record_player_usage(self.actor, self._usage(5.0))
+        self.assertFalse(budget_exempt(self.actor))
+        self.assertTrue(player_over_budget(self.actor))
 
 
 class GlobalSpendTests(TestCase):

@@ -114,7 +114,7 @@ Do these in order. Each is a separate, reviewable task.
    - input length cap on `talk`
    - `max_tokens` on every model call
    - bounded conversation history per call
-   - per-player daily token/cost budget with an in-character fallback
+   - per-player daily token/cost budget with an in-character fallback. **2026-10-16:** now $0.50/player/day in dollars (a quarter up front, the rest hourly), developer/admin accounts exempt. The original 120k-token budget lasted about six turns: each model call sends a ~10k-token prompt, and action turns make two calls. $0.50/day is over $15/month per active player, more than a plausible subscription. Prompt trimming and provider prompt caching are needed before a wider playtest, and average real spend per player (`cost_usd` in `server/logs/conversations.jsonl`) needs watching.
    - in-game daily spend circuit breaker, set below the $25 key limit, with scripted fallback and an alert
    - repeated identical messages get a canned reply instead of a model call
    - invite-only accounts for playtests
