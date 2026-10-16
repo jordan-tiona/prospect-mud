@@ -19,11 +19,10 @@ from world.build_rooms import BUILD_TAG_CATEGORY as ROOM_TAG_CATEGORY
 LEDGER_TAG_CATEGORY = "skitter_ledger_prop"
 LEDGER_PROP_ID = "civic_office_skitter_ledger"
 
-# TODO(lore): placeholder wording - the ledger's physical description
-# and room line are authored content (docs/lore-requests.md LR-0001).
-# Kept deliberately plain and functional until the Lore lane replaces
-# them; nothing here should be read as establishing how the Civic
-# Office actually keeps records.
+# TODO(lore): placeholder wording (docs/lore-requests.md LR-0001). The
+# authored copy lives in content/objects/civic_office_skitter_ledger.md;
+# this must match it until build_sector() replaces this script - copy
+# changes across, never edit only here.
 ROOM_LINE = "A ledger of pest reports lies open on a side table."
 DESC = "A plain ledger for logging reported skitter kills, one line per name."
 
