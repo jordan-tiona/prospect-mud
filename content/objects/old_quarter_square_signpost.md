@@ -3,7 +3,7 @@ object_id: old_quarter_square_signpost
 status: Provisional
 approval: Draft
 moved_from: prospect/world/build_signpost.py ROOM_LINE, SPOKE_LINES (verbatim, Tools lane, 2026-10-16)
-TODO(lore): moved verbatim from code; review per docs/lore-requests.md LR-TOOLS-0001, then set approval: Approved or rewrite.
+Lore review (LR-TOOLS-0001, 2026-10-16): text kept as moved. Awaiting project-owner approval; Dev/Tools copy nothing back unless the owner changes it.
 -->
 
 <!-- No ## Description: the route to Daven's office is computed by the engine (typeclasses.objects.SignpostObject), not authored here. -->

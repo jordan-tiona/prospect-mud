@@ -3,7 +3,8 @@ object_id: planting_bed
 status: Provisional
 approval: Draft
 moved_from: prospect/world/build_garden_props.py build() (verbatim, Tools lane, 2026-10-16)
-TODO(lore): moved verbatim from code; review per docs/lore-requests.md LR-TOOLS-0001, then set approval: Approved or rewrite.
+Lore review (LR-TOOLS-0001, 2026-10-16): text kept as moved. Awaiting project-owner approval.
+TODO(lore): the Old Quarter Square room description (Approved) says "someone has kept the beds tended", which contradicts this overgrown bed and Iri's planting-bed ask; owner decision needed, see LR-TOOLS-0001 Resolution.
 -->
 
 # a planting bed
