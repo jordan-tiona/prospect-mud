@@ -1,6 +1,6 @@
 # MUD Editor: sector format and export manifest
 
-**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Nothing here is implemented yet. Changes to the build pipeline (Section 7) also need a Dev-lane review before code lands.
+**Status:** Format agreed with the project owner (2026-10-16), Tools lane. Implemented so far (milestone 2): `sectors/elsewhere/sector.json` imported from today's builders, plus `ops/editor/check.py` (`python ops/editor/check.py`). Export, `build_sector()` and the editor UI aren't built yet. Changes to the build pipeline (Section 7) also need a Dev-lane review before code lands.
 
 **Background:** bible §18, "Planned content-authoring tool". This spec is the data model for that tool. It does not approve any lore and doesn't change how prose is authored.
 
@@ -91,6 +91,7 @@ Rules:
 - **Exits:** every exit is one record. `"return": null` marks an intentional one-way exit, and a missing `return` is a validation error. That rules out the accidental one-way drift that hand-kept `SPOKES`/`CHAINS` lists allow. The hub-and-spoke assumption in `build_rooms.py` goes away, and every connection is explicit.
 - **`editor`** holds map layout and other editor-only data. Export strips it.
 - **`params`** may only contain keys that the entity's kind declares (Section 5).
+- **`aliases`** (optional) are extra words players can use to refer to an entity, e.g. the gardening kit's `["kit", "gardening kits"]`. Like exit aliases, they're structure, not prose.
 - **Display names** of NPCs and objects aren't stored here. They come from the content file's `# Heading`, as `build_ambient.py` already does. Talk NPCs' first-name alias is derived the same way `build_npcs.py` does it today.
 
 ## 5. Entity kinds (Dev-owned allowlist)

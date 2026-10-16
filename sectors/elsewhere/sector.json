@@ -1,0 +1,306 @@
+{
+  "entities": {
+    "civic_information_display": {
+      "content": "objects/civic_information_display.md",
+      "kind": "revision_display",
+      "room": "corner_cafe"
+    },
+    "civic_services_board": {
+      "content": "ambient/objects/civic_services_board.md",
+      "kind": "ambient_object",
+      "room": "civic_office"
+    },
+    "concourse_arrival_directory": {
+      "content": "ambient/objects/concourse_arrival_directory.md",
+      "kind": "ambient_object",
+      "room": "lift_concourse"
+    },
+    "concourse_otheryn_courier": {
+      "content": "ambient/npcs/concourse_otheryn_courier.md",
+      "kind": "ambient_npc",
+      "room": "lift_concourse"
+    },
+    "courtyard_neshyr_neighbor": {
+      "content": "ambient/npcs/courtyard_neshyr_neighbor.md",
+      "kind": "ambient_npc",
+      "room": "residential_courtyard"
+    },
+    "daven_varek": {
+      "content": "npcs/daven_varek.md",
+      "kind": "talk_npc",
+      "room": "daven_office"
+    },
+    "faulty_heating_module_hint": {
+      "content": "objects/faulty_heating_module_hint.md",
+      "kind": "quest_prop",
+      "params": {
+        "visibility": "module_exchange_hint_visible"
+      },
+      "room": "corner_cafe"
+    },
+    "gardening_kit": {
+      "aliases": [
+        "kit",
+        "gardening kits"
+      ],
+      "content": "objects/gardening_kit.md",
+      "kind": "gardening_kit",
+      "room": "residential_courtyard"
+    },
+    "given_marr": {
+      "content": "npcs/given_marr.md",
+      "kind": "talk_npc",
+      "room": "medical_bay"
+    },
+    "iri_vael": {
+      "content": "npcs/iri_vael.md",
+      "kind": "talk_npc",
+      "room": "civic_office"
+    },
+    "mara_voss": {
+      "content": "npcs/mara_voss.md",
+      "kind": "talk_npc",
+      "room": "corner_cafe"
+    },
+    "misdelivered_parcel_hint": {
+      "content": "objects/misdelivered_parcel_hint.md",
+      "kind": "quest_prop",
+      "params": {
+        "commitment_type": "deliver_parcel",
+        "visibility": "commitment_hint_visible"
+      },
+      "room": "corner_cafe"
+    },
+    "old_quarter_square_signpost": {
+      "content": "objects/old_quarter_square_signpost.md",
+      "kind": "signpost",
+      "room": "old_quarter_square"
+    },
+    "planting_bed": {
+      "aliases": [
+        "bed",
+        "planting beds",
+        "beds"
+      ],
+      "content": "objects/planting_bed.md",
+      "kind": "planting_bed",
+      "room": "old_quarter_square"
+    },
+    "square_elderly_kethari": {
+      "content": "ambient/npcs/square_elderly_kethari.md",
+      "kind": "ambient_npc",
+      "room": "old_quarter_square"
+    },
+    "square_noticeboard": {
+      "content": "ambient/objects/square_noticeboard.md",
+      "kind": "ambient_object",
+      "room": "old_quarter_square"
+    },
+    "tarin_os": {
+      "content": "npcs/tarin_os.md",
+      "kind": "talk_npc",
+      "room": "maintenance_workshop"
+    },
+    "veska_renn": {
+      "content": "npcs/veska_renn.md",
+      "kind": "talk_npc",
+      "room": "civic_office"
+    },
+    "workshop_parts_tray": {
+      "content": "ambient/objects/workshop_parts_tray.md",
+      "kind": "ambient_object",
+      "room": "maintenance_workshop"
+    }
+  },
+  "exits": [
+    {
+      "aliases": [
+        "ne"
+      ],
+      "from": "old_quarter_square",
+      "key": "northeast",
+      "return": {
+        "aliases": [
+          "sw"
+        ],
+        "key": "southwest"
+      },
+      "to": "lift_concourse"
+    },
+    {
+      "aliases": [
+        "n"
+      ],
+      "from": "old_quarter_square",
+      "key": "north",
+      "return": {
+        "aliases": [
+          "s"
+        ],
+        "key": "south"
+      },
+      "to": "corner_cafe"
+    },
+    {
+      "aliases": [
+        "e"
+      ],
+      "from": "old_quarter_square",
+      "key": "east",
+      "return": {
+        "aliases": [
+          "w"
+        ],
+        "key": "west"
+      },
+      "to": "maintenance_workshop"
+    },
+    {
+      "aliases": [
+        "s"
+      ],
+      "from": "old_quarter_square",
+      "key": "south",
+      "return": {
+        "aliases": [
+          "n"
+        ],
+        "key": "north"
+      },
+      "to": "residential_courtyard"
+    },
+    {
+      "aliases": [
+        "w"
+      ],
+      "from": "old_quarter_square",
+      "key": "west",
+      "return": {
+        "aliases": [
+          "e"
+        ],
+        "key": "east"
+      },
+      "to": "civic_office"
+    },
+    {
+      "aliases": [
+        "sw"
+      ],
+      "from": "old_quarter_square",
+      "key": "southwest",
+      "return": {
+        "aliases": [
+          "ne"
+        ],
+        "key": "northeast"
+      },
+      "to": "old_quarter_street"
+    },
+    {
+      "aliases": [
+        "u"
+      ],
+      "from": "lift_concourse",
+      "key": "up",
+      "return": {
+        "aliases": [
+          "d"
+        ],
+        "key": "down"
+      },
+      "to": "medical_bay"
+    },
+    {
+      "aliases": [
+        "n"
+      ],
+      "from": "old_quarter_street",
+      "key": "north",
+      "return": {
+        "aliases": [
+          "s"
+        ],
+        "key": "south"
+      },
+      "to": "daven_office"
+    }
+  ],
+  "format_version": 1,
+  "notes": "",
+  "rooms": {
+    "civic_office": {
+      "content": "rooms/civic_office.md",
+      "editor": {
+        "x": -560,
+        "y": 0
+      },
+      "title": "Civic Office"
+    },
+    "corner_cafe": {
+      "content": "rooms/corner_cafe.md",
+      "editor": {
+        "x": 0,
+        "y": -400
+      },
+      "title": "Corner Café"
+    },
+    "daven_office": {
+      "content": "rooms/daven_office.md",
+      "editor": {
+        "x": -840,
+        "y": 0
+      },
+      "title": "Daven's Office"
+    },
+    "lift_concourse": {
+      "content": "rooms/lift_concourse.md",
+      "editor": {
+        "x": 560,
+        "y": -400
+      },
+      "title": "Lift Concourse"
+    },
+    "maintenance_workshop": {
+      "content": "rooms/maintenance_workshop.md",
+      "editor": {
+        "x": 560,
+        "y": 0
+      },
+      "title": "Maintenance Workshop"
+    },
+    "medical_bay": {
+      "content": "rooms/medical_bay.md",
+      "editor": {
+        "x": 560,
+        "y": -830
+      },
+      "title": "Medical Bay"
+    },
+    "old_quarter_square": {
+      "content": "rooms/old_quarter_square.md",
+      "editor": {
+        "x": 0,
+        "y": 0
+      },
+      "title": "Old Quarter Square"
+    },
+    "old_quarter_street": {
+      "content": "rooms/old_quarter_street.md",
+      "editor": {
+        "x": -560,
+        "y": 430
+      },
+      "title": "Old Quarter Street"
+    },
+    "residential_courtyard": {
+      "content": "rooms/residential_courtyard.md",
+      "editor": {
+        "x": 0,
+        "y": 460
+      },
+      "title": "Residential Courtyard"
+    }
+  },
+  "sector_id": "elsewhere"
+}
