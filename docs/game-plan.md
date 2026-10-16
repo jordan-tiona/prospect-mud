@@ -37,11 +37,13 @@ Each lane runs in its **own git worktree and branch**. Jordan reviews and merges
 
 | Lane | Does | May edit | Must not |
 |---|---|---|---|
-| **Lore** | Worldbuilding, NPC profiles, quest content, room descriptions, common-knowledge updates | Bible, `content/`, `docs/lore-requests.md` | Change game code |
-| **Dev** | RPG systems, features, fixes from findings | Game code, tests | Write or invent lore (hard rule 7). Request it instead. |
-| **Tools** | MUD editor and other internal tooling | Tool code | Change game behavior without a dev-lane review |
+| **Lore** | Worldbuilding, NPC persona/knowledge prose, quest content, room descriptions, common-knowledge updates | Bible, `content/` (persona/knowledge/room prose; not `## Actions` sections or `npc-shared-rules.md`), `docs/lore-requests.md` | Change game code; edit `## Actions` sections or `npc-shared-rules.md`; create or place anything directly into the live game (Evennia objects, exits, `world/build_*.py`) |
+| **Dev** | RPG systems, features, fixes from findings | Game code, tests, persona `## Actions` sections, `npc-shared-rules.md` | Write or invent lore (hard rule 7). Request it instead. |
+| **Tools** | MUD editor and other internal tooling; the pipeline that takes Lore's finished prose and turns it into actual in-game content (object/room creation, `world/build_*.py`, wiring into the world) | Tool code, `world/build_*.py`, in-game object/placement code | Change game behavior/mechanics without a dev-lane review; invent lore |
 | **Tests** | Tests for newly merged work, coverage of validator and prompt builder | Tests | Change game code to make tests pass |
 | **Playtest review** | Reads logs during and after playtests; writes findings | `docs/playtest-findings.md` | Fix anything. It reports; Jordan triages. |
+
+**Lore/Dev/Tools boundary.** `content/npcs/<npc_id>.md` mixes authored canon (persona, voice, knowledge) with engine-facing prompt engineering (the `## Actions` section) — those are different kinds of work and belong to different lanes even within one file. Lore writes the prose; it never runs or edits `world/build_*.py` and never creates the actual Evennia objects/exits/rooms itself — that's Tools' job (via the editor once it exists) or Dev's, depending on whether it's world placement or an engine mechanic. If a new NPC needs both a persona (Lore) and new actions (Dev) in the same week, do it sequentially — Lore drafts the persona with a stub `## Actions` placeholder, merge, then Dev fills in the real actions — rather than both lanes holding the same file open at once.
 
 **Concurrency:** Normally run **Lore + Dev** side by side. Run **Tools** when there's a defined task. Run **Tests** and **Playtest review** as short, task-shaped sessions, not continuously. Two or three sessions at once is the target; more than that outpaces review.
 
@@ -122,6 +124,10 @@ Do these in order. Each is a separate, reviewable task.
 6. **Lane scaffolding.** Create `docs/lore-requests.md` and `docs/playtest-findings.md` using the formats in Section 4. Add lane rules (Section 3) to `CLAUDE.md`.
 7. **Canon-reviewer subagent.** Define a Claude Code subagent whose only job is checking a diff against the bible: invented lore, Provisional material reaching prompts, hard-rule violations. Run it on every merge before Jordan reviews.
 8. **Playtest-review command.** A reusable command or skill that runs one review pass as described in Section 5, given a log checkpoint.
+
+**Known issues flagged for the Tests lane** (found during items 2–3, 2026-10-16; parked here since the lane doesn't exist yet):
+- `run_tests.bat` only runs `evennia test commands world` - the `typeclasses` app (which has its own test files, e.g. `test_npcs.py`, `test_rooms.py`, `test_characters.py`) isn't included at all, so its tests never run as part of the normal test command.
+- `typeclasses/test_npcs.py`'s `AmbientPoseRotationTests` fails with a dangling-foreign-key `IntegrityError` when run alongside the rest of the suite (a test character created with no explicit room/home, relying on `settings.DEFAULT_HOME` ("#2") existing, which is order-dependent on another test having built one first). Same root cause fixed in `world/test_llm_budget.py`/`world/test_commitments.py`/`world/test_session_log.py` today by giving those tests an explicit room - `test_npcs.py` itself still has the bug.
 
 ---
 

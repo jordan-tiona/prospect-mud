@@ -85,6 +85,20 @@ Apply this to every new quest/commitment scenario going forward; the actual hint
 - While anything from an NPC is actively offered-pending-answer or accepted-but-unfulfilled, nothing else from that same NPC can be newly proposed, regardless of priority — an NPC doesn't start a second errand while the first is genuinely in progress.
 - Apply `mandatory=True` to every future tutorial-sequence quest sharing an NPC with other commitment content, from the start — don't wait for a live cross-contamination bug to surface before adding it.
 
+## Workstream lanes (2026-10-16 onward)
+
+Work on this project runs in parallel lanes, each in its own git worktree and branch (see `docs/game-plan.md` Section 3 for the full rationale, concurrency guidance and the Lore/Dev/Tools boundary). Know which lane a session is in before touching anything.
+
+| Lane | May edit | Must not |
+|---|---|---|
+| **Lore** | `docs/bible/`, `content/` persona/knowledge/room prose (not `## Actions` sections or `npc-shared-rules.md`), `docs/lore-requests.md` | Change game code; edit `## Actions` sections or `npc-shared-rules.md`; create or place anything directly into the live game (Evennia objects, exits, `world/build_*.py`) |
+| **Dev** | Game code, tests, persona `## Actions` sections, `npc-shared-rules.md` | Write or invent lore (hard rule 7) - add a `docs/lore-requests.md` entry instead |
+| **Tools** | Tool code, `world/build_*.py`, in-game object/placement code | Change game behavior/mechanics without a Dev-lane review; invent lore |
+| **Tests** | Tests | Change game code to make tests pass |
+| **Playtest review** | `docs/playtest-findings.md` | Fix anything - it reports, the project owner triages |
+
+Need lore a lane doesn't have? Add an entry to `docs/lore-requests.md` (format in that file) instead of inventing it. Found a bug or pain point reviewing a playtest? Add or update an entry in `docs/playtest-findings.md` (format in that file) rather than fixing it directly.
+
 ## Working style
 
 - **Propose a plan before writing code** for anything beyond a small change, and wait for approval.
