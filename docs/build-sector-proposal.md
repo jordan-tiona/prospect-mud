@@ -188,3 +188,20 @@ What changes:
    - `REQUIRED_ROOM_IDS` (item 3) goes here.
 
 **Not on the checklist.** Section 3.3 says to move an entity back to its room when it's somewhere else. That conflicts with Section 3.5's rule that nothing a character carries is ever touched. `GardeningKit` can be picked up, and today `build_garden_props.py` already takes it out of a player's inventory on a rebuild. For consistency: **don't move an entity a character is carrying.** Report it as "held by <character>" instead.
+
+## 9. Dev-lane confirmation of Step A (2026-10-16)
+
+**Confirmed:**
+- **`REQUIRED_ROOM_IDS`, keyed by sector.** It matches every room game code looks up by tag:
+  - `world/chargen.py`: `medical_bay`
+  - `typeclasses/objects.py`: `daven_office`
+  - `world/tutorial.py`: both of the above
+  - `world/skitters.py`: `ELIGIBLE_ROOM_TAGS`
+
+  `give_directions` matches room names, not tags. A new tag lookup in game code has to be added here.
+- **No pruning while there are conflicts.**
+- **Room and exit IDs unique across sectors.**
+- **No re-homing of pruned objects.**
+- **What runtime-created objects are tagged with.** Parcels use `parcel_commitment` and skitters use `skitter_entity`, so the build never treats them as its own or as orphans. Ambient and talk NPCs are `DefaultObject`, not characters, so a removed NPC can still be pruned. The never-prune rule only protects player characters.
+
+**One edge case for Tools:** if a *room* is skipped because two rooms carry its tag, exits and entities placed in that room still get planned. `_apply` then raises `KeyError` on `rooms[desired.location]` partway through a real build, after earlier steps have already been written. Skip, and report as conflicts, any exit or entity whose room or destination was skipped, the same way an ambiguous exit is handled.
