@@ -1,9 +1,9 @@
 <!--
 object_id: gardening_kit
 status: Provisional
-approval: Draft
+approval: Approved
 moved_from: prospect/world/build_garden_props.py build() (verbatim, Tools lane, 2026-10-16)
-Lore review (LR-TOOLS-0001, 2026-10-16): ## Description reworded (the moved text said the kit was both "pulled from" the locker and "kept here"). Awaiting project-owner approval; once approved, Dev/Tools copy the new ## Description back to prospect/world/build_garden_props.py.
+Lore review (LR-TOOLS-0001, 2026-10-16): ## Description reworded (the moved text said the kit was both "pulled from" the locker and "kept here"). Owner approved 2026-10-16; Dev/Tools copy the new ## Description back to prospect/world/build_garden_props.py.
 -->
 
 # a gardening kit
