@@ -70,6 +70,11 @@ def load_kinds(root=ROOT):
     return data['ROOM_KIND'], data['KINDS']
 
 
+def load_required_rooms(root=ROOT):
+    """{sector_id: [room_id, ...]} the engine finds by tag (Dev-owned)."""
+    return literals(Path(root) / KINDS_FILE, ('REQUIRED_ROOM_IDS',))['REQUIRED_ROOM_IDS']
+
+
 def strip_comments(text):
     return re.sub(r'\n{3,}', '\n\n', _COMMENT_RE.sub('', text)).strip()
 

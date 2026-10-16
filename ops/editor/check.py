@@ -12,7 +12,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from world_model import (FORMAT_VERSION, ID_RE, ROOT, DuplicateKeyError, load_content, load_kinds,
-                         load_sector, manifest_path, read_json, sector_ids, sector_path, source_hashes)
+                         load_required_rooms, load_sector, manifest_path, read_json, sector_ids, sector_path,
+                         source_hashes)
 
 ERROR, WARNING, INFO = 'error', 'warning', 'info'
 
@@ -162,6 +163,12 @@ def check_sector(root, sector_id):
     for object_id in [*rooms, *entities]:
         if not ID_RE.fullmatch(object_id):
             issues.append(Issue(ERROR, 'bad_id', object_id, 'IDs must match [a-z0-9_]+'))
+
+    for room_id in load_required_rooms(root).get(sector_id, []):
+        if room_id not in rooms:
+            issues.append(Issue(ERROR, 'missing_required_room', f'room {room_id}',
+                                'game code finds this room by tag (REQUIRED_ROOM_IDS in '
+                                'prospect/world/entity_kinds.py); the sector must keep it'))
 
     for room_id, room in rooms.items():
         here = f'room {room_id}'

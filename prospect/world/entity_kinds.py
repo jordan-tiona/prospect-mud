@@ -35,6 +35,24 @@ ROOM_KIND = {
 
 EXIT_TYPECLASS = "typeclasses.exits.Exit"
 
+# Rooms game code finds by tag, per sector. ops/editor/check.py reports a
+# sector missing one as an error (so export refuses), and world.build_sector
+# never prunes one. Drafted by the Tools lane from the Dev review of
+# docs/build-sector-proposal.md (Section 8, item 3); pending Dev confirmation.
+REQUIRED_ROOM_IDS = {
+    "elsewhere": [
+        "medical_bay",  # world/chargen.py place_in_medical_bay; world/tutorial.py tannoy + nudge
+        "daven_office",  # typeclasses/objects.py SignpostObject route; world/tutorial.py nudge
+        # world/skitters.py ELIGIBLE_ROOM_TAGS (skitter spawn rooms):
+        "lift_concourse",
+        "old_quarter_square",
+        "corner_cafe",
+        "maintenance_workshop",
+        "residential_courtyard",
+        "old_quarter_street",
+    ],
+}
+
 KINDS = {
     "talk_npc": {
         "typeclass": "typeclasses.npcs.TalkativeNPC",
