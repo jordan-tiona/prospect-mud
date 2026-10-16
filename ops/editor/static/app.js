@@ -697,6 +697,9 @@ function roomPanel(id) {
     ${roomIssues.length ? `<h3>Issues</h3>${issueList(roomIssues)}` : ''}
     <h3>Title</h3>
     <input data-field="room-title" value="${esc(room.title || '')}">
+    ${(room.editor?.former_titles || []).length ? `<p class="small muted">Formerly: ${room.editor.former_titles.map((t) => `<span class="former">${esc(t)}
+      <button type="button" class="link" data-action="forget-title" data-title="${esc(t)}" title="Stop warning about prose that uses this title">Forget</button></span>`).join(' · ')}
+      <br>Check warns about prose that still uses an old title.</p>` : ''}
     ${!room.content && matchingProse.length ? `<p class="small">Prose for this ID has arrived: <select data-field="room-content">${options([['', 'choose…'], ...matchingProse.map((f) => [f.path, `${f.path} (${f.approval || 'no approval'})`])], '')}</select></p>` : ''}
     ${room.content ? '<p class="small"><button type="button" class="link" data-action="unlink-prose">Detach prose</button> <span class="muted">(makes this a placeholder again; the file is untouched)</span></p>' : ''}
     ${sections.Glance ? `<h3>Glance</h3><div class="prose">${prose(sections.Glance)}</div>` : ''}
@@ -885,6 +888,7 @@ function setupPanelInput() {
         break;
       }
       case 'unlink-prose': edit((doc) => core.setRoom(doc, id, { content: '' })); break;
+      case 'forget-title': edit((doc) => core.forgetFormerTitle(doc, id, act.dataset.title)); break;
       case 'place-room': placeRoomCandidate(act.dataset.path); break;
       case 'dismiss': setDismissed([act.dataset.path], true); break;
       case 'restore': setDismissed([act.dataset.path], false); break;

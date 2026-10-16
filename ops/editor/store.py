@@ -115,6 +115,8 @@ def validate_shape(root, sector_id, sector):
         editor = room.get('editor', {})
         if not (isinstance(editor, dict) and all(isinstance(editor.get(c, 0), (int, float)) for c in ('x', 'y'))):
             problems.append(f'{where}: editor position must be numbers')
+        elif not _str_list(editor.get('former_titles', [])):
+            problems.append(f'{where}: former titles must be a list of text')
         if not isinstance(room.get('notes', ''), str):
             problems.append(f'{where}: notes must be text')
 

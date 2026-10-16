@@ -36,7 +36,7 @@ test('rooms: add, retitle, move, refuse bad or taken IDs', () => {
   assert.throws(() => core.addRoom(doc, { id: 'thing', title: 'x' }), /already used/);
   assert.throws(() => core.addRoom(doc, { id: 'd', title: '  ' }), /title/);
   core.setRoom(doc, 'c', { title: 'Sea', position: { x: 40, y: 50 } });
-  assert.deepEqual(doc.rooms.c, { title: 'Sea', editor: { x: 40, y: 50 } });
+  assert.deepEqual(doc.rooms.c, { title: 'Sea', editor: { x: 40, y: 50, former_titles: ['C'] } });
 });
 
 test('placeholder rooms have no content until it is set', () => {
@@ -142,4 +142,15 @@ test('placing candidates: rooms take the heading as a suggested title, entities 
   core.placeCandidate(doc, npc, { kind: 'ambient_npc', idField: 'npc_id', room: 'sea_wall' });
   assert.deepEqual(doc.entities.vendor, { kind: 'ambient_npc', room: 'sea_wall', content: 'ambient/npcs/vendor.md' });
   assert.throws(() => core.placeCandidate(doc, room, { kind: 'room', idField: 'room_id' }), /already used/);
+});
+
+test('renaming a room remembers its former titles for check', () => {
+  const doc = sector();
+  core.setRoom(doc, 'a', { title: 'Annex' });
+  core.setRoom(doc, 'a', { title: 'Big Annex' });
+  core.setRoom(doc, 'a', { title: 'annex' }); // back to an old title (any case): no longer "former"
+  assert.deepEqual(doc.rooms.a.editor, { x: 0, y: 0, former_titles: ['A', 'Big Annex'] });
+  core.forgetFormerTitle(doc, 'a', 'A');
+  core.forgetFormerTitle(doc, 'a', 'Big Annex');
+  assert.deepEqual(doc.rooms.a.editor, { x: 0, y: 0 });
 });

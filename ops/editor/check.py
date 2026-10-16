@@ -6,6 +6,7 @@ check reports an error. Never writes anything.
 """
 
 import argparse
+import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
@@ -155,6 +156,39 @@ def _exit_issues(sector, rooms):
     return issues
 
 
+def _mentions(text, title, current_titles):
+    """Does `text` mention `title` as a whole phrase, outside any current room
+    title that contains it ("Square" inside "Old Quarter Square")?"""
+    for current in current_titles:
+        if title.lower() in current.lower() and title.lower() != current.lower():
+            text = re.sub(re.escape(current), ' ', text, flags=re.I)
+    return re.search(rf'(?<!\w){re.escape(title)}(?!\w)', text, re.I) is not None
+
+
+def _former_title_issues(root, rooms):
+    """A renamed room keeps its old titles in editor.former_titles (the editor
+    records them). Warn about content files whose player-visible text still
+    says an old title, until the prose is updated or the owner forgets the
+    title. Titles another room currently has are skipped: a mention may be it."""
+    current_titles = {r.get('title', '') for r in rooms.values() if r.get('title')}
+    former = [(room_id, room['title'], old) for room_id, room in rooms.items()
+              for old in (room.get('editor') or {}).get('former_titles', [])
+              if old and old.lower() not in {t.lower() for t in current_titles}]
+    if not former:
+        return []
+    base = Path(root) / 'content'
+    texts = {path.relative_to(base).as_posix(): load_content(root, path.relative_to(base).as_posix()).visible_text
+             for path in sorted(base.rglob('*.md'))}
+    issues = []
+    for room_id, title, old in former:
+        for relative, text in texts.items():
+            if _mentions(text, old, current_titles):
+                issues.append(Issue(WARNING, 'old_title', f'room {room_id}',
+                                    f'content/{relative} still mentions "{old}" (now "{title}"): ask Lore to '
+                                    'update it, or forget the old title in the editor'))
+    return issues
+
+
 def check_sector(root, sector_id):
     """All issues for one sector, plus the content paths it references."""
     where = f'sectors/{sector_id}/sector.json'
@@ -232,6 +266,7 @@ def check_sector_data(root, sector_id, sector, manifest=True):
             referenced.add(entity['content'])
 
     issues += _exit_issues(sector, rooms)
+    issues += _former_title_issues(root, rooms)
     if manifest:
         issues += _manifest_issues(root, sector_id, sector, referenced)
     return issues, referenced
