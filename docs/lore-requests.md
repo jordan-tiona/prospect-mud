@@ -4,8 +4,10 @@ Any lane that needs lore it doesn't have adds an entry here instead of inventing
 
 Format (see `docs/game-plan.md` Section 4):
 
+**IDs are prefixed by the requesting lane** (`LR-DEV-0001`, `LR-TOOLS-0001`, `LR-TESTS-0001`, `LR-REVIEW-0001`), numbered within that lane. Lanes work on separate branches and can't see each other's new entries until merge, so unprefixed numbers collide (LR-0001 and LR-0002 below were both created as LR-0001). Take the next number after the highest existing one for your own lane.
+
 ```
-## LR-0001: <short title>
+## LR-<LANE>-0001: <short title>
 - Requested by: dev | tools | tests | playtest-review
 - Needed for: <feature, file, or finding>
 - What's needed: <specific question or content>

@@ -55,10 +55,10 @@ Each lane runs in its **own git worktree and branch**. Jordan reviews and merges
 
 ### `docs/lore-requests.md`: lore request queue
 
-Any lane that needs lore it doesn't have adds an entry instead of inventing it. The Lore lane works through the queue.
+Any lane that needs lore it doesn't have adds an entry instead of inventing it. The Lore lane works through the queue. IDs are prefixed by the requesting lane (`LR-DEV-0001`, `LR-TOOLS-0001`, ...) so entries added on separate branches can't collide at merge.
 
 ```
-## LR-0001: <short title>
+## LR-<LANE>-0001: <short title>
 - Requested by: dev | tools | tests | playtest-review
 - Needed for: <feature, file, or finding>
 - What's needed: <specific question or content>
