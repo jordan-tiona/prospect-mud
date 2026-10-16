@@ -1,6 +1,6 @@
 # Proposal: `world.build_sector`, building the world from sector manifests
 
-**Status:** Proposal, Tools lane (2026-10-16). **Dev-reviewed 2026-10-16: approved for Step A** with the changes in Section 8, which are now folded into Section 3 and Step C below. One question still needs the owner: Section 5. No game code has changed yet. This is milestone 4 of the MUD Editor (`docs/mud-editor-sector-format.md` Section 7).
+**Status:** Proposal, Tools lane (2026-10-16). **Dev-reviewed 2026-10-16: approved for Step A** with the changes in Section 8, which are now folded into Section 3 and Step C below. The owner settled the remaining question (Section 5) the same day. No game code has changed yet. This is milestone 4 of the MUD Editor (`docs/mud-editor-sector-format.md` Section 7).
 
 **Why Dev review:** it replaces how the world gets built, touches modules that game code imports (`world/build_rooms.py`, `world/actions.py`), and includes one small behaviour change (Section 5). The Tools lane may write `world/build_*.py`, but must not change game behaviour without a Dev-lane review.
 
@@ -133,7 +133,7 @@ The wrappers can be removed later, test module by test module (a Tests-lane task
 What changes:
 - `_find_neighborhood_room` reads the room list (ID and title) from the manifest instead of `build_rooms.ROOMS`. With today's nine rooms, players see no difference.
 - Duplicate titles mean a name can match more than one room. **The owner will work out with Dev how to resolve multiple matches, picking the closest one as the room the player meant.** That design belongs to Dev. `build_sector` only has to supply the room list with both IDs and titles, so whatever rule Dev settles on can return a specific room ID.
-- **Open question:** may an NPC direct players to every room in the sector, or should there be a per-NPC or per-room limit? Today it's all nine rooms. I'd ship "all rooms in the sector" first.
+- **Decided (owner, 2026-10-16):** the engine lets an NPC give directions to any room in its sector. Which rooms an NPC actually offers directions to is limited by its persona and what it knows, not by an engine list. Every route is still checked against the real exits.
 
 ## 6. Out of scope
 
@@ -172,7 +172,7 @@ What changes:
    - The engine still checks every route against the real exits.
    - The persona prompt already limits which places an NPC offers to explain.
 
-   **Owner to confirm** that any exported room automatically becoming a valid destination is the intended rule. Two cleanups for Step C:
+   **Owner confirmed (2026-10-16):** yes. NPCs *can* direct players to any room; persona and knowledge keep them to the rooms they'd actually know. Two cleanups for Step C:
    - `_find_neighborhood_room`'s docstring still says "six known rooms".
    - `_find_exit_path`'s `max_depth=4` will need raising once a sector is wider than four hops.
 6. **Relaxing the ambient parser: fine.** The only readers of `room:` are `world/build_ambient.py` and `ops/generate_obsidian.py`. Retire the second one in the same step, or teach it to read placements from the sector file.
