@@ -142,6 +142,20 @@ def load_sector(root, sector_id):
     return read_json(sector_path(root, sector_id))
 
 
+DISMISSED_FILE = f'{SECTORS_DIR}/_dismissed.json'
+
+
+def dismissed_path(root):
+    return Path(root) / DISMISSED_FILE
+
+
+def load_dismissed(root=ROOT):
+    """Content paths (relative to content/) dismissed from the editor's candidate
+    tray. Editor-owned; the files themselves are never touched."""
+    path = dismissed_path(root)
+    return set(read_json(path).get('dismissed', [])) if path.is_file() else set()
+
+
 MANIFEST_DIR = 'prospect/world/data/sectors'
 EDITOR_ONLY_FIELDS = ('editor', 'notes')
 

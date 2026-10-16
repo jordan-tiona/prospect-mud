@@ -111,3 +111,35 @@ test('undo and redo walk snapshots; a new edit clears redo', () => {
   assert.equal(history.canRedo, false);
   assert.equal(history.canUndo, true);
 });
+
+test('tray: unplaced minus what the open document uses, plus files it released', () => {
+  const doc = sector();
+  const unplaced = [{ path: 'rooms/c.md' }, { path: 'ambient/objects/thing.md' }];
+  const released = [{ path: 'rooms/old.md' }, { path: 'rooms/c.md' }];
+  assert.deepEqual(core.trayItems(unplaced, released, doc).map((i) => i.path), ['rooms/c.md', 'rooms/old.md']);
+});
+
+test('tray: grouped by request, stray files last, dismissed kept apart', () => {
+  const groups = core.groupByRequest([
+    { path: 'a', request: null },
+    { path: 'b', request: 'LR-OWNER-0002' },
+    { path: 'c', request: 'LR-OWNER-0001', dismissed: true },
+    { path: 'd', request: 'LR-OWNER-0001' },
+  ]);
+  assert.deepEqual(groups.map((g) => g.request), ['LR-OWNER-0001', 'LR-OWNER-0002', null]);
+  assert.deepEqual(groups[0].active.map((i) => i.path), ['d']);
+  assert.deepEqual(groups[0].dismissed.map((i) => i.path), ['c']);
+});
+
+test('placing candidates: rooms take the heading as a suggested title, entities need a room', () => {
+  const doc = sector();
+  const room = { path: 'rooms/sea_wall.md', heading: 'The Sea Wall', fields: { room_id: 'sea_wall', approval: 'Draft' } };
+  core.placeCandidate(doc, room, { kind: 'room', idField: 'room_id', x: 100, y: 200 });
+  assert.deepEqual(doc.rooms.sea_wall, { title: 'The Sea Wall', content: 'rooms/sea_wall.md', editor: { x: 100, y: 200 } });
+  const npc = { path: 'ambient/npcs/vendor.md', fields: {} }; // no ID field: the file name is the ID
+  assert.equal(core.candidateId(npc, 'npc_id'), 'vendor');
+  assert.throws(() => core.placeCandidate(doc, npc, { kind: 'ambient_npc', idField: 'npc_id', room: 'nowhere' }), /room/);
+  core.placeCandidate(doc, npc, { kind: 'ambient_npc', idField: 'npc_id', room: 'sea_wall' });
+  assert.deepEqual(doc.entities.vendor, { kind: 'ambient_npc', room: 'sea_wall', content: 'ambient/npcs/vendor.md' });
+  assert.throws(() => core.placeCandidate(doc, room, { kind: 'room', idField: 'room_id' }), /already used/);
+});
