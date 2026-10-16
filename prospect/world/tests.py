@@ -169,7 +169,7 @@ class PromptBuilderTests(SimpleTestCase):
         common_knowledge_pos = prompt.index("Elsewhere has been around for about four centuries")
         shared_rules_pos = prompt.index("You are a resident of Elsewhere")
         persona_pos = prompt.index("You are Mara Voss")
-        lore_pos = prompt.index("[11.2.1]")
+        lore_pos = prompt.index("## What you specifically know")
         self.assertLess(common_knowledge_pos, shared_rules_pos)
         self.assertLess(shared_rules_pos, persona_pos)
         self.assertLess(persona_pos, lore_pos)

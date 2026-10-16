@@ -30,6 +30,7 @@
       "aliases": [],
       "attributes": {
         "desc": "Neatly arranged notices explain where residents can bring general inquiries, public-service questions, and maintenance concerns. Among the practical information is a brief reminder of Elsewhere's founding commitment to equal citizenship for all seven peoples. The board is kept tidy, though one corner is crowded with overlapping notices.",
+        "probe_desc": "Up close, the notices sort themselves into groups: where to bring a general inquiry, which part of the counter handles public-service questions, how to report something broken in a shared passage. Most are printed on the same plain stock and dated in one corner, and a few of the older ones have been corrected by hand where a detail changed. The reminder of Elsewhere's founding commitment to equal citizenship for all seven peoples sits near the middle with a little clear space around it, as if whoever keeps the board wants it left unobstructed. The crowded corner is short-term notices, a meeting, a temporary closure, a lost item, pinned over one another faster than anyone has taken the old ones down.",
         "room_line": "A public information board beside the counter carries notices about neighborhood services."
       },
       "key": "Public services board",
@@ -42,6 +43,7 @@
       "aliases": [],
       "attributes": {
         "desc": "A durable directory panel identifies Old Quarter Square as the way into the neighborhood. Below it are listings for the Corner Café, Maintenance Workshop, Residential Courtyard, and Civic Office, all reached from the square. The panel is scuffed at hand height from frequent use.",
+        "probe_desc": "The panel is a single sealed sheet, built to be wiped down rather than updated often. Old Quarter Square is set largest at the top, and the four listings beneath it are in smaller type, the Corner Café, the Maintenance Workshop, the Residential Courtyard and the Civic Office, each with a line about what someone would go there for. The surface is dulled to a haze at hand height where years of fingers have traced the same few routes. One corner of the panel has been replaced and doesn't quite match the rest, a shade brighter than the older material around it.",
         "room_line": "An arrival directory stands near the lift doors, listing destinations in the Old Quarter."
       },
       "key": "Arrival directory",
@@ -53,7 +55,8 @@
     "concourse_otheryn_courier": {
       "aliases": [],
       "attributes": {
-        "desc": "A worn carrying strap crosses the courier's work jacket, and a few scuffs mark the stacked containers beside them. They compare the contents of a handheld display with the labels on the containers, occasionally adjusting the strap on their shoulder. For the moment, their attention is firmly on the delivery."
+        "desc": "A worn carrying strap crosses the courier's work jacket, and a few scuffs mark the stacked containers beside them. They compare the contents of a handheld display with the labels on the containers, occasionally adjusting the strap on their shoulder. For the moment, their attention is firmly on the delivery.",
+        "probe_desc": "The courier's jacket is a working one, patched at the elbows, with a pale square on the chest where some badge or patch used to be. The containers are the standard stacking kind, each with a routing tag, and a couple of the tags have been crossed out and rewritten by hand. The handheld display shows a list, and the courier works down it with a thumb, now and then frowning at a line and glancing at the stack before moving on. They have the look of someone who has done this a thousand times and would like to be done with it by the end of the shift."
       },
       "key": "An Otheryn courier",
       "kind": "ambient_npc",
@@ -69,7 +72,8 @@
     "courtyard_neshyr_neighbor": {
       "aliases": [],
       "attributes": {
-        "desc": "A Neshyr resident tends the plants beside the courtyard path, pausing now and then to clear away a leaf or inspect a stem. Their everyday clothes are smudged at the knees from working near the soil. They seem comfortable making an unhurried job of it."
+        "desc": "A Neshyr resident tends the plants beside the courtyard path, pausing now and then to clear away a leaf or inspect a stem. Their everyday clothes are smudged at the knees from working near the soil. They seem comfortable making an unhurried job of it.",
+        "probe_desc": "The neighbor works along the row with a small hand fork and a cloth bag for whatever they pull up, one plant at a time. These beds are better kept than the square's: the soil is dark and loose, the edges tidy, a few stakes labelled in a neat hand. Their sleeves are pushed past the elbow, and their everyday clothes have clearly been worn for this before, the knees permanently darkened. When a door opens somewhere above, they glance up, nod to whoever it is, and go back to the stem they were checking."
       },
       "key": "A Neshyr neighbor",
       "kind": "ambient_npc",
@@ -88,7 +92,8 @@
       ],
       "attributes": {
         "desc": "Daven Varek is a Kethari with a relaxed, attentive manner and a well-worn set of everyday clothes. He looks like someone used to speaking with strangers, though there's nothing rehearsed about the way he listens.",
-        "npc_id": "daven_varek"
+        "npc_id": "daven_varek",
+        "probe_desc": "Daven's clothes have the softness of being worn and washed many times: a plain jacket over a shirt that was once a brighter color, and nothing on him that suggests a uniform or a rank. His coat is neatly kept, his ears easy and attentive, turning toward whoever is speaking. The desk in front of him is arranged for the next visitor rather than the last one, a few information sheets squared up and a cup pushed to one side. He has the knack of sitting still while someone works out what they want to ask, and the slight lift of the ears that says he's heard the question before and doesn't mind hearing it again."
       },
       "key": "Daven Varek",
       "kind": "talk_npc",
@@ -100,6 +105,7 @@
       "aliases": [],
       "attributes": {
         "desc": "A removable temperature-control module, worked free of the café's heating unit. It looks like the kind of ordinary part Tarin Os at the Maintenance Workshop would know how to deal with.",
+        "probe_desc": "A boxy control module about the size of a hand, with a row of contacts along one edge where it should seat into the heating unit. The contacts are dull, and one is darker than the others, the way metal looks when it has run hot. A maker's code is stamped on the casing, too worn to read in full. The slot it came from is just behind the counter, a narrow gap in the unit's housing with nothing in it now.",
         "room_line": "A small temperature-control module sits pulled loose from the heating unit, clearly not seated right."
       },
       "key": "a faulty heating module",
@@ -116,6 +122,7 @@
       ],
       "attributes": {
         "desc": "A worn gardening kit from the courtyard's communal equipment locker: a hand trowel, a pair of shears, and a few lengths of twine, left out where anyone who needs them can take them.",
+        "probe_desc": "The trowel's handle is wrapped in tape where the original grip split, and its blade has been worn narrower than it started. The shears are stiff but clean, oiled by someone who cares about them. The twine is a few hand-wound hanks of different lengths, the ends tied off neatly. A tag on the kit's strap names the courtyard's communal equipment locker and asks, politely, that everything be put back when you're done.",
         "room_line": "A gardening kit sits here, free for anyone to use."
       },
       "key": "a gardening kit",
@@ -130,7 +137,8 @@
       ],
       "attributes": {
         "desc": "Given Marr is a Neshyr medical technician in plain work clothes, his attention moving easily between his patient and the nearby monitors. His manner is unhurried, as though answering another confused question is a perfectly ordinary part of the shift.",
-        "npc_id": "given_marr"
+        "npc_id": "given_marr",
+        "probe_desc": "Given's work clothes are the plain, washable kind, with a small pocket of instruments at the chest and an identification tag clipped to the collar. His hands are steady and clean, and he keeps them where a patient can see them. He checks the nearest display with a glance that takes in several readings at once, then gives the patient his attention again as if the display had only confirmed what he'd already noticed. He has the look of someone a long way into a shift that has gone, so far, exactly as expected, and who sees no reason to rush the end of it."
       },
       "key": "Given Marr",
       "kind": "talk_npc",
@@ -143,7 +151,9 @@
         "Iri"
       ],
       "attributes": {
-        "npc_id": "iri_vael"
+        "desc": "Iri Vael is a young Naevari woman in casual, slightly rumpled clothes with a volunteer's badge clipped over the top and a tablet tucked under one arm. She has the bright, slightly impatient attentiveness of someone who finds most things interesting.",
+        "npc_id": "iri_vael",
+        "probe_desc": "Iri's tablet goes everywhere with her, its edge chipped and its screen crowded with open notes; she holds it the way other people hold a cup, for something to do with her hands. Her clothes are the kind a student wears from a lecture straight to a shift somewhere, comfortable and a little creased, the volunteer's badge clipped on as an afterthought. Her fur is tidy without being fussed over. She listens with her whole face, leaning in a little, and when something catches her interest she visibly stores it away, half a word already forming before you've finished. She's at ease here, but still has the air of someone learning the place rather than someone who has always belonged to it."
       },
       "key": "Iri Vael",
       "kind": "talk_npc",
@@ -156,7 +166,9 @@
         "Mara"
       ],
       "attributes": {
-        "npc_id": "mara_voss"
+        "desc": "Mara Voss is a Voldren woman in a practical apron over everyday clothes, with the settled look of someone who has run this room for a long time. Her attention moves between the counter, the tables and the door without her seeming to try.",
+        "npc_id": "mara_voss",
+        "probe_desc": "Mara's apron is clean but not new, the pocket at the hip stretched from carrying a cloth, a stylus and whatever else the day brings. Her sleeves are pushed up, and her hands are the hands of someone who washes a great many cups. She works the counter without hurry, wiping a ring here and straightening a stack there, and every so often her eyes rest on a table a moment longer than the task needs, taking in who's talking to whom. When she catches a newcomer looking, the look she gives back is friendly enough, and plainly sizing them up at the same time."
       },
       "key": "Mara Voss",
       "kind": "talk_npc",
@@ -168,6 +180,7 @@
       "aliases": [],
       "attributes": {
         "desc": "A small, plainly wrapped parcel. The shipping label reads: \"Tarin Os, Maintenance Workshop.\" It was clearly meant to go there, not here.",
+        "probe_desc": "The wrapping is plain, folded tight and taped at the seams, and the parcel looks heavy for its size, the compact shape of something mechanical rather than anything soft. The label is printed, not handwritten: \"Tarin Os, Maintenance Workshop,\" with a short routing code beneath it that would mean something only to a courier. There is no sender's name. Someone has set it to one side of the counter, out of the way of the cups, where it has gathered a small ring of crumbs.",
         "room_line": "A small parcel sits on the counter, unopened."
       },
       "key": "a small parcel",
@@ -214,7 +227,8 @@
     "square_elderly_kethari": {
       "aliases": [],
       "attributes": {
-        "desc": "Gray has crept into the fur around the Kethari's muzzle and ears. A slim reading tablet rests in their lap, held at an easy angle, while their ears occasionally turn toward the sounds of the square. They seem content to read and let the bustle carry on around them."
+        "desc": "Gray has crept into the fur around the Kethari's muzzle and ears. A slim reading tablet rests in their lap, held at an easy angle, while their ears occasionally turn toward the sounds of the square. They seem content to read and let the bustle carry on around them.",
+        "probe_desc": "The tablet in their lap is an old one, its casing scuffed pale at the corners, and the text on it is set large. They read slowly and without hurry, one ear swivelling toward any raised voice or rattling cart while the other stays trained on the page. A walking stick leans against the bench beside them, its handle worn to a shine. Their coat is well brushed, their clothes neat and a little old-fashioned, and the bench they have chosen is the one with the best view of the whole square."
       },
       "key": "An elderly Kethari",
       "kind": "ambient_npc",
@@ -231,6 +245,7 @@
       "aliases": [],
       "attributes": {
         "desc": "Community notices and small advertisements are arranged behind a scratched transparent cover. Some are neatly printed; others have been written by hand. The frame has been repainted more than once, and the edges of older postings show beneath the newer ones. Nothing on the board suggests that the square's residents lack things to discuss.",
+        "probe_desc": "Behind the cover, the postings are layered three or four deep in places. The printed ones tend to be practical, a repair offered, a neighborhood meeting, a room's worth of furniture to give away, and the handwritten ones run more personal: something found, something lost, a short note of thanks to a neighbor. Dates on the older layers go back a long way, and nobody seems to have had the heart to strip them. The cover's latch is worn bright from use, and someone has wedged a folded scrap of paper into the frame where it no longer closes flush.",
         "room_line": "A glass-fronted notice board hangs beside one of the passages leading into the square."
       },
       "key": "Public notice board",
@@ -244,7 +259,9 @@
         "Tarin"
       ],
       "attributes": {
-        "npc_id": "tarin_os"
+        "desc": "Tarin Os is a Sylari in worn work overalls, scaled and long-snouted, with a loop of tools at his belt that has seen more use than the rest of him. He gives a newcomer a brief, measuring glance before going back to whatever is in his hands.",
+        "npc_id": "tarin_os",
+        "probe_desc": "Up close, the overalls are stained the way they get on someone who works on the same kinds of equipment over and over: a dark smear in the same place on each thigh, a pale worn patch where a tool rests against his hip. The scales along the backs of his hands are flecked with old nicks, and his fingers are careful and exact. A pair of magnifying lenses hangs around his neck, pushed aside while he talks, and a tagged component sits half-disassembled on the bench in front of him, each piece laid out in the order it came off. He doesn't fidget. When he isn't speaking he's usually looking at whatever he was working on, as if the conversation is a pause in the job rather than the other way round."
       },
       "key": "Tarin Os",
       "kind": "talk_npc",
@@ -257,7 +274,9 @@
         "Veska"
       ],
       "attributes": {
-        "npc_id": "veska_renn"
+        "desc": "Veska Renn is an Aevyrin woman in neat, plain work clothes at the records end of the counter, her plumage kept as tidy as the trays of reports at her elbow. She looks up when someone approaches, but not before she has finished the line she's on.",
+        "npc_id": "veska_renn",
+        "probe_desc": "Veska's end of the counter is the orderly one: a slim terminal, a tray of reports that have been filed and a tray of reports that haven't, and nothing in between. Her work clothes are plain and pressed, and the feathers at her crown lie smooth, settled rather than styled. She has the stillness of someone who does one thing at a time. When a visitor starts talking she waits, stylus raised, until she's sure what they're actually saying; then she writes it down in short, exact strokes, and reads it back only if asked. Nothing about her is unfriendly. She simply doesn't seem to find paperwork, or the people who bring it, any more dramatic than they are."
       },
       "key": "Veska Renn",
       "kind": "talk_npc",
@@ -269,6 +288,7 @@
       "aliases": [],
       "attributes": {
         "desc": "Shallow compartments hold small fasteners, tagged metal fittings, and a few sealed electronic modules. The labels are compact and practical, written for someone who already knows the equipment. A clear space beside the tray suggests the pieces are being sorted for a job in progress.",
+        "probe_desc": "The compartments are arranged by what the parts do rather than what they look like: fasteners of a few sizes in one row, fittings tagged with the systems they belong to in the next, and the sealed modules last, each with a short printed code and a date. Several labels have been written over more than once. Two compartments are empty with their labels still in place, and a third holds a single part set apart from the rest by a strip of tape across it, marked as not to be used. The clear space beside the tray carries a faint outline of grime where something larger was set down and taken away again.",
         "room_line": "A shallow tray of labeled spare parts rests on the edge of a workbench."
       },
       "key": "Parts tray",
@@ -492,24 +512,24 @@
   },
   "sector_id": "elsewhere",
   "sources": {
-    "content/ambient/npcs/concourse_otheryn_courier.md": "3dce83ecc1c4998d0e8b814526ecebe12eb9071e290a069d934d90cb65f8fe01",
-    "content/ambient/npcs/courtyard_neshyr_neighbor.md": "f3a341e7f6b889a936340077a0b97caf694591117d9d4b2fe248d0a1f62ef946",
-    "content/ambient/npcs/square_elderly_kethari.md": "d228eca91b685f53c82aa29caf06a889c0a9822a5c85a76c142d2777e34a1f49",
-    "content/ambient/objects/civic_services_board.md": "d1751d34f571441cf2f78df33d2332bd886c3826d81b22807be711d42244275f",
-    "content/ambient/objects/concourse_arrival_directory.md": "27ee9d1dd8bfeac27f41caa4dfa4425ddb3fe3effe36fbe4fa4b056e2f2f29f4",
-    "content/ambient/objects/square_noticeboard.md": "7eeb1bf9dcab2eea313cb70a719e4c5ca5c55e8e91c2f4bca37d194a7f910464",
-    "content/ambient/objects/workshop_parts_tray.md": "765b022208203357627f64ed29cf054bfa9277eb8207f41a11ef861f1bc4d335",
-    "content/npcs/daven_varek.md": "14edcdd32dd343c2dc3678efd25126481d726ea65957bd2d9d9187e04bb7672b",
-    "content/npcs/given_marr.md": "d389d9ec951c7e87be53f5940f26071b61cc398430440ad58caadc2b120ea8b1",
-    "content/npcs/iri_vael.md": "3616af6f5b1ef5418ffa0b8631d9e174e83deee7ed58fe072ab8845a049b0631",
-    "content/npcs/mara_voss.md": "61c7e9900e52bd6bfa8be9a764725366490fd843bfea67478af0e75851aed509",
-    "content/npcs/tarin_os.md": "f04b7e422e45046b4ca6ef172b51d82d8e9cefb7b0547db89c1e780997398685",
-    "content/npcs/veska_renn.md": "241d94289091ef2b998341028c9aa3236d7382555583679f29ec6e2900edcd2a",
+    "content/ambient/npcs/concourse_otheryn_courier.md": "8ea64887b8de597c5efed953c95669db5caaae39445133e5739513a09cd7f312",
+    "content/ambient/npcs/courtyard_neshyr_neighbor.md": "8c5e520d730bc80af213342b6d1f6f6e9ace8b9035cea342acc4e2f5fdbefaaf",
+    "content/ambient/npcs/square_elderly_kethari.md": "336f5519575ff7bfca08e22c5afe1970e1ddaefced6899510b32c77651f84445",
+    "content/ambient/objects/civic_services_board.md": "789f2b5986f484e2632c30ec7e44410c6c254111ce2ccf76c61ed6121ae54948",
+    "content/ambient/objects/concourse_arrival_directory.md": "7e5fdeb3bc267670f33d0e69f364f71035a0a022a75ecd3ddec302d8deaf27b0",
+    "content/ambient/objects/square_noticeboard.md": "3c4c5759a41f5f784dce9926048a184c87fe1ba516ab06b71b74ed2414be8a9c",
+    "content/ambient/objects/workshop_parts_tray.md": "f9498d0b8a514f1bf65f2f541fe3f3b0952c6cc7ddcd4bdb1d6a42df581f45b9",
+    "content/npcs/daven_varek.md": "777d6bd6a114bf55a6776704d15fc5104db9c4f23dce06a90738921cf1d199a9",
+    "content/npcs/given_marr.md": "3ca9b578e94b502fb3b245601ec92d4b09c13e9b9ce5593e012bbfab14f8aa7a",
+    "content/npcs/iri_vael.md": "4ee8dd3b1d5bdc4624b3a0bea8571d1234c6c7df22d5e204721088a1b8d4b912",
+    "content/npcs/mara_voss.md": "0106e85bd400454f9c7a763cdba44a4e06cd5066315f3387dc04c14c71d5155b",
+    "content/npcs/tarin_os.md": "4c06ea0282a07f6d4785e81dee544769d9563979881dd5ff1ac146ba68f965e1",
+    "content/npcs/veska_renn.md": "d32ad9fabc05154d310b3d554017799bd2771cd7c6f60ea1ca0549770426613e",
     "content/objects/civic_information_display.md": "a4a42210f3684cab3b4952a236266945d454765e6fbfee4f114a61a023f8286c",
     "content/objects/civic_office_skitter_ledger.md": "325776d41f0ddcb573556c303a53846fd6fcf2592adb7675f6b30ca2a31aeb98",
-    "content/objects/faulty_heating_module_hint.md": "840cb5ea2976da98374e21a7a5cc4a2be7fa008f09375d120c13b94f61030c88",
-    "content/objects/gardening_kit.md": "430060e7f73e3857ecaa938631cb66b90e8a7917cb1727fb2dca4b36d587a741",
-    "content/objects/misdelivered_parcel_hint.md": "9f1954aa26548f4e1c1d4bf636b68f28b57c801b31b0c8b1bbbc1ddb1d9ec6dc",
+    "content/objects/faulty_heating_module_hint.md": "1c84ada12e1f746516319a62dc9312acc22df2aa251258ae6a68a9f7f2d7052c",
+    "content/objects/gardening_kit.md": "8a5cb9a9f8c63711b9e2ecd04019a137d5f4e6b05196236038693b087e854ead",
+    "content/objects/misdelivered_parcel_hint.md": "bf57ac6b9fed2097b35d5fb12de944e0853d28221ccffaabdb64af7c6e0079de",
     "content/objects/old_quarter_square_signpost.md": "a2c80680cbc1a981d540c8fc46c524958a20a564279f56b0859820d2229dabac",
     "content/objects/planting_bed.md": "31389ee7940bf1389e082e79439832bae8d2741a6f2fa747004b634fbd5a5ea2",
     "content/rooms/civic_office.md": "7f026752051cc065fcd172d1242bb4bd0c1309dbb8c125dd9357b23bb8f76ca8",
