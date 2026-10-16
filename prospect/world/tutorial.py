@@ -78,14 +78,17 @@ _ROOM_NUDGES = {
 
 # Owner-approved wording (LR-DEV-0001, 2026-10-16). Fires every time a
 # player enters the room (see module docstring), via a room
-# announcement rather than an NPC line.
+# announcement rather than an NPC line. (lead-in, spoken words): the
+# spoken part is shown in bright cyan with its quotes, like any other
+# dialogue (owner, 2026-10-16).
 _ROOM_TANNOYS = {
     "medical_bay": (
-        'A tannoy near the ceiling crackles to life: "Attention, new arrivals. '
-        "To talk to someone, type SAY and then what you want to say. To move, "
-        "type a direction, such as NORTH or SOUTHWEST. To look at something "
-        "you can see, type LOOK and then its name. To study it more closely, "
-        'type PROBE and then its name. To hear this again, type TANNOY."'
+        "A tannoy near the ceiling crackles to life:",
+        "Attention, new arrivals. To talk to someone, type SAY and then what "
+        "you want to say. To move, type a direction, such as NORTH or "
+        "SOUTHWEST. To look at something you can see, type LOOK and then its "
+        "name. To study it more closely, type PROBE and then its name. To "
+        "hear this again, type TANNOY.",
     ),
 }
 
@@ -118,9 +121,9 @@ def tannoy_text_for_room(room):
     `commands/tannoy.py`'s `tannoy` command (repeats it on demand)."""
     if not room:
         return None
-    for room_tag, text in _ROOM_TANNOYS.items():
+    for room_tag, (lead_in, speech) in _ROOM_TANNOYS.items():
         if _room_has_tag(room, room_tag):
-            return text
+            return f'{lead_in} |c"{speech}"|n'
     return None
 
 

@@ -50,6 +50,10 @@ class TannoyTests(TestCase):
         text = tannoy_text_for_room(self.rooms["medical_bay"])
         for command in ("SAY", "NORTH", "LOOK", "PROBE", "TANNOY"):
             self.assertIn(command, text)
+        # The spoken part is bright cyan, like other dialogue; the lead-in isn't.
+        self.assertTrue(text.startswith("A tannoy near the ceiling crackles to life: "))
+        self.assertIn(' |c"Attention, new arrivals.', text)
+        self.assertTrue(text.endswith('type TANNOY."|n'))
 
     def test_tannoy_text_for_room_none_elsewhere(self):
         self.assertIsNone(tannoy_text_for_room(self.rooms["old_quarter_square"]))
