@@ -23,13 +23,14 @@ Run with:
 
 import sys
 from pathlib import Path
+from unittest import mock
 
 from django.test import TestCase
 from evennia import search_tag
 from evennia.objects.models import ObjectDB
 
 from world import (build_ambient, build_garden_props, build_noticeboard, build_npcs, build_quest_props,
-                   build_rooms, build_signpost, build_skitter_ledger)
+                   build_rooms, build_sector, build_signpost, build_skitter_ledger)
 
 _EDITOR_DIR = Path(__file__).resolve().parents[2] / "ops" / "editor"
 if str(_EDITOR_DIR) not in sys.path:
@@ -48,18 +49,8 @@ def _one(tag, category):
     return matches[0]
 
 
-class SectorManifestMatchesLegacyBuildTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        build_rooms.build()
-        build_npcs.build()
-        build_ambient.apply_all_room_content()
-        build_ambient.build_ambient_entities()
-        build_quest_props.build()
-        build_noticeboard.build()
-        build_signpost.build()
-        build_garden_props.build()
-        build_skitter_ledger.build()
+class _WorldMatchesManifest:
+    """Assertions shared by both builds below; subclasses build the world in setUpTestData."""
 
     def setUp(self):
         self.manifest = sector_export.build_manifest(ROOT, "elsewhere")
@@ -123,3 +114,34 @@ class SectorManifestMatchesLegacyBuildTests(TestCase):
                          for tag in obj.tags.get(category=category, return_list=True)}
                 expected = {i for i, e in self.manifest["entities"].items() if e["tag_category"] == category}
                 self.assertEqual(built, expected)
+
+
+def build_legacy_world():
+    """Everything the old world/build_*.py scripts build (skitters aside)."""
+    build_rooms.build()
+    build_npcs.build()
+    build_ambient.apply_all_room_content()
+    build_ambient.build_ambient_entities()
+    build_quest_props.build()
+    build_noticeboard.build()
+    build_signpost.build()
+    build_garden_props.build()
+    build_skitter_ledger.build()
+
+
+class SectorManifestMatchesLegacyBuildTests(_WorldMatchesManifest, TestCase):
+    """The old scripts' output matches the manifest."""
+
+    @classmethod
+    def setUpTestData(cls):
+        build_legacy_world()
+
+
+class BuildSectorMatchesManifestTests(_WorldMatchesManifest, TestCase):
+    """world.build_sector, from an empty database, builds what the manifest says -
+    with the class above, the same world the old scripts build."""
+
+    @classmethod
+    def setUpTestData(cls):
+        with mock.patch.object(build_sector, "_server_is_running", return_value=False):
+            build_sector.build("elsewhere", manifest=sector_export.build_manifest(ROOT, "elsewhere"))

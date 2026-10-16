@@ -297,6 +297,16 @@ class CheckTests(unittest.TestCase):
         self.sector['rooms']['room_c'] = {'title': 'Room C', 'content': 'rooms/room_c.md'}
         self.assertEqual(codes(self.run_check(), check.WARNING), ['disconnected', 'no_exits'])
 
+    def test_required_rooms(self):
+        kinds = self.root / KINDS_FILE
+        kinds.write_text(kinds.read_text(encoding='utf-8').replace(
+            'REQUIRED_ROOM_IDS = {', 'REQUIRED_ROOM_IDS = {\n    "test": ["room_a"],', 1), encoding='utf-8')
+        self.assertEqual(self.run_check(), [])
+        del self.sector['rooms']['room_a']
+        self.sector['exits'] = []
+        self.sector['entities'] = {}
+        self.assertIn('missing_required_room', codes(self.run_check(), check.ERROR))
+
     def test_unused_content_only_on_a_full_check(self):
         self.write('ambient/objects/spare.md', OBJECT_FILE.format(id='spare', name='a spare'))
         self.assertEqual(codes(self.run_check(), check.WARNING), ['unused_content'])

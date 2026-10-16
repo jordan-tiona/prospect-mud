@@ -110,13 +110,19 @@ As with every database-writing script, it's run only with the server stopped. If
 
 ## 4. Rollout in three steps
 
-**Step A: add `build_sector` next to the old scripts (Tools, after this review).** Nothing in the game calls it yet. Tests, using Evennia's test database:
+**Step A: add `build_sector` next to the old scripts (Tools, after this review). Built 2026-10-16:** `prospect/world/build_sector.py`, tested by `prospect/world/test_build_sector.py` (19 tests, including the Elsewhere takeover test) and a second class in `test_sector_manifest.py` that builds Elsewhere from an empty database. Additions beyond the reviewed design, for Dev to confirm:
+- **No pruning while there are conflicts.** An exit left unadopted because of a conflict is also an orphan, so pruning it would leave that room pair with no exit at all. With any conflict, every orphan is reported as blocked instead.
+- **`REQUIRED_ROOM_IDS` is keyed by sector** (`{"elsewhere": [...]}`), so a future habitat sector isn't required to contain Elsewhere's medical bay. It lists `medical_bay`, `daven_office` and the six skitter spawn rooms. The tutorial only uses the first two.
+- Pruned objects aren't re-homed: objects created without an explicit home get Evennia's `DEFAULT_HOME` (`#2`, Limbo), exactly as with the old scripts.
+- Room and exit tags are global in Evennia, so **IDs must be unique across all sectors**, not just within one, once there's a second sector.
+
+Original plan for Step A: Nothing in the game calls it yet. Tests, using Evennia's test database:
 - build from a small fixture manifest, then check idempotency (a second run changes nothing)
 - typeclass swap, exit adoption and re-keying, managed-attribute removal, and orphan reporting and pruning, including a room with a player in it
 - `dry_run` writes nothing
 - **old vs new:** build Elsewhere with the old scripts, snapshot it, then run `build_sector` over that same database. It must report zero creates and zero orphans, and only the expected updates: adding sector tags and managed-field records. Separately, building from an empty database must produce the same snapshot as the old scripts. That extends the existing `test_sector_manifest.py`.
 
-**Step B: export Elsewhere (owner).** This needs LR-TOOLS-0001 and LR-TOOLS-0002 resolved, so that export stops refusing. The first real `prospect/world/data/sectors/elsewhere.json` gets committed.
+**Step B: export Elsewhere (owner). Done 2026-10-16.** This needs LR-TOOLS-0001 and LR-TOOLS-0002 resolved, so that export stops refusing. The first real `prospect/world/data/sectors/elsewhere.json` gets committed.
 
 **Step C: switch over (Dev-reviewed change, after B).**
 - Each old builder's `build()` becomes a thin wrapper: `build_sector.build("elsewhere", kinds={...})`. Its hard-coded lists (`ROOMS`, `SPOKES`, `CHAINS`, `NPCS`, `AMBIENT_*_IDS`, `ROOM_IDS`, `QUEST_PROPS`, and the in-code prose and room lines) are deleted. Constants and return shapes stay, e.g. `build_npcs.build()` still returns `{npc_id: npc}`.
