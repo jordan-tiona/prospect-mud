@@ -999,6 +999,35 @@ class CostSafeguardTests(SayCommandTests):
 
         mock_chat.assert_called_once()
 
+    @patch("commands.say.player_over_budget", return_value=True)
+    @patch("commands.say.chat")
+    def test_player_over_budget_skips_the_model_call(self, mock_chat, mock_over_budget):
+        self._say("hello there")
+
+        mock_chat.assert_not_called()
+        self.assertTrue(any("another day" in m.lower() for m in self.messages))
+
+    @patch("commands.say.global_daily_limit_reached", return_value=True)
+    @patch("commands.say.chat")
+    def test_global_spend_limit_skips_the_model_call(self, mock_chat, mock_limit_reached):
+        self._say("hello there")
+
+        mock_chat.assert_not_called()
+        self.assertTrue(any("too busy" in m.lower() for m in self.messages))
+
+    @patch("commands.say.chat")
+    def test_usage_is_recorded_against_the_player_and_global_totals(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        mock_chat.return_value.usage = {
+            "prompt_tokens": 100,
+            "completion_tokens": 20,
+            "total_tokens": 120,
+        }
+
+        self._say("hello there")
+
+        self.assertEqual(self.actor.db.llm_tokens_used_today, 120)
+
     @patch("commands.say.chat")
     def test_duplicate_check_is_scoped_per_npc(self, mock_chat):
         # Unlike the cooldown gate above, saying the exact same line to

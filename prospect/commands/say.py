@@ -43,6 +43,12 @@ from world.actions import get_tool_schemas, quest_context_for, validate_and_appl
 from world.commitments import commitment_context_for
 from world.conversation_log import log_turn
 from world.emotes import format_emote, parse_reply
+from world.llm_budget import (
+    global_daily_limit_reached,
+    player_over_budget,
+    record_global_spend,
+    record_player_usage,
+)
 from world.llm_client import LLMUnavailableError, chat
 from world.npc_addressing import present_talkative_npcs, resolve_addressee
 from world.npc_memory import memory_context_for
@@ -293,6 +299,14 @@ def _handle_llm_reply(
     # individual emote/dialogue line within the reply itself. See
     # _msg_with_lead_blank for why every branch below embeds it in the
     # first real message instead of sending it as its own caller.msg("").
+    #
+    # Usage is recorded here unconditionally, before any branch below -
+    # the call already happened and cost real tokens regardless of
+    # whether the reply ends up flagged, empty, or answered with a
+    # follow-up reaction call of its own.
+    record_player_usage(caller, reply.usage.get("total_tokens", 0))
+    record_global_spend(reply.usage)
+
     raw_text = reply.text.strip()
     flagged, flag_reason = is_flagged(raw_text)
 
@@ -441,6 +455,12 @@ def _handle_action_reaction(
     look like plain prose with no action behind it.
     """
     pending.discard(caller.dbref)
+    # This follow-up call is a second real request with its own usage,
+    # separate from the action-call turn's usage already recorded by
+    # _handle_llm_reply before this was dispatched.
+    record_player_usage(caller, reply.usage.get("total_tokens", 0))
+    record_global_spend(reply.usage)
+
     raw_text = reply.text.strip()
     flagged, flag_reason = is_flagged(raw_text)
 
@@ -542,7 +562,7 @@ def engage_npc(target, caller, message):
     hears. The player's line has already been broadcast to the room
     as an ordinary `say` by the time this runs.
 
-    Four gates run before any model call, each a pure cost/abuse
+    Six gates run before any model call, each a pure cost/abuse
     safeguard (game-plan.md 6.2) with no effect on the ordinary speech
     broadcast that already happened in CmdSay.func() - a rejected turn
     still speaks in the room, it just never reaches the model:
@@ -555,12 +575,20 @@ def engage_npc(target, caller, message):
       sequence.
     - input length: LLM_MAX_INPUT_CHARS.
     - cooldown: LLM_COOLDOWN_SECONDS between this player's model-calling
-      turns, across all NPCs (not per NPC, unlike the other three gates
+      turns, across all NPCs (not per NPC, unlike most other gates
       here) - catches a rapid sequence of separate, already-resolved
       turns that the overlap guard above doesn't.
     - duplicate message: the same player sending the exact same line to
       the same NPC twice in a row gets a canned reply instead of
       spending a second model call on it.
+    - per-player daily token budget (world/llm_budget.py): once a
+      player exceeds their share for the day so far, they get an
+      in-character "come back tomorrow" fallback instead of further
+      calls.
+    - global daily spend circuit breaker (world/llm_budget.py): a
+      server-wide dollar ceiling, well above realistic playtest
+      volume - a backstop against a bug or runaway loop, not a
+      throttle on ordinary play.
     """
     pending = _get_pending(target)
     if caller.dbref in pending:
@@ -582,6 +610,17 @@ def engage_npc(target, caller, message):
     last_messages = _get_last_message(target)
     if last_messages.get(caller.dbref) == message:
         caller.msg(f"You already just said that to {target.key}.")
+        return
+
+    if player_over_budget(caller):
+        caller.msg(
+            f"{target.key} will have to catch up with you another day - "
+            "you've used up today's conversation budget."
+        )
+        return
+
+    if global_daily_limit_reached():
+        caller.msg(f"{target.key} seems too busy to talk right now. (try again later)")
         return
 
     profile = parse_persona(target.db.npc_id)

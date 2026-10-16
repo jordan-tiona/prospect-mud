@@ -89,6 +89,39 @@ LLM_MAX_INPUT_CHARS = int(os.environ.get("PROSPECT_LLM_MAX_INPUT_CHARS", "300"))
 # rapid-fire sequence of separate, already-resolved turns.
 LLM_COOLDOWN_SECONDS = float(os.environ.get("PROSPECT_LLM_COOLDOWN_SECONDS", "4"))
 
+# Per-player daily token budget (world/llm_budget.py) - granted in 24
+# cumulative hourly chunks rather than all at once, so a budget this
+# size, divided across a full day, caps how much any one player can
+# burn through in a single sitting without a hard cutoff tied to a
+# fixed hour. Once exceeded, that player gets an in-character "come
+# back tomorrow" fallback instead of further model calls, until the
+# daily reset at UTC midnight.
+LLM_PLAYER_DAILY_TOKEN_BUDGET = int(os.environ.get("PROSPECT_LLM_PLAYER_DAILY_TOKEN_BUDGET", "120000"))
+
+# OpenRouter's per-token rates for the configured model (openai/gpt-4.1-mini
+# as of 2026-10-16: https://openrouter.ai/openai/gpt-4.1-mini-2025-04-14/api) -
+# used only to compute real spend for LLM_DAILY_SPEND_LIMIT_USD below.
+# Update these if the model or its pricing changes.
+LLM_INPUT_COST_PER_1M_TOKENS = float(os.environ.get("PROSPECT_LLM_INPUT_COST_PER_1M_TOKENS", "0.40"))
+LLM_OUTPUT_COST_PER_1M_TOKENS = float(os.environ.get("PROSPECT_LLM_OUTPUT_COST_PER_1M_TOKENS", "1.60"))
+
+# Server-wide daily spend circuit breaker (world/llm_budget.py), well
+# below the OpenRouter key's own $25 spend limit. Deliberately set
+# far above realistic playtest volume - this is a backstop against a
+# bug or runaway loop, not a throttle on ordinary play. Logged at
+# error level when tripped; nothing else is notified yet.
+LLM_DAILY_SPEND_LIMIT_USD = float(os.environ.get("PROSPECT_LLM_DAILY_SPEND_LIMIT_USD", "2.00"))
+
+# A pure data counter with no in-game presence (evennia.GLOBAL_SCRIPTS
+# singleton pattern) - the daily spend circuit breaker's server-wide
+# total has no single player or NPC object of its own to live on.
+GLOBAL_SCRIPTS = {
+    "llm_spend_tracker": {
+        "typeclass": "typeclasses.scripts.Script",
+        "persistent": True,
+    },
+}
+
 # Every stock Evennia command resolves its own base class from this
 # setting at import time (see e.g. evennia.commands.default.general's
 # `COMMAND_DEFAULT_CLASS = class_from_module(settings.COMMAND_DEFAULT_CLASS)`).
