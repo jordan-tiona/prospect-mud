@@ -103,7 +103,7 @@ Rules:
 - which content sections it needs
 - which `params` it accepts and their allowed values
 
-The editor and the exporter read it without importing the game, the same way `ops/generate_obsidian.py` reads the build scripts' lists. A new kind, or a new allowed value such as a new lock func, is a Dev-lane change. The editor can only choose from what exists.
+The editor and the exporter read it without importing the game (`world_model.literals()` parses the literal assignments). A new kind, or a new allowed value such as a new lock func, is a Dev-lane change. The editor can only choose from what exists.
 
 Kinds needed to cover today's world:
 
@@ -185,7 +185,7 @@ The hand-written lists in `build_rooms.py`, `build_npcs.py`, `build_ambient.py`,
 
 - Lore keeps writing `content/` Markdown exactly as now and never edits sector files or manifests.
 - A new content file that no sector references shows up in the editor as **unplaced**. The owner places it.
-- The editor can produce a read-only map (taking over from `ops/generate_obsidian.py`), so Lore can see layout and exits.
+- The editor's map is the read-only view of layout and exits for Lore too: open it and don't Save. It replaced the Obsidian vault (`ops/generate_obsidian.py` and the generated `maps/`), retired 2026-10-16.
 
 ### 8.1 Batch requests: request, pick, place (owner workflow, agreed 2026-10-16)
 
