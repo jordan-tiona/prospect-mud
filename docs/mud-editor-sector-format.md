@@ -115,6 +115,7 @@ Kinds needed to cover today's world:
 | `quest_prop` | `typeclasses.objects.CommitmentHintObject` | `quest_prop` | *currently in code* | `build_quest_props.py` |
 | `revision_display` | `typeclasses.objects.RevisionDisplayObject` | `noticeboard_prop` | *currently in code* | `build_noticeboard.py` |
 | `signpost` | `typeclasses.objects.SignpostObject` | `signpost_prop` | *currently in code* | `build_signpost.py` |
+| `skitter_ledger` | `typeclasses.objects.SkitterLedgerObject` | `skitter_ledger_prop` | *currently in code* | `build_skitter_ledger.py` |
 | `gardening_kit` | `typeclasses.objects.GardeningKit` | `garden_prop` | *currently in code* | `build_garden_props.py` |
 | `planting_bed` | `typeclasses.objects.PlantingBed` | `garden_prop` | *currently in code* | `build_garden_props.py` |
 

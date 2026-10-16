@@ -97,6 +97,15 @@ KINDS = {
         "needs_heading": True,
         "params": {},
     },
+    "skitter_ledger": {
+        "typeclass": "typeclasses.objects.SkitterLedgerObject",
+        "tag_category": "skitter_ledger_prop",
+        "content_dir": "objects",
+        "id_field": "object_id",
+        "required_sections": ["Short Description", "Description"],
+        "needs_heading": True,
+        "params": {},
+    },
     "gardening_kit": {
         "typeclass": "typeclasses.objects.GardeningKit",
         "tag_category": "garden_prop",

@@ -2,7 +2,7 @@
 
 Run from any directory:  python ops/editor/import_legacy.py [--force]
 
-Reads the builders' literal data (and, for the three builders that wire
+Reads the builders' literal data (and, for the builders that wire
 objects inside build(), their _get_room/_get_or_create call arguments) with
 ast, never executing game code. Map positions come from the Obsidian canvas
 where it has them; other rooms are placed next to a neighbour by exit
@@ -135,6 +135,7 @@ def build_sector(root=ROOT):
     quest_props = literals(root / WORLD / 'build_quest_props.py', ('QUEST_PROPS',))['QUEST_PROPS']
     noticeboard_id = literals(root / WORLD / 'build_noticeboard.py', ('DISPLAY_PROP_ID',))['DISPLAY_PROP_ID']
     signpost_id = literals(root / WORLD / 'build_signpost.py', ('SIGNPOST_PROP_ID',))['SIGNPOST_PROP_ID']
+    ledger_id = literals(root / WORLD / 'build_skitter_ledger.py', ('LEDGER_PROP_ID',))['LEDGER_PROP_ID']
 
     room_ids = [room_id for room_id, _title, _desc in rooms_data['ROOMS']]
     rooms = {room_id: {'title': title, 'content': f'rooms/{room_id}.md'}
@@ -172,6 +173,8 @@ def build_sector(root=ROOT):
                                 'content': f'objects/{noticeboard_id}.md'}
     entities[signpost_id] = {'kind': 'signpost', 'room': single_room(root, 'build_signpost.py'),
                              'content': f'objects/{signpost_id}.md'}
+    entities[ledger_id] = {'kind': 'skitter_ledger', 'room': single_room(root, 'build_skitter_ledger.py'),
+                           'content': f'objects/{ledger_id}.md'}
     garden_kinds = {'typeclasses.objects.GardeningKit': 'gardening_kit',
                     'typeclasses.objects.PlantingBed': 'planting_bed'}
     for prop in garden_props(root):

@@ -5,6 +5,11 @@
       "kind": "revision_display",
       "room": "corner_cafe"
     },
+    "civic_office_skitter_ledger": {
+      "content": "objects/civic_office_skitter_ledger.md",
+      "kind": "skitter_ledger",
+      "room": "civic_office"
+    },
     "civic_services_board": {
       "content": "ambient/objects/civic_services_board.md",
       "kind": "ambient_object",

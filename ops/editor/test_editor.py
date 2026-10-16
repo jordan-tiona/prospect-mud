@@ -56,6 +56,7 @@ class ImporterTests(unittest.TestCase):
             expected[prop[0]] = ('quest_prop', prop[1])
         expected['civic_information_display'] = ('revision_display', 'corner_cafe')
         expected['old_quarter_square_signpost'] = ('signpost', 'old_quarter_square')
+        expected['civic_office_skitter_ledger'] = ('skitter_ledger', 'civic_office')
         expected['gardening_kit'] = ('gardening_kit', 'residential_courtyard')
         expected['planting_bed'] = ('planting_bed', 'old_quarter_square')
         self.assertEqual(expected, {k: (v['kind'], v['room']) for k, v in entities.items()})
@@ -116,6 +117,11 @@ class MovedProseTests(unittest.TestCase):
         data = literals(WORLD / 'build_noticeboard.py', ('DISPLAY_PROP_ID', 'ROOM_LINE'))
         self.assert_object(data['DISPLAY_PROP_ID'], import_legacy.single_prop_key(ROOT, 'build_noticeboard.py'),
                            data['ROOM_LINE'])
+
+    def test_skitter_ledger(self):
+        data = literals(WORLD / 'build_skitter_ledger.py', ('LEDGER_PROP_ID', 'ROOM_LINE', 'DESC'))
+        self.assert_object(data['LEDGER_PROP_ID'], import_legacy.single_prop_key(ROOT, 'build_skitter_ledger.py'),
+                           data['ROOM_LINE'], data['DESC'])
 
     def test_signpost(self):
         data = literals(WORLD / 'build_signpost.py', ('SIGNPOST_PROP_ID', 'ROOM_LINE', 'SPOKE_LINES'))
