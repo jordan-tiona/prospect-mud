@@ -76,17 +76,16 @@ _ROOM_NUDGES = {
     },
 }
 
-# TODO(lore): project owner to write/approve final tannoy wording -
-# this is a placeholder. Fires every time a player enters the room
-# (see module docstring), via a room announcement rather than an NPC
-# line.
+# Owner-approved wording (LR-DEV-0001, 2026-10-16). Fires every time a
+# player enters the room (see module docstring), via a room
+# announcement rather than an NPC line.
 _ROOM_TANNOYS = {
     "medical_bay": (
-        'A tannoy near the ceiling crackles to life: "Reminder to new '
-        "arrivals - type SAY followed by your message to talk to someone, "
-        "type a direction (like NORTH or SOUTHWEST) to move there, type "
-        "LOOK followed by something you see to look at it, and type PROBE "
-        'followed by something you see to study it more closely."'
+        'A tannoy near the ceiling crackles to life: "Attention, new arrivals. '
+        "To talk to someone, type SAY and then what you want to say. To move, "
+        "type a direction, such as NORTH or SOUTHWEST. To look at something "
+        "you can see, type LOOK and then its name. To study it more closely, "
+        'type PROBE and then its name. To hear this again, type TANNOY."'
     ),
 }
 
