@@ -14,7 +14,11 @@ from evennia import create_object
 
 class AmbientPoseRotationTests(TestCase):
     def setUp(self):
-        self.npc = create_object("typeclasses.npcs.NPC", key="A dockhand")
+        # A real room: with no location, Evennia sets home to DEFAULT_HOME
+        # (#2), which doesn't exist in the test DB and fails teardown's
+        # foreign-key check.
+        room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.npc = create_object("typeclasses.npcs.NPC", key="A dockhand", location=room, home=room)
 
     def test_set_ambient_poses_seeds_an_initial_pose(self):
         self.npc.set_ambient_poses(["sweeping", "coiling a line"])

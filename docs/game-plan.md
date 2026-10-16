@@ -126,8 +126,8 @@ Do these in order. Each is a separate, reviewable task.
 8. **Playtest-review command.** A reusable command or skill that runs one review pass as described in Section 5, given a log checkpoint.
 
 **Known issues flagged for the Tests lane** (found during items 2–3, 2026-10-16; parked here since the lane doesn't exist yet):
-- `run_tests.bat` only runs `evennia test commands world` - the `typeclasses` app (which has its own test files, e.g. `test_npcs.py`, `test_rooms.py`, `test_characters.py`) isn't included at all, so its tests never run as part of the normal test command.
-- `typeclasses/test_npcs.py`'s `AmbientPoseRotationTests` fails with a dangling-foreign-key `IntegrityError` when run alongside the rest of the suite (a test character created with no explicit room/home, relying on `settings.DEFAULT_HOME` ("#2") existing, which is order-dependent on another test having built one first). Same root cause fixed in `world/test_llm_budget.py`/`world/test_commitments.py`/`world/test_session_log.py` today by giving those tests an explicit room - `test_npcs.py` itself still has the bug.
+- ~~`run_tests.bat` only runs `evennia test commands world` - the `typeclasses` app (which has its own test files, e.g. `test_npcs.py`, `test_rooms.py`, `test_characters.py`) isn't included at all, so its tests never run as part of the normal test command.~~ Fixed 2026-10-16 (Dev): both scripts now run `commands world typeclasses` plus `ops/editor`'s tests, in parallel.
+- `typeclasses/test_npcs.py`'s `AmbientPoseRotationTests` fails with a dangling-foreign-key `IntegrityError` when run alongside the rest of the suite (a test character created with no explicit room/home, relying on `settings.DEFAULT_HOME` ("#2") existing, which is order-dependent on another test having built one first). Same root cause fixed in `world/test_llm_budget.py`/`world/test_commitments.py`/`world/test_session_log.py` today by giving those tests an explicit room - `test_npcs.py` itself still has the bug. **Fixed 2026-10-16 (Dev)** the same way.
 
 ---
 
