@@ -5,11 +5,11 @@ npc_id: veska_renn
 room: Civic Office
 species: Aevyrin
 pronouns: she/her
-prompt_version: 9
+prompt_version: 10
 status: Provisional
 approval: Approved
 knowledge_scope (bible sections, Established content only):
-  11.1, 11.2.1, 11.2.6, 5.8
+  11.1, 11.2.1, 11.2.5, 11.2.6, 5.8
 actions: accept_handoff, remember_fact
 max_reply_tokens: 120
 desc: Veska Renn is an Aevyrin woman in neat, plain work clothes at the records end of the counter, her plumage kept as tidy as the trays of reports at her elbow. She looks up when someone approaches, but not before she has finished the line she's on.

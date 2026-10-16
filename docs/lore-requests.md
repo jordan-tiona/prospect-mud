@@ -82,3 +82,18 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Blocking: no
 - Status: approved (2026-10-16)
 - Resolution: Removed the separator and the five direction lines from `content/ambient/objects/square_noticeboard.md`'s `## Description`; the paragraph above them is unchanged. No new prose was written, so the file stays `approval: Approved` on the strength of its existing approval. Directions in the square come from the exits and the signpost (`content/objects/old_quarter_square_signpost.md`), not this board. Reaches players after the next export and rebuild.
+
+## LR-DEV-0002: One knowledge subject per NPC, and Mara as the "ask someone else" hub
+- Requested by: dev (owner-directed, 2026-10-16)
+- Needed for: prompt trimming. Each NPC's `knowledge_scope` metadata has been narrowed by Dev to one subject (owner-approved mappings); the persona prose should now match.
+- What's needed: Rewrite each persona's `## What you know` (and, where useful, `## People you know`) so the NPC has one area of real knowledge, defers on everything else, and knows who to send a player to. The new scopes (bible sections):
+  - **Iri Vael (history):** 3, 4.4, 10.1, 10.4, 11.1, 11.5, 11.2.1, 11.2.5. Dropped 11.2.3 (district names), 11.2.6 (culture/tensions), 5.8. Her prose still lists Elsewhere's regions; keep or cut that as you see fit.
+  - **Tarin Os (the habitat itself):** 11.2.1, 11.2.2, 11.2.3, 15.2, 16.1. Dropped 11.2.5 (government); his prose mentions public oversight of shared systems, which is still fine as personal working experience.
+  - **Mara Voss (the hub / redirector):** 11.2.3 (district names, needed for directions), 5.6 (her own species). Dropped 11.2.1, 11.2.2, 11.2.4, 11.2.6. Owner's intent: Mara doesn't need to know everything; she points the player at whoever would know (history to Iri, the habitat to Tarin, and so on). She needs authored redirect wording for that.
+  - **Veska Renn (records/government):** 11.1, 11.2.1, 11.2.5, 11.2.6, 5.8 (gained 11.2.5).
+  - **Daven Varek (newcomer orientation):** 11.2.1, 11.2.2, 11.2.3, 11.2.4, 11.2.5, 11.2.6 (gained 11.2.4 economy and 11.2.5 government).
+  - **Given Marr (medical):** unchanged, 11.2.1, 11.2.2, 11.2.3, 11.2.6.
+  - Each NPC's "who to ask about what" pointers, so a redirect lands on the right person. Every talk NPC's `## People you know` may need a line on each neighbor's specialty.
+- Blocking: no (the scopes already apply; this is consistency and the redirect behavior)
+- Status: open
+- Resolution:
