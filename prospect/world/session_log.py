@@ -197,6 +197,38 @@ def log_quest_event(
     )
 
 
+def log_feedback(
+    *,
+    session_id: Optional[str],
+    actor_key: str,
+    actor_dbref: str,
+    location: str,
+    category: str,
+    message: str,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    A marker for commands/feedback.py's `bug`/`feedback` command
+    (game-plan.md 6's Week 0 item 4) - the player explicitly flagged
+    something, right then, rather than this being inferred from
+    other activity. `category` is "bug" or "feedback", whichever
+    word they actually typed (see that command's own docstring).
+    """
+    _write(
+        {
+            "event": "feedback",
+            "timestamp": _now_iso(),
+            "session_id": session_id,
+            "actor_key": actor_key,
+            "actor_dbref": actor_dbref,
+            "location": location,
+            "category": category,
+            "message": message,
+        },
+        path,
+    )
+
+
 def log_idle(
     *,
     session_id: str,

@@ -16,6 +16,7 @@ from evennia import create_account, create_object
 
 from world.session_log import (
     log_command,
+    log_feedback,
     log_idle,
     log_quest_event,
     log_room_changed,
@@ -131,6 +132,22 @@ class SessionLogTests(SimpleTestCase):
         self.assertEqual(record["commitment_type"], "hunt_skitters")
         self.assertTrue(record["mandatory"])
         self.assertEqual(record["commitment_id"], "xyz")
+
+    def test_log_feedback_writes_expected_fields(self):
+        log_feedback(
+            session_id="abc123",
+            actor_key="Jordan",
+            actor_dbref="#5",
+            location="Old Quarter Square",
+            category="bug",
+            message="the drink kept serving cold",
+            path=self.path,
+        )
+
+        [record] = self._read_records()
+        self.assertEqual(record["event"], "feedback")
+        self.assertEqual(record["category"], "bug")
+        self.assertEqual(record["message"], "the drink kept serving cold")
 
     def test_log_idle_writes_expected_fields(self):
         log_idle(
