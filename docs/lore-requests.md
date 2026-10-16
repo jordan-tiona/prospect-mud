@@ -97,3 +97,21 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Blocking: no (the scopes already apply; this is consistency and the redirect behavior)
 - Status: open
 - Resolution:
+
+## LR-DEV-0003: Errand prose for moving the parcel to Veska and the display check to Daven
+- Requested by: dev (owner-directed, 2026-10-16)
+- Needed for: `docs/errand-redistribution-plan.md` (owner-approved 2026-10-16, decisions D1-D5 in its Section 3). Mara's legacy errands move to NPCs with no quest of their own, so every quest-giver has exactly one errand (CLAUDE.md "One quest offer per NPC"). **Do this in the same pass as LR-DEV-0002**: both rewrite the same persona files (Mara's redirect role and each NPC's one knowledge subject).
+- What's needed (the engine side is fixed by the plan; this is the prose):
+  1. **Veska Renn** (`content/npcs/veska_renn.md`): a section on the misdelivered parcel with **her as the giver**. Why it ended up at the Civic Office; that it's addressed to Tarin Os at the Maintenance Workshop; that she'd like it taken to him; when she raises it (a general "anything I can help with", or a player noticing the parcel, the same as Mara's version). Also: she only finds out it arrived when the player comes back and tells her (D1), and the player doesn't need to say who took it, because Tarin is the only recipient. **Remove** the existing prose about the office taking in misdirected parcels for collection: she no longer receives it (D2).
+  2. **Daven Varek** (`content/npcs/daven_varek.md`): a section on a civic information display in **his office**, and why he'd like its revision number checked with Iri Vael at the Civic Office. He raises it only when asked about the display itself, as Mara's version did. Reconcile it with `## Mentor behavior`: he still doesn't hand out Mara's, Tarin's or Iri's tasks; this one is his own.
+  3. **Daven's hint pose**: a short phrase shown in place of his ambient pose to a player who hasn't been offered the display check yet. It replaces Mara's "glancing at the café's information display". Dev copies it into `world/commitments.py`.
+  4. **Mara Voss** (`content/npcs/mara_voss.md`): remove `## Your misdelivered parcel`, `## Your café's civic display`, and the parcel cross-reference inside `## Your heating unit` ("that's the parcel's territory"). She keeps only the heating unit. Leave her `## Actions` section to Dev.
+  5. **Tarin Os** (`content/npcs/tarin_os.md`): the parcel now comes by way of Veska and the Civic Office, not Mara (the line about "the thing Mara...", around line 48, and the `## Receiving a parcel` prose above `## Actions`).
+  6. **Iri Vael** (`content/npcs/iri_vael.md`): the display-revision paragraph names "the one at Mara Voss's café". It should be the one in Daven's office.
+  7. **`content/objects/misdelivered_parcel_hint.md`**: rewrite `## Short Description` (currently "sits on the counter") and `## Description` for the Civic Office.
+  8. **`content/objects/civic_information_display.md`**, and the room files `content/rooms/corner_cafe.md`, `civic_office.md`, `daven_office.md`: fix any wording that places the display or the parcel in the café, or that should mention them in their new rooms.
+  9. Optional: whether anyone's `## People you know` should mention Veska's or Daven's errands. Default is no ("know them by name and job").
+- Not needed: `## Actions` sections, `npc-shared-rules.md`, engine narration lines (Dev), or `sectors/elsewhere/sector.json` placement (Tools). Bump `prompt_version` on each persona you edit.
+- Blocking: yes (blocks the errand move; Dev and Tools land after this)
+- Status: open
+- Resolution:

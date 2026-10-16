@@ -1,6 +1,6 @@
 # Errand redistribution plan: parcel to Veska, display check to Daven
 
-Status: **plan, awaiting owner sign-off on Section 3** (written 2026-10-16, Dev lane)
+Status: **approved 2026-10-16** (D1-D5 accepted as recommended); waiting on LR-DEV-0003 (Lore), then Steps 2-5 (written 2026-10-16, Dev lane)
 
 ## 1. Goal and decisions already made
 
@@ -64,7 +64,7 @@ Why:
 
 **`world/npc_eval.py`:** about 12 scenarios with `npc_id="mara_voss"`. The parcel and display ones need re-targeting; setups include `_setup_mara_parcel_offered`, `_MARA_PARCEL_HANDED_OFF_CONTEXT` and others.
 
-## 3. Open decisions (owner) and recommendations
+## 3. Decisions (owner approved all five as recommended, 2026-10-16)
 
 **D1. Keep "word gets around" for the parcel?** It means Veska only learns the parcel arrived when the player comes back and tells her.
 - *Recommended: keep it.* It gives the player a reason to return to the giver, which helps the RPG feel. The rumor module is already generic apart from its hard-coded IDs.
