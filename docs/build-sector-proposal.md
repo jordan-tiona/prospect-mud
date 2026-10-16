@@ -115,11 +115,14 @@ As with every database-writing script, it's run only with the server stopped. If
 
 The wrappers can be removed later, test module by test module (a Tests-lane task). That isn't needed for the switch.
 
-## 5. The one behaviour change
+## 5. The one behaviour change: `give_directions` reads rooms from the manifest
 
-`give_directions` matches a free-text destination against a fixed list of the original nine room names, from `build_rooms.ROOMS`. After the switch it would match against **all room titles in the NPC's sector manifest**. Two consequences:
-- **Today, with the same nine rooms:** behaviour is identical.
-- **Later:** any room added in the editor automatically becomes a valid destination for NPC directions, which is the point. But it also means a room exists for directions as soon as it's exported. Is that the intended rule? Or should directions be limited, for example to rooms in the NPC's own `knowledge_scope`, or by a per-room flag? Dev and owner to decide; I'd ship the simple version first.
+**Rule (owner, 2026-10-16): rooms are identified by ID everywhere in the data. Titles are display text and may repeat**, which isn't unusual in MUDs. **`give_directions` deliberately stays name-based**, because players ask for places by name. The model passes the destination's name as free text, and the engine matches it against room titles.
+
+What changes:
+- `_find_neighborhood_room` reads the room list (ID and title) from the manifest instead of `build_rooms.ROOMS`. With today's nine rooms, players see no difference.
+- Duplicate titles mean a name can match more than one room. **The owner will work out with Dev how to resolve multiple matches, picking the closest one as the room the player meant.** That design belongs to Dev. `build_sector` only has to supply the room list with both IDs and titles, so whatever rule Dev settles on can return a specific room ID.
+- **Open question:** may an NPC direct players to every room in the sector, or should there be a per-NPC or per-room limit? Today it's all nine rooms. I'd ship "all rooms in the sector" first.
 
 ## 6. Out of scope
 
@@ -133,6 +136,6 @@ The wrappers can be removed later, test module by test module (a Tests-lane task
 2. Exit adoption rule (3.2): is same source plus same destination safe? Today no room pair has two exits between them.
 3. Prune safety rules (3.5): anything else that must never be deleted?
 4. Wrappers vs. moving tests to `build_sector` directly in Step C.
-5. `give_directions` source (Section 5).
+5. `give_directions` room list from the manifest, plus the multiple-match rule for duplicate titles (Section 5; owner and Dev).
 6. Ambient parser relaxation in Step C: any other code relying on ambient files' `room:` field? (`ops/generate_obsidian.py` does until Obsidian is retired.)
 7. Review `prospect/world/entity_kinds.py`, which the Tools lane drafted, and take ownership of it.
