@@ -472,9 +472,29 @@ class ParcelActionWiringTests(TestCase):
         result = _validate_accept_handoff(self.tarin, self.actor, {"commitment_type": self.TYPE})
         self.assertFalse(result.applied)
 
-    def test_stock_give_cannot_move_the_parcel(self):
+    def test_stock_give_cannot_move_the_parcel_to_anyone_else(self):
         self._accept()
         parcel = self._carried_parcels()[0]
+        other = create_object("typeclasses.characters.Character", key="Other", location=self.actor.location)
+        self.assertFalse(parcel.at_pre_give(self.actor, other))
+        self.assertFalse(parcel.at_pre_give(self.actor, self.veska))
+        self.assertIs(parcel.location, self.actor)
+        self.assertIsNone(get_fulfilled_commitment(self.actor, self.TYPE))
+
+    def test_give_to_tarin_completes_the_handoff(self):
+        # Owner, 2026-10-17: `give parcel to Tarin` works, through the
+        # same validator as Tarin's own accept_handoff call.
+        self._accept()
+        self.actor.location = self.tarin.location
+        self.actor.execute_cmd("give parcel to Tarin")
+        self.assertEqual(self._carried_parcels(), [])
+        self.assertIsNotNone(get_fulfilled_commitment(self.actor, self.TYPE))
+
+    def test_give_to_tarin_without_an_open_errand_is_refused(self):
+        self._accept()
+        parcel = self._carried_parcels()[0]
+        _validate_accept_handoff(self.tarin, self.actor, {"commitment_type": self.TYPE})
+        parcel.location = self.actor  # a stale copy still in hand
         self.assertFalse(parcel.at_pre_give(self.actor, self.tarin))
         self.assertIs(parcel.location, self.actor)
 
@@ -872,6 +892,16 @@ class HuntSkittersWiringTests(TestCase):
         self._accept()
         weapons = [obj for obj in self.actor.contents if obj.is_typeclass("typeclasses.objects.Weapon", exact=False)]
         self.assertEqual(len(weapons), 1)
+
+    def test_baton_cannot_be_given_away_or_dropped(self):
+        # Owner, 2026-10-17: lending it on would let someone hunt
+        # without taking Tarin's quest.
+        self._accept()
+        baton = next(obj for obj in self.actor.contents if obj.is_typeclass("typeclasses.objects.Weapon", exact=False))
+        friend = create_object("typeclasses.characters.Character", key="Friend", location=self.actor.location)
+        self.actor.execute_cmd("give baton to Friend")
+        self.actor.execute_cmd("drop baton")
+        self.assertIs(baton.location, self.actor)
 
     def test_report_before_enough_kills_is_dropped(self):
         self._accept()

@@ -11,6 +11,7 @@ with a location in the game world (like Characters, Rooms, Exits).
 import re
 
 from evennia.objects.objects import DefaultObject
+from evennia.utils.utils import inherits_from
 
 _PARAGRAPH_SPLIT_RE = re.compile(r"\n\s*\n")
 PARAGRAPH_INDENT = "    "  # four spaces - project owner's call
@@ -240,6 +241,25 @@ class Parcel(ObjectParent, DefaultObject):
         self.locks.add("get:false();drop:false()")
 
     def at_pre_give(self, giver, getter, **kwargs):
+        # One exception (owner, 2026-10-17): handing the parcel to the
+        # NPC it's for. That runs the same engine validator as the
+        # NPC's own accept_handoff tool call - same role, open-
+        # commitment and possession checks, same parcel move - so a
+        # player's `give` and the conversational handoff can't
+        # disagree. The stock give is always cancelled; on success
+        # the validator has already moved the parcel.
+        if inherits_from(getter, "typeclasses.npcs.TalkativeNPC"):
+            from world.actions import PARCEL_COMMITMENT_TYPES, PARCEL_TAG_CATEGORY, validate_and_apply
+
+            if self.location == giver and self.tags.get(category=PARCEL_TAG_CATEGORY):
+                for commitment_type in sorted(PARCEL_COMMITMENT_TYPES):
+                    result = validate_and_apply(getter, giver, "accept_handoff", {"commitment_type": commitment_type})
+                    if result.applied:
+                        if giver.location:
+                            giver.location.msg_contents(result.narration)
+                        return False
+            giver.msg(f"{getter.get_display_name(giver)} isn't expecting {self.get_display_name(giver)}.")
+            return False
         giver.msg(f"{self.get_display_name(giver)} isn't yours to give away.")
         return False
 
@@ -291,14 +311,24 @@ class Weapon(ObjectParent, DefaultObject):
     player by accept_commitment's engine-side effect for the
     "hunt_skitters" commitment (world/actions.py's
     _create_weapon_for), same shape as Quest 1's accept_commitment
-    creating a Parcel. Unlike Parcel, ordinary gettable/droppable -
-    no reason to make it exclusive, same as GardeningKit.
+    creating a Parcel. Can't be given away or dropped (owner,
+    2026-10-17): handing it to a friend would let them hunt skitters
+    without ever taking Tarin's quest. Enforced in the hooks rather
+    than a lock string, so batons already handed out are covered too.
 
     `db.damage` is the only mechanical property commands/attack.py
     reads, kept on the instance rather than hardcoded in the command
     so a future different weapon type could vary it without touching
     command code.
     """
+
+    def at_pre_give(self, giver, getter, **kwargs):
+        giver.msg(f"{self.get_display_name(giver)} isn't yours to give away.")
+        return False
+
+    def at_pre_drop(self, dropper, **kwargs):
+        dropper.msg(f"You can't drop {self.get_display_name(dropper)}.")
+        return False
 
 
 class Object(ObjectParent, DefaultObject):
