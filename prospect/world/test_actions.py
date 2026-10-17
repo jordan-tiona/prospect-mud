@@ -893,6 +893,36 @@ class HuntSkittersWiringTests(TestCase):
         weapons = [obj for obj in self.actor.contents if obj.is_typeclass("typeclasses.objects.Weapon", exact=False)]
         self.assertEqual(len(weapons), 1)
 
+    def _batons(self):
+        return [obj for obj in self.actor.contents if obj.is_typeclass("typeclasses.objects.Weapon", exact=False)]
+
+    def test_accepting_again_doesnt_hand_over_a_second_baton(self):
+        from world.actions import _create_weapon_for
+
+        self._accept()
+        _create_weapon_for(self.actor)
+        self.assertEqual(len(self._batons()), 1)
+
+    def test_cleanup_keeps_one_baton_while_the_hunt_is_open(self):
+        from evennia import create_object
+
+        from world.actions import cleanup_stray_weapons
+
+        self._accept()
+        create_object("typeclasses.objects.Weapon", key="a compact shock baton", location=self.actor)
+        self.assertEqual(cleanup_stray_weapons(self.actor), 1)
+        self.assertEqual(len(self._batons()), 1)
+
+    def test_cleanup_removes_every_baton_with_no_hunt(self):
+        from world.actions import cleanup_stray_weapons
+
+        self._accept()
+        from world.commitments import reset_commitment
+
+        reset_commitment(self.actor, self.TYPE)
+        self.assertEqual(cleanup_stray_weapons(self.actor), 1)
+        self.assertEqual(self._batons(), [])
+
     def test_baton_cannot_be_given_away_or_dropped(self):
         # Owner, 2026-10-17: lending it on would let someone hunt
         # without taking Tarin's quest.

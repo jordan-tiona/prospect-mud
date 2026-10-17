@@ -10,7 +10,7 @@ its own, since it lives on `ndb`, not persisted to the database.
 
 from evennia.utils.utils import inherits_from
 
-from world.actions import QUEST_MODULE_EXCHANGE_KEY, cleanup_stray_parcels, get_quest_state
+from world.actions import QUEST_MODULE_EXCHANGE_KEY, cleanup_stray_parcels, cleanup_stray_weapons, get_quest_state
 from world.commitments import SCENARIOS, known_commitment_types_for, reset_commitment
 from world.conversation_log import (
     log_commitment_reset,
@@ -185,6 +185,7 @@ class CmdResetCommitment(Command):
             )
 
         removed_parcels = cleanup_stray_parcels(target)
+        removed_weapons = cleanup_stray_weapons(target)
         previous_revision = reset_expected_revision(target)
         # Quest 2/3: downstream world-state facts that aren't part of
         # the commitment record itself (world/garden.py's tended flag,
@@ -224,6 +225,7 @@ class CmdResetCommitment(Command):
         if (
             cleared_any
             or removed_parcels
+            or removed_weapons
             or previous_revision is not None
             or previous_bed_tended
             or previous_skitter_kills
@@ -234,6 +236,8 @@ class CmdResetCommitment(Command):
             caller.msg(f"You reset {target.key}'s commitment progress back to the start.")
             if removed_parcels:
                 caller.msg(f"Removed {removed_parcels} stray carried parcel(s) no longer tied to anything open.")
+            if removed_weapons:
+                caller.msg(f"Removed {removed_weapons} shock baton(s) no longer tied to the skitter hunt.")
             if previous_revision is not None:
                 caller.msg("Cleared their generated noticeboard revision - the display will show a fresh one.")
             if previous_bed_tended:

@@ -14,6 +14,7 @@ from world.actions import (
     PARCEL_TAG_CATEGORY,
     _actor_has_correct_parcel,
     _create_parcel_for,
+    _create_weapon_for,
     _validate_accept_help,
     _validate_give_faulty_module,
     get_quest_state,
@@ -262,6 +263,19 @@ class ResetCommitmentCommandTests(TestCase):
 
         self.assertFalse(_actor_has_correct_parcel(self.actor, commitment_id))
         self.assertTrue(any("stray carried parcel" in m for m in self.messages))
+
+    def test_reset_removes_carried_batons(self):
+        # Five stacked up on one tester (2026-10-17): reset cleared
+        # hunt_skitters but left the baton, and re-accepting added one.
+        propose_commitment(self.actor, "hunt_skitters")
+        accept_commitment(self.actor, "hunt_skitters")
+        _create_weapon_for(self.actor)
+
+        self.actor.execute_cmd("resetcommitment")
+
+        batons = [o for o in self.actor.contents if o.is_typeclass("typeclasses.objects.Weapon", exact=False)]
+        self.assertEqual(batons, [])
+        self.assertTrue(any("shock baton" in m for m in self.messages))
 
     def test_reset_clears_the_generated_revision(self):
         from world.noticeboard import get_or_create_expected_revision

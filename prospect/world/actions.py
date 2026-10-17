@@ -418,8 +418,14 @@ def _create_weapon_for(actor) -> None:
     typeclasses.objects.Weapon directly into the player's inventory.
     Unlike _create_parcel_for, not tied to the commitment instance by
     tag - a Weapon is ordinary, undistinguished gear, not a single
-    specific physical object the engine has to track possession of."""
+    specific physical object the engine has to track possession of.
+    A player who already carries one isn't given another: re-accepting
+    after a reset used to stack them up (five on one tester, 2026-10-17),
+    and they can't be dropped."""
     from evennia import create_object
+
+    if _carried_weapons(actor):
+        return
 
     weapon = create_object(
         "typeclasses.objects.Weapon",
@@ -438,6 +444,32 @@ def _create_weapon_for(actor) -> None:
         "small pests - but repeated solid hits carry a jolt that can put one down."
     )
     weapon.db.damage = 1
+
+
+def _carried_weapons(actor) -> list:
+    return [obj for obj in actor.contents if obj.is_typeclass("typeclasses.objects.Weapon", exact=False)]
+
+
+def cleanup_stray_weapons(actor) -> int:
+    """
+    The baton's counterpart to cleanup_stray_parcels (engineering-
+    pitfalls #4): the reset path has to find and remove the physical
+    object itself, since clearing the commitment record doesn't. A
+    player keeps one baton while hunt_skitters is open or fulfilled
+    (the post-quest skitter loop still needs it), and none otherwise.
+    Weapons can't be dropped (typeclasses.objects.Weapon), so without
+    this a stale one could never be got rid of. Returns how many were
+    deleted.
+    """
+    keep = 0
+    for commitment_type in WEAPON_COMMITMENT_TYPES:
+        if _get_open_commitment_id(actor, commitment_type) or _get_fulfilled_commitment(actor, commitment_type):
+            keep = 1
+    removed = 0
+    for weapon in _carried_weapons(actor)[keep:]:
+        weapon.delete()
+        removed += 1
+    return removed
 
 
 def _validate_report_skitter_kills_to_tarin(npc, actor, arguments: dict) -> ActionResult:
