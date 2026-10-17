@@ -146,3 +146,14 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Blocking: yes (chargen picker is empty until Dev's part lands alongside the content change)
 - Status: open
 - Resolution: content side done on `lore` 2026-10-16. Tools part done on `tools` 2026-10-16: ambient ids renamed to `square_elderly_kell`, `courtyard_selk_neighbor`, `concourse_astrel_courier` (files, `ambient_id`, both JSON files) and Elsewhere re-exported; the rebuild needs `prune=True` to remove the old-id NPCs. Code and spec follow-ups pending.
+
+## LR-DEV-0004: Mara should ask for help with her heating unit, not send people to Tarin
+- Requested by: dev (owner-approved, 2026-10-17)
+- Needed for: live playtest 2026-10-17 (Mara `prompt_version` 44). Three heating cues in a row ("It's awfully cold in here", "What's wrong with the heating?", "I meant what's wrong with the control module") got no ask at all; on the second she sent the player to the Maintenance Workshop to "ask him about it." The player had to offer help on their own, on the fourth try.
+- What's needed: two prose changes in `content/npcs/mara_voss.md` (Dev has already limited her `give_directions` bullet to real route requests, `prompt_version` 45; bump again when you edit):
+  1. **`## Your heating unit` needs an actual ask.** Today it only says "if a customer offers to help, or you decide to ask one". Every other errand that worked live has a firm "describing the problem *is* the ask" rule (guideline #11). Once the cue is there, explaining the faulty module and asking the customer to carry it to Tarin should happen in the same reply. There's no tool call for asking (the heating errand starts at `accept_help`, when the player commits), so this lives entirely in the prose.
+  2. **Reconcile it with `## Pointing people the right way`.** That section tells her to send technical questions to whoever knows, and "what's wrong with the heating?" reads to the model as Tarin's territory (guideline #12, two sections pulling against each other). The heating unit is her own problem: she already knows Tarin is the fix, and what she needs is someone to carry the module over, so sending a customer to him empty-handed doesn't help her. One way is an explicit exception in either section; the wording is yours.
+- Not needed: `## Actions` changes (Dev). The trigger bar itself stays as approved on 2026-10-16 (a generic "how are you / anything I can help with" counts).
+- Blocking: no (the errand still completes if the player offers on their own)
+- Status: open
+- Resolution:

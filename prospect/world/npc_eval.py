@@ -203,6 +203,36 @@ SCENARIOS = [
             "checked for making it worse."
         ),
     ),
+    # The heating unit is Mara's only errand again since the errand
+    # redistribution (2026-10-16). Live playtest 2026-10-17 (prompt_version
+    # 44): three heating cues in a row got no ask, and "What's wrong with the
+    # heating?" fired give_directions to the workshop instead - her new
+    # redirect role pulling the topic to Tarin. prompt_version 45 limits
+    # give_directions to actual route requests; the "ask" itself is pending
+    # Lore's LR-DEV-0004. Whether she asks is text, not a tool call (there's
+    # no propose step for this errand), so these need transcript inspection
+    # too.
+    EvalScenario(
+        name="mara_heating_cold_cue_does_not_give_directions",
+        npc_id="mara_voss",
+        player_message="Morning Mara... It's awfully cold in here.",
+        expect_no_calls={"give_directions", "accept_help"},
+        notes="Transcript check: she should ask the player to take the module to Tarin.",
+    ),
+    EvalScenario(
+        name="mara_heating_question_does_not_give_directions",
+        npc_id="mara_voss",
+        player_message="What's wrong with the heating?",
+        expect_no_calls={"give_directions", "accept_help"},
+        notes="Transcript check: explain the module and ask, not 'go ask Tarin'.",
+    ),
+    EvalScenario(
+        name="mara_heating_offer_accepts_and_hands_over",
+        npc_id="mara_voss",
+        player_message="I'll take the module over to Tarin for you.",
+        expect_calls={"accept_help", "give_faulty_module"},
+        notes="Guideline #9's same-turn chaining; live 2026-10-17 she accepted but didn't hand it over.",
+    ),
     # docs/phase2c-misdelivered-parcel-proposal.md scenarios below.
     # The parcel moved from Mara to Veska 2026-10-16 (docs/errand-
     # redistribution-plan.md); Mara's reliability history for these
