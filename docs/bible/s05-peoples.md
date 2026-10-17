@@ -136,13 +136,25 @@ Their stature follows functional subterranean engineering rather than an inherit
 
 The **Selk** were engineered for hazardous underwater construction, deep-water extraction, salvage and related work. Their historical or colloquial designation is **Sea Walkers**. The earlier *Aquarians* label was a working placeholder and is **superseded**, as is the 2026-10-10 working name *Neshyr*.
 
-**Provisional anatomical detail within the established body plan:**
-- Sharklike or shark-inspired humanoid appearance, with smooth streamlined skin.
-- Powerful swimming musculature and potentially webbed extremities or a swimming tail.
-- Pressure adaptations and exceptional breath-holding or oxygen storage.
-- Effective terrestrial locomotion and ordinary participation in dry, shared living environments.
-
 **Settled design constraint:** Selk are **air-breathing** and do **not** need permanently submerged accommodations. They could live aboard the Nine across generations without specially flooded ship compartments. Their aquatic adaptations are not immunity to Prospect's alien ocean hazards. They are not restricted to aquatic professions.
+
+**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and replaces the earlier "provisional anatomical detail" list). Their looks point to none of the three ancestral peoples in particular (Section 18 safeguard):**
+
+- **Build.** Mid-height (5.8): 1.9–2.0 m and 85–95 kg on average, dense swimming muscle with a deep chest for lung capacity; the second heaviest of the mid-height peoples after the Drask.
+- **Skin.** Smooth, hairless and cool to the touch, needing no water to stay healthy. Countershaded, dark above and pale below: slate blue, dark green or grey-brown over cream. Scars heal white and stay visible; the skin pales with age.
+- **Head and face.** A broad, slightly flattened head with a short wide muzzle and a wide mouth, teeth hidden at rest. The shark reference is the head shape only; there is no dorsal fin.
+- **Eyes.** Set wide, with visible whites and a protective inner lid that sweeps across while swimming.
+- **Ears and nose.** No external ears, only small openings. Nostrils that seal shut, closed reflexively when startled.
+- **Sensory line.** A line of fine sensory pits along the jaw and down each flank reads pressure and movement in water, and faintly in air; a Selk tends to notice someone moving behind them before anyone else does.
+- **Fins.** Fin-like stabilising appendages along the outer forearms and calves, folded flat against the limb on land and spread in water for stability.
+- **Hands and feet.** Four fingers and a thumb with mild webbing. Plantigrade feet that are very fully webbed, so ordinary shoes do not fit and Selk wear footwear made for them.
+- **Tail.** None.
+- **Breath and pressure.** Exceptional breath-holding and oxygen storage, and tolerance of pressure at depth.
+- **Dress.** Simple fitted clothing, often sleeveless, in water-shedding fabrics, cut to let the fins lie flat, with a dislike of heavy layers and of anything that would drag in water.
+
+Still **Unresolved** after this pass: any visible difference between the sexes, lifespan.
+
+**Content follow-ups once approved (Lore lane):** one physical sentence in the Selk entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.7.md` chunk, and physical descriptions for Given Marr and the courtyard Selk neighbor (LR-LORE-0003).
 
 ### 5.8 Shared species-design and naming boundaries
 

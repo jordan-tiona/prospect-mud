@@ -68,4 +68,4 @@ Engineered in the home system for mining, excavation and other dangerous work un
 
 Engineered in the home system for hazardous underwater work, such as deep construction, extraction and salvage, which earned them the old label "Sea Walkers". They breathe air and live in ordinary dry quarters alongside everyone else; the water was their work, never their home.
 
-<!-- Left out as Provisional in bible 5.7: sharklike or shark-inspired look, webbed extremities or swimming tail, pressure and breath-holding adaptations. Air-breathing and dry accommodation are a settled constraint, so they stay in. -->
+<!-- Draft (bible 5.7 physical description, 2026-10-17; pending owner approval, then move this sentence into the entry above after the first sentence): "Smooth-skinned and countershaded, dark above and pale below, with a broad flattened head, fin-like edges along the forearms and calves, and fully webbed feet that need their own footwear." Air-breathing and dry accommodation are a settled constraint, so they stay in. -->
