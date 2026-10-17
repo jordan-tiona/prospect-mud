@@ -22,8 +22,11 @@ The **Kell** are furred, predominantly **canine-looking**, digitigrade humanoids
 - **Feet.** Digitigrade and padded, and always bare. Light cloth wraps are casual wear; thicker, padded wraps are worn for work. Kell do not wear shoes.
 - **Coat.** Colours outside the Earth-canid range: slate, blue-grey, russet and cream, in dappling or brindle rather than wolf masks and saddles. Fur greys around the muzzle and ears with age. The palette may be extended; these are the first approved colours, not the only ones.
 - **Dress.** Most Kell wear no top. When they do, it is a backless, sleeveless garment somewhere between a dress and an apron: a front panel held by strips of cloth over the shoulders and tied at the hips or lower back, leaving the spine and the ruff uncovered. This is the one cultural item in the list; it concerns Kell dress only, and the other peoples' styles of dress remain undecided (11.2).
+- **Sexes.** Same height. Males carry the full 25–30 cm ruff, which lifts more readily; females' ruff is shorter, 15–20 cm, ending between the shoulder blades, and their tail crest is longer instead. Male voices are lower. Dress is the same.
+- **Lifespan.** Around 90 years in good health; adult by about 18, elderly from about 70, when the greying of muzzle and ears is plain.
+- **Iris colours.** Amber, gold, copper, pale green and grey, with blue rare; no link between iris and coat colour. The reflective layer gives a green-gold eyeshine in dim light.
 
-Still **Unresolved** after this pass: iris colours, any visible difference between the sexes, teeth and diet, lifespan.
+Still **Unresolved**: teeth and diet.
 
 **Scientific heritage (established):** The two original discoverers of the Venn–Saye field were Kell. Their scientific and educational institutions developed an especially long tradition of Venn–Saye dynamics, preserved across the voyage and subsequent settlement. Many Kell communities regard this as an important cultural achievement. A modest **proposed** player species bonus to relevant starting proficiency or learning would express inherited educational and cultural traditions, **not innate biological superiority**; exact mechanics are unresolved.
 
@@ -41,8 +44,10 @@ The **Drask** are scaled, plantigrade humanoids with a distinctly **lizardlike f
 - **Tail.** Thick and muscular, long enough to touch the ground, carried clear of the floor when walking. It dictates how a Drask sits: on stools, on the front edge of a chair, or on seats made with a gap for it.
 - **Hands and feet.** Plantigrade. Four digits on each hand (read as three fingers and an opposable thumb) and on each foot. Claws are left untrimmed but are short, a few centimetres at most, never talons.
 - **Dress.** Ordinary shirts and upper garments, with no need for the open backs the Kell prefer. Below the waist a loincloth, not necessarily thin, which exists mainly to cover and protect the genitals; trousers are not the norm.
+- **Sexes.** Females are the larger and heavier sex, at the top of the 95–110 kg range; males are lighter, with more pronounced brow-to-neck shingling and brighter banding.
+- **Lifespan.** Around 120 years; slow to mature, adult by about 25, elderly from about 95, when the scales dull and thicken at the edges. The Bloom (~150 years ago) falls within two Drask lifetimes, so an old Drask could have known someone who saw Haven fall.
 
-Still **Unresolved** after this pass: eye details (pupil shape, any inner eyelid), iris and scale-pattern variation between the sexes, lifespan.
+Still **Unresolved**: eye details (pupil shape, iris colours, any inner eyelid).
 
 ### 5.3 Lirra — Ancestral C
 
@@ -62,8 +67,10 @@ The **Lirra** are avian-influenced, feathered humanoids, with distinctive balanc
 - **Hands.** Scaled and bare like the lower legs, four long fingers and a thumb; the finest grip of the seven peoples.
 - **Colours.** A small palette per individual, two colours at most, with the crest usually the brighter one. Within that rule players and NPCs have wide freedom.
 - **Dress.** Loose, draped garments, wrapped and pinned, that cover the body fully (unlike the Kell's open backs) while leaving the arms free so the fringes are not crushed.
+- **Sexes.** Same size. The "crest is the brighter colour" rule is strongest in males; a female's crest usually matches her body colour, and her tail plume is longer.
+- **Lifespan.** Around 70 years; fast to mature, adult by about 15, elderly from about 55, when the moult thins and slows.
 
-Still **Unresolved** after this pass: whether the sexes differ in plumage, lifespan, voice.
+Still **Unresolved**: voice.
 
 ### 5.4 Revari — Hybrid-descended
 
@@ -78,8 +85,9 @@ The **Revari** are a long-established, self-reproducing people with ancestry inv
 - **Eyes.** Kell eyes by default, including the reflective layer; a pale Lirra-type iris is a possible inherited trait.
 - **Colours.** The Kell palette and patterning (5.1); scale and feather patches follow the Drask and Lirra colour rules (5.2, 5.3) where they appear.
 - **Dress.** Mixed by family: Revari with a ruff dress as the Kell do, the rest wear ordinary clothes. The loincloth remains a Drask custom.
+- **Sexes, lifespan and eyes.** As the Kell (5.1): ruff length and tail crest differ by sex, male voices lower; around 90 years, adult by about 18, elderly from about 70; irises from the Kell set, with the pale Lirra-type iris as the inherited trait above, and the same green-gold eyeshine.
 
-Still **Unresolved** after this pass: the reproductive history above, and any trait that is more common in one sex.
+Still **Unresolved**: the reproductive history above.
 
 ### 5.5 Astrel — Engineered; “Void Walkers”
 
@@ -98,8 +106,10 @@ The **Astrel** were engineered for hazardous orbital construction, spacecraft ma
 - **Gravity.** At full gravity they tire faster over a long shift and favour sitting or leaning, so Astrel are often found perched on rails and ledges. A tendency for description, not a game mechanic.
 - **Radiation.** Enhanced radiation resilience, which does **not** grant survival in vacuum; suits and life support remain necessary.
 - **Dress.** Close-fitting layered garments with attachment loops and many pockets, a habit carried over from generations of suit liners and now worn by choice.
+- **Sexes.** Little visible difference beyond reproductive anatomy and voice; males' skin mottles earlier. This is a plain fact about the Astrel, with no claim about why they were made so.
+- **Lifespan.** Around 85 years; adult by about 18, elderly from about 65, when the mottling is plain. Nothing in their making shortens their lives.
 
-Astrel today are free to pursue any profession in societies recognizing their rights; their engineering purpose must not be presented as their inevitable vocation. Still **Unresolved** after this pass: any visible difference between the sexes, lifespan.
+Astrel today are free to pursue any profession in societies recognizing their rights; their engineering purpose must not be presented as their inevitable vocation. Still **Unresolved**: iris colours.
 
 ### 5.6 Voldren — Engineered; “Cave Crawlers”
 
@@ -117,8 +127,10 @@ The **Voldren** were engineered for mining, excavation and other dangerous work 
 - **Tail.** None.
 - **Hazards.** Resistance to heat, contaminants and abrasion, never invulnerability.
 - **Dress.** Sturdy layered clothing with reinforced knees and elbows, worn by habit even by Voldren who have never been underground, with good boots and the cap or visor above.
+- **Sexes.** Little visible difference beyond reproductive anatomy and voice; females' brow ridge is lower. A plain fact about the Voldren, with no claim about why they were made so.
+- **Lifespan.** Around 95 years; adult by about 18, elderly from about 75, when the skin's cracking is plain. Nothing in their making shortens their lives.
 
-Their stature follows functional subterranean engineering rather than an inherited fantasy-dwarf identity. *Dwarfs* was an out-of-world early placeholder, **superseded** by the name Voldren. Modern Voldren need not be miners. Still **Unresolved** after this pass: any visible difference between the sexes, lifespan.
+Their stature follows functional subterranean engineering rather than an inherited fantasy-dwarf identity. *Dwarfs* was an out-of-world early placeholder, **superseded** by the name Voldren. Modern Voldren need not be miners. Still **Unresolved**: iris colours.
 
 ### 5.7 Selk — Engineered; “Sea Walkers”
 
@@ -139,10 +151,14 @@ The **Selk** were engineered for hazardous underwater construction, deep-water e
 - **Tail.** None.
 - **Breath and pressure.** Exceptional breath-holding and oxygen storage, and tolerance of pressure at depth.
 - **Dress.** Simple fitted clothing, often sleeveless, in water-shedding fabrics, cut to let the fins lie flat, with a dislike of heavy layers and of anything that would drag in water.
+- **Sexes.** Little visible difference beyond reproductive anatomy and voice; males' countershading boundary sits higher on the flank. A plain fact about the Selk, with no claim about why they were made so.
+- **Lifespan.** Around 85 years; adult by about 18, elderly from about 65, when the paling is plain. Nothing in their making shortens their lives.
 
-Still **Unresolved** after this pass: any visible difference between the sexes, lifespan.
+Still **Unresolved**: iris colours.
 
 ### 5.8 Shared species-design and naming boundaries
+
+**Sexes and lifespans (Established; project-owner decisions, approved 2026-10-17):** each people's entry gives its visible sex differences and typical lifespan. The differences are visible enough that a description can say "a Kell woman", never affect capability, map onto character creation's male/female choice, and no one sex is the larger one across all seven peoples. Lifespans sit near a human scale, assuming a year close to an Earth year under the translation convention (Section 2), so that "generations ago" and "~150 years since the Bloom" keep their weight.
 
 **Height ladder (Established; project-owner decision, approved 2026-10-17):** the Voldren are the shortest people, engineered to work in confined spaces, and the Astrel the tallest, engineered for low gravity; the other five peoples are fairly close to one another in height. Relative weights are **not decided** beyond each people's own entry.
 
@@ -227,35 +243,5 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 - **Illustrative output (not canon):** Sulim Thesk, Selm Mesk, Mithen Thulim
 
 **Open questions for the owner, not answered here:** whether the engineered peoples' naming customs carry any trace of their history as assigned labour (names given by a commission, reclaimed names, chosen names at emancipation), whether any people uses a structure other than given + family, and whether family names pass down one line or both. Any of those would change a row's structure column and should be decided before the generator is treated as more than a placeholder.
-
-### 5.10 Sex differences, lifespans and iris colours — Draft proposal
-
-**Status:** Lore-lane proposal written 2026-10-17 at the owner's request, after the physical descriptions in 5.1–5.7 were approved. **Draft, pending the owner's decision**; nothing here is Established, and no content file uses it. Each heading can be approved, changed or rejected on its own. Once decided, the approved items move into the people's own entries and this subsection is removed.
-
-**Principles the proposal follows:** a difference between the sexes is visible enough that a description can say "a Kell woman" and a reader could have told; it never affects capability (5.8); it maps onto character creation's male/female choice; and no one sex is "the larger one" across all seven peoples. Lifespans stay near a human scale so that "generations ago" and "~150 years since the Bloom" keep the weight the bible gives them. The bible does not define the length of a year; the figures assume a year close to an Earth year under the translation convention (Section 2).
-
-**Sex differences:**
-
-- **Kell.** Same height. Males carry the full 25–30 cm ruff, which lifts more readily; females' ruff is shorter, 15–20 cm, ending between the shoulder blades, and their tail crest is longer instead. Male voices are lower. Dress is the same.
-- **Drask.** Females are the larger and heavier sex, at the top of the 95–110 kg range; males are lighter, with more pronounced brow-to-neck shingling and brighter banding. The reverse of the usual expectation, on purpose.
-- **Lirra.** Same size. The "crest is the brighter colour" rule is strongest in males; a female's crest usually matches her body colour, and her tail plume is longer.
-- **Revari.** Follow the Kell pattern (ruff length, tail crest, voice).
-- **Astrel, Voldren, Selk.** Little visible difference beyond reproductive anatomy and voice, with one light tell each: Astrel males' skin mottles earlier; Voldren females' brow ridge is lower; Selk males' countershading boundary sits higher on the flank. *(The engineered peoples' low dimorphism is written as a plain fact about them, with no claim about why the Commissions made them that way; if the owner wants a reason, that is a history decision for Section 4.)*
-
-**Lifespans (typical, in good health; "elderly" is when the ageing cues in 5.1–5.7 are plain):**
-
-| People | Typical lifespan | Adult by | Elderly from | Note |
-|---|---|---|---|---|
-| Kell | ~90 | ~18 | ~70 | Greying muzzle and ears |
-| Drask | ~120 | ~25 | ~95 | Slow to mature; scales dull and thicken at the edges with age (new cue) |
-| Lirra | ~70 | ~15 | ~55 | Fast to mature; moult thins and slows |
-| Revari | ~90 | ~18 | ~70 | As the Kell |
-| Astrel | ~85 | ~18 | ~65 | Skin mottling |
-| Voldren | ~95 | ~18 | ~75 | Skin cracking |
-| Selk | ~85 | ~18 | ~65 | Skin paling |
-
-Nothing in the engineered peoples' making shortens their lives. One consequence to accept or avoid: the Bloom (~150 years ago) falls within two Drask lifetimes, so an old Drask on Elsewhere could have known someone who saw Haven fall.
-
-**Kell iris colours (and, by extension, Revari):** amber, gold, copper, pale green and grey, with blue rare; no link between iris and coat colour. The reflective layer gives a green-gold eyeshine in dim light. Revari draw from the same set, with the pale Lirra-type iris as the inherited trait 5.4 already allows, and the same eyeshine.
 
 ---
