@@ -65,7 +65,7 @@ Each NPC prompt is assembled in this order: common-knowledge sheet → shared ru
 
 If a content file doesn't exist yet, use a clearly marked stub and tell me, rather than writing the content.
 
-Personas and lore (personality, voice, knowledge, setting content) are authored by the project owner. The `## Actions` section of a persona file, and the tool-calling rules in `content/npc-shared-rules.md`, are different: they describe engine mechanics in prompt form, which is implementation work. Before writing or editing either, check **`docs/npc-action-prompt-guidelines.md`** for prompt-wording pitfalls found during playtesting — they recur with every new action regardless of model.
+Personas and lore (personality, voice, knowledge, setting content) belong to the project owner: the Lore lane writes them, and anything that adds new canon needs the owner's sign-off (see "Lore approval"). The `## Actions` section of a persona file, and the tool-calling rules in `content/npc-shared-rules.md`, are different: they describe engine mechanics in prompt form, which is implementation work. Before writing or editing either, check **`docs/npc-action-prompt-guidelines.md`** for prompt-wording pitfalls found during playtesting — they recur with every new action regardless of model.
 
 Before adding a new generic multi-scenario action, a new per-player visibility mechanic, or a new admin reset/cleanup command, check **`docs/engineering-pitfalls.md`** — engine/architecture mistakes (missing role checks, Evennia's superuser lock bypass, reset tools that only know about current config, orphaned objects, incomplete turn logging) caught live during phase 2; they're a different kind of recurring bug than the prompt-wording ones above.
 
@@ -100,6 +100,16 @@ Work on this project runs in parallel lanes, each in its own git worktree and br
 | **Playtest review** | `docs/playtest-findings.md` | Fix anything - it reports, the project owner triages |
 
 Need lore a lane doesn't have? Add an entry to `docs/lore-requests.md` (format in that file) instead of inventing it. Found a bug or pain point reviewing a playtest? Add or update an entry in `docs/playtest-findings.md` (format in that file) rather than fixing it directly.
+
+## Lore approval
+
+The Lore lane's changes come in two kinds, and only one needs the project owner.
+
+- **Lore approves its own work** when the change adds no new setting facts: applying a decision the owner already made (renames, moving errands), consistency fixes, behaviour wording in persona prose (trigger bars, redirects), and rewording or excerpting material the bible already holds as Established. Lore marks these `approval: Approved` itself. It records what changed in the commit message and, for a lore request, in the request's Resolution. Playtests are the review for behaviour wording.
+- **The owner approves new canon:** anything that makes something true in the world that wasn't before. That means new facts, names, places, history, details of the peoples, an NPC's backstory, or promoting bible material to Established. Lore leaves these as `Draft`, and the export refuses Draft markers, so nothing reaches the game. Lore lists them for the owner in plain language, one line per new item, saying what it is and where it goes, with no diff to read. The owner approves or rejects each item, and Lore removes the markers for the approved ones.
+- If one change mixes both kinds, only the new-canon part waits. When unsure which kind something is, treat it as new canon.
+
+This doesn't change the bible's Established/Provisional/Unresolved tagging or hard rule 4.
 
 ## Working style
 

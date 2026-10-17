@@ -1,6 +1,6 @@
 # Lore request queue
 
-Any lane that needs lore it doesn't have adds an entry here instead of inventing it (CLAUDE.md hard rule 7). The Lore lane works through the queue; Jordan approves resolutions.
+Any lane that needs lore it doesn't have adds an entry here instead of inventing it (CLAUDE.md hard rule 7). The Lore lane works through the queue. Lore approves resolutions that add no new canon itself; anything that does goes to Jordan as a plain-language list (CLAUDE.md, "Lore approval").
 
 Format (see `docs/game-plan.md` Section 4):
 
@@ -13,6 +13,7 @@ Format (see `docs/game-plan.md` Section 4):
 - What's needed: <specific question or content>
 - Blocking: yes | no
 - Status: open | drafted | approved | rejected
+- Approved by: lore | owner
 - Resolution: <bible section or content file, once approved>
 ```
 
