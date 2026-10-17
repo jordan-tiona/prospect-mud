@@ -30,6 +30,7 @@ These are scoped priorities, not an implementation roadmap with dates or deadlin
 - What are Prospect's principal biomes, native organisms, and geographical landmarks?
 - What are the precise official names, electoral systems, legal procedures and jurisdiction of Elsewhere's civic institutions?
 - What are the final species physiologies and any subtle biological bonuses?
+- Are the seven working species names memorable enough for players (owner concern raised 2026-10-16: seven coined names with no human baseline, several sharing sounds - three end in *-ari*, two begin *Ae-*/*-ae-*, two end *-yrin*/*-ren*)? Options under consideration: revise the colliding names (they are working names), present the chargen picker grouped 3 ancestral / 1 hybrid-descended / 3 engineered with a visual tag per name, or reduce the playable set for the playtest. No decision yet; the names stay as adopted.
 - What precise biological processes on Prospect made practical Venn–Saye dynamics possible, and when were those advances made?
 - What are the exact identities and biographies of Venn and Saye?
 
