@@ -26,7 +26,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 07:47 / 07:59
 - Evidence: Veska, "What do you do?": the first reply answered ("I handle paperwork and keep records straight…"), the reaction pass replaced it with the parcel pitch, and the player asked again ("But what do you do?"). Iri's history answer was replaced by the planting-bed pitch. Daven, twice: suggestions (the square, the café, the Civic Office) were replaced by a bare route. Given, "I think I'm gonna be sick": reassurance replaced by directions.
 - Notes: The follow-up call sends the first reply back as the model's own earlier turn, so the model writes its reaction as a continuation (just the route, just the pitch). `commands/say.py` then shows only the reaction for FORCE_REACTION_ACTIONS, so the part the reaction assumed was already said is never seen. Hiding the first reply is deliberate when a call is rejected (engineering pitfall #8). Every case here had all calls applied.
-- Status: fixed in e33a3ed (awaiting live verify)
+- Status: fixed in e33a3ed; verified live 2026-10-17 14:45 (Veska answered "what do you do?", then made the offer)
 
 ## PF-0002: give_directions fires when nobody asked the way
 - Category: NPC/canon issue
@@ -49,11 +49,11 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 ## PF-0004: remember_fact stores fabricated player facts
 - Category: bug
 - Severity: high
-- Occurrences: 3, players affected: 1
-- First seen / last seen: 2026-10-17 08:01 / 08:07
-- Evidence: Tarin, "What race are you?" → remember_fact "Drask" (his own species). Next turn, "What race am I?" → "You mentioned you're Drask too.", remember_fact "Player is Drask". Mara stored "asked Mara about her race".
+- Occurrences: 4, players affected: 1
+- First seen / last seen: 2026-10-17 08:01 / 14:53
+- Evidence: Tarin, "What race are you?" → remember_fact "Drask" (his own species). Next turn, "What race am I?" → "You mentioned you're Drask too.", remember_fact "Player is Drask". Mara stored "asked Mara about her race". Again at 14:53: "So which of the seven peoples are you?" → remember_fact "is Drask".
 - Notes: Against hard rule 6's spirit: the stored memory isn't something the player said about themselves. Owner question: should NPCs see a player's species, since it's visible appearance?
-- Status: triaged → Dev (wording); owner decision pending on species visibility
+- Status: fixed in 919676d (engine checks the player's quoted words); owner leaning towards NPCs seeing a player-written short description
 
 ## PF-0005: Tarin knew about the module before it was mentioned
 - Category: NPC/canon issue
@@ -62,7 +62,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 08:08
 - Evidence: "Actually, it's for Mara." → "If it's the faulty heating-unit module, I need to inspect it first." Then "you're the first to mention it today", then "It's a routine part of the job here."
 - Notes: The engine state in his prompt says the player carries the faulty module; nothing tells him not to act on it until the player brings it up.
-- Status: fixed in edeab42 (awaiting live verify)
+- Status: fixed in edeab42 ; verified live 2026-10-17 14:49 (Tarin waited for the player to raise it)
 
 ## PF-0006: Iri calls the Revari "mixed ancestry"
 - Category: NPC/canon issue
@@ -99,3 +99,23 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - Evidence: Quest events from actors Tester, Hunter, Other and EvalActor in the live log; three truncated lines (3431, 6687, 9061) from parallel test runs writing at once.
 - Notes: Pollutes playtest analysis and corrupts the file.
 - Status: fixed in ad72263 (old test lines are still in the existing log)
+
+Playtest of 2026-10-17, 14:42–14:53 UTC, one player (the owner), after the fixes above.
+
+## PF-0010: Veska offers the parcel on small talk
+- Category: NPC/canon issue
+- Severity: medium
+- Occurrences: 1, players affected: 1
+- First seen / last seen: 2026-10-17 14:45
+- Evidence: "So what do you do around here?" → she answered, then offered the parcel (propose_commitment applied). The player hadn't asked about it, and the parcel sits on her counter as the passive cue.
+- Notes: Her persona says the parcel "comes up when someone makes conversation with you - including a general "how are you" or "anything I can help with" question", so she followed it. Tarin's bar is the opposite ("A generic "you alright?" ... is never enough"). Persona prose, so Lore: raise her bar to the parcel itself or an offer of help.
+- Status: triaged → Lore
+
+## PF-0011: Mara records the player's help before they agree
+- Category: NPC/canon issue
+- Severity: low
+- Occurrences: 1, players affected: 1
+- First seen / last seen: 2026-10-17 14:47
+- Evidence: "Man it's cold in here." → she explained and asked "You wouldn't happen to be up for helping with that, would you?", and called accept_help in the same turn. The player said yes on the next turn and got the module.
+- Notes: Harmless here (the player said yes), but a player who said no would still have the errand marked accepted. accept_help means the player agreed. Dev: check her `## Actions` wording for accept_help; if it recurs after that, it needs an offered state like the commitments have.
+- Status: new
