@@ -11,6 +11,8 @@ import json
 import tempfile
 from pathlib import Path
 
+from unittest.mock import patch
+
 from django.test import SimpleTestCase, TestCase
 from evennia import create_account, create_object
 
@@ -24,6 +26,7 @@ from world.session_log import (
     log_session_start,
     log_unknown_command,
     session_id_for,
+    set_session_id,
 )
 
 
@@ -186,6 +189,28 @@ class SessionIdForTests(TestCase):
         )
         account = create_account("TesterAccount", "tester@example.com", "zqv-prospect-test-9273")
         character.account = account
-        account.ndb.session_id = "abc123"
+        set_session_id(account, "abc123")
 
         self.assertEqual(session_id_for(character), "abc123")
+
+    def test_session_id_survives_a_reload(self):
+        # PF-0008: on ndb, a reload wiped it and command logging stopped
+        # for every player still connected.
+        character = create_object(
+            "typeclasses.characters.Character", key="Tester", location=self.room, home=self.room
+        )
+        account = create_account("TesterAccount", "tester@example.com", "zqv-prospect-test-9273")
+        character.account = account
+        set_session_id(account, "abc123")
+        account.nattributes.clear()
+
+        self.assertEqual(session_id_for(character), "abc123")
+
+
+class DefaultLogPathTests(SimpleTestCase):
+    def test_tests_never_write_to_the_real_log(self):
+        # PF-0009: quest/commitment tests were appending to the real
+        # sessions.jsonl, and parallel workers truncated lines in it.
+        with patch("pathlib.Path.open") as mock_open:
+            log_session_start(session_id="abc", account_key="Tester")
+        mock_open.assert_not_called()

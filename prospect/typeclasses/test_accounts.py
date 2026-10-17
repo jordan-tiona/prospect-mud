@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from evennia import create_account
+from world.session_log import account_session_id
 
 
 class AccountSessionLoggingTests(TestCase):
@@ -22,17 +23,17 @@ class AccountSessionLoggingTests(TestCase):
     def test_post_login_generates_and_logs_a_session_id(self, mock_log_start):
         self.account.at_post_login(session=None)
 
-        session_id = self.account.ndb.session_id
+        session_id = account_session_id(self.account)
         self.assertTrue(session_id)
         mock_log_start.assert_called_once_with(session_id=session_id, account_key="Tester")
 
     @patch("typeclasses.accounts.log_session_start")
     def test_each_login_gets_a_fresh_session_id(self, mock_log_start):
         self.account.at_post_login(session=None)
-        first_id = self.account.ndb.session_id
+        first_id = account_session_id(self.account)
 
         self.account.at_post_login(session=None)
-        second_id = self.account.ndb.session_id
+        second_id = account_session_id(self.account)
 
         self.assertNotEqual(first_id, second_id)
 
@@ -40,7 +41,7 @@ class AccountSessionLoggingTests(TestCase):
     @patch("typeclasses.accounts.log_session_start")
     def test_disconnect_logs_the_same_session_id_from_login(self, mock_log_start, mock_log_end):
         self.account.at_post_login(session=None)
-        session_id = self.account.ndb.session_id
+        session_id = account_session_id(self.account)
 
         self.account.at_disconnect(reason="quit")
 

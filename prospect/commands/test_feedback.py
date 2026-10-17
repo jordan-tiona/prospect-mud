@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from evennia import create_account, create_object
+from world.session_log import set_session_id
 
 _PASSWORD = "zqv-prospect-test-9273"
 
@@ -22,7 +23,7 @@ class FeedbackCommandTests(TestCase):
         )
         account = create_account("FeedbackTesterAccount", "feedbacktester@example.com", _PASSWORD)
         self.addCleanup(account.delete)
-        account.ndb.session_id = "session-abc"
+        set_session_id(account, "session-abc")
         self.actor.account = account
         self.messages = []
         self.actor.msg = lambda text="", **kw: self.messages.append(text)

@@ -26,12 +26,30 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from django.conf import settings
+
 # world/session_log.py -> parents[1] is the game dir (prospect/)
 DEFAULT_LOG_PATH = Path(__file__).resolve().parents[1] / "server" / "logs" / "sessions.jsonl"
 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# Where an account's current login session_id is kept. An Attribute,
+# not ndb: `evennia reload` wipes ndb while players stay connected, so
+# every command after a reload went unlogged (docs/playtest-findings.md
+# PF-0008). at_post_login overwrites it on each login.
+SESSION_ID_ATTRIBUTE = "session_id"
+SESSION_ID_CATEGORY = "session_log"
+
+
+def set_session_id(account, session_id: str) -> None:
+    account.attributes.add(SESSION_ID_ATTRIBUTE, session_id, category=SESSION_ID_CATEGORY)
+
+
+def account_session_id(account) -> Optional[str]:
+    return account.attributes.get(SESSION_ID_ATTRIBUTE, category=SESSION_ID_CATEGORY)
 
 
 def session_id_for(character) -> Optional[str]:
@@ -46,10 +64,16 @@ def session_id_for(character) -> Optional[str]:
     account/ndb lookup.
     """
     account = getattr(character, "account", None)
-    return account.ndb.session_id if account else None
+    return account_session_id(account) if account else None
 
 
 def _write(record: dict, path: Optional[Path]) -> None:
+    if path is None and getattr(settings, "TEST_ENVIRONMENT", False):
+        # Tests exercising quest/commitment code would otherwise append
+        # to the real playtest log, and parallel workers writing at once
+        # left truncated lines in it (PF-0009). Tests of this module
+        # pass an explicit path.
+        return
     target_path = path or DEFAULT_LOG_PATH
     target_path.parent.mkdir(parents=True, exist_ok=True)
     with target_path.open("a", encoding="utf-8") as f:

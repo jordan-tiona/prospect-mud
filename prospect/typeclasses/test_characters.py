@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from evennia import create_account, create_object
+from world.session_log import set_session_id
 
 _PASSWORD = "zqv-prospect-test-9273"
 
@@ -29,7 +30,7 @@ class RoomChangedEventTests(TestCase):
     def test_logs_room_changed_for_a_character_with_a_session_id(self, mock_log):
         account = create_account("RoomTesterAccount", "roomtester@example.com", _PASSWORD)
         self.addCleanup(account.delete)
-        account.ndb.session_id = "session-abc"
+        set_session_id(account, "session-abc")
         self.character.account = account
 
         self.character.move_to(self.room_b, quiet=True)

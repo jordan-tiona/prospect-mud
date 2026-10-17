@@ -21,6 +21,7 @@ from django.test import TestCase
 from evennia import create_account, create_object
 
 from commands.command import Command, CmdNoMatch
+from world.session_log import set_session_id
 
 _PASSWORD = "zqv-prospect-test-9273"
 
@@ -42,7 +43,7 @@ class SessionCommandLoggingTests(TestCase):
     def test_logs_a_command_for_a_character_with_a_session_id(self, mock_log_command):
         account = create_account("TesterAccount", "tester1@example.com", _PASSWORD)
         self.addCleanup(account.delete)
-        account.ndb.session_id = "session-abc"
+        set_session_id(account, "session-abc")
         self.actor.account = account
 
         self._make_cmd(self.actor, raw_input="look north").at_pre_cmd()
@@ -86,7 +87,7 @@ class SessionCommandLoggingTests(TestCase):
         # themselves.
         account = create_account("TesterAccount3", "tester3@example.com", _PASSWORD)
         self.addCleanup(account.delete)
-        account.ndb.session_id = "session-xyz"
+        set_session_id(account, "session-xyz")
         thing = create_object(
             "typeclasses.objects.Object", key="a non-character thing", location=self.room
         )
@@ -102,7 +103,7 @@ class SessionCommandLoggingTests(TestCase):
         # - logging must never do that.
         account = create_account("TesterAccount4", "tester4@example.com", _PASSWORD)
         self.addCleanup(account.delete)
-        account.ndb.session_id = "session-abc"
+        set_session_id(account, "session-abc")
         self.actor.account = account
 
         result = self._make_cmd(self.actor).at_pre_cmd()
@@ -138,7 +139,7 @@ class NoMatchCommandTests(TestCase):
     def test_logs_for_a_character_with_a_session_id(self, mock_log_unknown):
         account = create_account("TesterAccount5", "tester5@example.com", _PASSWORD)
         self.addCleanup(account.delete)
-        account.ndb.session_id = "session-abc"
+        set_session_id(account, "session-abc")
         self.actor.account = account
 
         self._make_cmd(self.actor).func()
@@ -162,7 +163,7 @@ class NoMatchCommandTests(TestCase):
     def test_does_not_log_for_a_non_character_caller(self, mock_log_unknown):
         account = create_account("TesterAccount6", "tester6@example.com", _PASSWORD)
         self.addCleanup(account.delete)
-        account.ndb.session_id = "session-xyz"
+        set_session_id(account, "session-xyz")
         thing = create_object(
             "typeclasses.objects.Object", key="a non-character thing", location=self.room
         )
