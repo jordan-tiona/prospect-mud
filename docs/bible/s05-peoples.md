@@ -73,11 +73,12 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 
 ### 5.9 Provisional personal-name guidance
 
-**Status:** Approved by the project owner 2026-10-16 as creative guidance (owner's note: approved as a working basis for a name generator, to be judged against its output later; illustrative names corrected 2026-10-17 after a Tools-lane check found several breaking their own rows). Rewritten by the Lore lane after the species rename so that each people's personal names (a) sound as if they come from the same language as the people's own name, (b) are distinguishable from every other people's names, and (c) are specified tightly enough for a Tools-lane name generator. It remains creative guidance, **not established linguistic or cultural canon**: there is still no settled language family, etymology or species-wide naming law, no existing character is to be renamed, and a resident's family, upbringing and personal choice can override any of it.
+**Status:** Approved by the project owner 2026-10-16 as creative guidance (owner's note: approved as a working basis for a name generator, to be judged against its output later; illustrative names corrected 2026-10-17 after a Tools-lane check found several breaking their own rows; rows widened 2026-10-17 after the owner judged the first generator output too repetitive, see the revision history for 0.4.9). Rewritten by the Lore lane after the species rename so that each people's personal names (a) sound as if they come from the same language as the people's own name, (b) are distinguishable from every other people's names, and (c) are specified tightly enough for a Tools-lane name generator. It remains creative guidance, **not established linguistic or cultural canon**: there is still no settled language family, etymology or species-wide naming law, no existing character is to be renamed, and a resident's family, upbringing and personal choice can override any of it.
 
 **Shared rules for every people, and for any generator:**
 
 - **Structure:** every existing character uses a given name and a family name (Daven Varek, Tarin Os, Veska Renn, Iri Vael, Mara Voss, Given Marr, Sera Venn, Talin Saye). Whether any people uses a single name, a patronymic or another structure is **unresolved**; until decided, generate given + family for all seven, with the family name drawn from the same table as the given name.
+- **Length:** within a row's range, lean toward the longer end. One-syllable parts should be a minority wherever a row allows them at all: three-letter names drawn from a three-vowel set are indistinguishable at a glance (Kon, Ker, Kem), and the first generator output showed it.
 - **Readability:** no name may need a pronunciation note. No *ae*, *ei*, *y*-as-vowel in a stressed syllable, or apostrophes. If it cannot be read aloud on first sight, reject it.
 - **Exclusions:** never emit the seven peoples' names (Kell, Drask, Lirra, Revari, Astrel, Voldren, Selk), the superseded names (Kethari, Sylari, Aevyrin, Naevari, Otheryn, Neshyr), place or field names (Prospect, Haven, Elsewhere, Venn, Saye), existing character names, or any English dictionary word (a text game and the NPC model both read *Silk* as cloth). Translated descriptive surnames are the one deliberate exception, and only where a row allows them.
 - **Borrowing:** cosmopolitan Elsewhere should show overlap. A generator may draw a minority of names from a neighbouring people's table; the proportion is a Tools-lane choice, and the Revari table is built from borrowing by design.
@@ -85,21 +86,21 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 
 #### Kell
 
-- **Syllables (given / family):** 1–2 / 1–2
+- **Syllables (given / family):** 2–3 / 1–2
 - **Onsets:** Hard stop: *k, t, d, b, g*
 - **Vowels:** *a, e, o*
 - **Endings:** Soft single consonant: *-l, -n, -m, -r*
-- **Avoid:** Sibilants; clusters, including doubled consonants; open-vowel endings
-- **Illustrative output (not canon):** Kedan Tolar, Dorem Gabel, Tam Bodon
+- **Avoid:** Sibilants; clusters, including doubled consonants; open-vowel endings; one-syllable given names
+- **Illustrative output (not canon):** Kedan Tolar, Dorem Gabel, Bodaren Kem
 
 #### Drask
 
-- **Syllables (given / family):** 1–2 / 1
+- **Syllables (given / family):** 1–2 / 1–2
 - **Onsets:** Clusters: *dr, tr, kr, br, sk, st*
 - **Vowels:** Short *a, o, u*
 - **Endings:** Hard: *-k, -t, -s, -sk, -st*
 - **Avoid:** Liquids as the only consonants; vowel endings; more than two syllables
-- **Illustrative output (not canon):** Krast Trak, Stobak Drosk, Krotas Brust
+- **Illustrative output (not canon):** Krast Trak, Stobak Drosk, Krotas Brudast
 
 #### Lirra
 
@@ -130,21 +131,21 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 
 #### Voldren
 
-- **Syllables (given / family):** 2 / 2, or a translated surname
+- **Syllables (given / family):** 2–3 / 2, or a translated surname
 - **Onsets:** Voiced: *v, b, d, g*
 - **Vowels:** *a, o, u*
-- **Endings:** *-ar, -or, -ur, -en*, after a heavy middle cluster (*-ld-, -rd-, -nd-, -rg-*)
+- **Endings:** *-ar, -or, -ur, -en*, after a heavy middle cluster (*-ld-, -rd-, -nd-, -rg-*). A plain *-l-, -r-, -n-, -d-* may join the other syllables, but every name part keeps at least one heavy cluster
 - **Avoid:** Light or liquid-only names; one-syllable given names
-- **Illustrative output (not canon):** Vordar Bargor, Goldur Dandor, Vundar Stonebreaker
+- **Illustrative output (not canon):** Vordar Bargor, Gandalor Dandor, Vundar Stonebreaker
 
 #### Selk
 
-- **Syllables (given / family):** 1–2 / 1
+- **Syllables (given / family):** 1–2 / 1–2
 - **Onsets:** Sibilant or soft: *s, sh, th, m*
 - **Vowels:** *e, i, u*
 - **Endings:** Closed consonant: *-k, -l, -m, -n, -sk*
 - **Avoid:** Open-vowel endings; *r*-heavy names; three syllables
-- **Illustrative output (not canon):** Sulim Thesk, Selm Mesk, Mithen Thul
+- **Illustrative output (not canon):** Sulim Thesk, Selm Mesk, Mithen Thulim
 
 **Open questions for the owner, not answered here:** whether the engineered peoples' naming customs carry any trace of their history as assigned labour (names given by a commission, reclaimed names, chosen names at emancipation), whether any people uses a structure other than given + family, and whether family names pass down one line or both. Any of those would change a row's structure column and should be decided before the generator is treated as more than a placeholder.
 
