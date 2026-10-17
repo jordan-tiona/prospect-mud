@@ -5,6 +5,8 @@ approval: Approved
 bible_refs: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8
 purpose: short player-facing entries shown during character creation when the player chooses a people (docs/prospect-initial-playtest-design-spec.md Section 3). Each ## heading matches an entry in world/chargen.py's SPECIES_CHOICES exactly, so code can key on it. Drafted by the Lore lane 2026-10-16 at the project owner's request; approved by the owner the same day (pronunciation notes removed at their request). The owner plans a later worldbuilding session on the peoples' physical details; the Provisional anatomy noted below is the input for that. Renamed 2026-10-16 on the owner's decision (bible 0.4.6): Kethari → Kell, Sylari → Drask, Aevyrin → Lirra, Naevari → Revari, Otheryn → Astrel, Neshyr → Selk. The ## headings must keep matching SPECIES_CHOICES, so this file only takes effect once Dev applies LR-LORE-0001 in the same merge.
 
+Group headings (2026-10-17, LR-LORE-0002): the three `## ` headings that are not a people's name ("Ancestral peoples", "Descended from all three", "Engineered peoples") group the entries that follow them, each with a one-line note, so the picker can show the bible's classification (5, 5.8) instead of a flat list of seven names. `world/chargen.py` currently keeps only headings in SPECIES_CHOICES, so these are ignored until Dev applies LR-LORE-0002; nothing breaks meanwhile. The group wording is a reading of bible 5's opening paragraph, 5.4-5.8 and common-knowledge.md, no new facts.
+
 Only Established canon is used in the visible text. Where bible 5 marks anatomy as Provisional (Astrel build, Voldren build, Selk sharklike look, Lirra beak and flight structures, specific Revari traits), it is left out of the entry and noted in a comment under it, so the owner can decide whether to promote any of it. Wiring these into the chargen prompt is Dev-lane work.
 -->
 
@@ -12,7 +14,11 @@ Only Established canon is used in the visible text. Where bible 5 marks anatomy 
 
 <!-- Optional shared preface; drop it if the picker only has room for per-entry text. -->
 
-All seven peoples came to Prospect together, aboard the nine generation ships that left their shared home system long ago. Three are ancestral peoples, one descends from all three, and three were engineered in the home system for dangerous work. On Elsewhere, every one of them holds the same citizenship.
+All seven peoples came to Prospect together, aboard the nine generation ships that left their shared home system long ago. Three are ancestral peoples, one descends from all three, and three were engineered in the home system for dangerous work. On Elsewhere, every one of them holds the same citizenship. Your people shapes how you look, not who you are or what work you can take up.
+
+## Ancestral peoples
+
+The three original civilizations of the home system.
 
 ## Kell
 
@@ -32,11 +38,19 @@ Feathered, avian-influenced people, lighter in frame than the other ancestral pe
 
 <!-- Left out as unresolved in bible 5.3: beak or birdlike facial anatomy, any flight-related structures, flightlessness. "Lighter in frame" paraphrases 5.3's "distinctive balance, skeletal proportions"; cut it if that reads as more than the bible says. -->
 
+## Descended from all three
+
+A long-established people with ancestry from the Kell, Drask and Lirra alike.
+
 ## Revari
 
 A long-established people whose ancestry draws on the Kell, Drask and Lirra alike. Most resemble the furred Kell in general build, but individuals carry varying inherited traits from all three lines, so no two families look quite the same. They are a people in their own right, not a mixture, and their name is their own.
 
 <!-- Left out as visual proposals in bible 5.4: localized scales, feathered crests, differing ear or tail shapes. The origin of their cross-ancestry is unresolved and not mentioned. -->
+
+## Engineered peoples
+
+Made in the home system, long ago, for dangerous work in orbit, underground and underwater. Their ancestors were once legally property; on Elsewhere they are citizens like anyone else.
 
 ## Astrel
 

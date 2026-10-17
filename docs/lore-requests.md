@@ -167,3 +167,33 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Blocking: no (the generator works without it; Voldren output just lacks this form)
 - Status: approved (2026-10-17; `content/names/voldren-translated-surnames.md` is `approval: Approved` with the work-derived reading accepted. **Tools:** the generator may draw from it; frequency about one in four unless you prefer otherwise)
 - Resolution: (1) `content/names/voldren-translated-surnames.md` drafted with sixteen surnames on the *Stonebreaker* pattern, `approval: Draft`, one per line under the heading; the generator must not use it until the owner approves. Every entry is work-derived, which implies Voldren families kept the names of their engineered trade as heritage - the owner should confirm that reading or ask for some non-work entries before approving. (2) Frequency is Tools' call; the Lore lane's suggestion is about one in four. (3) No other people uses translated surnames until the owner says so; 5.9 stays as written.
+
+## LR-LORE-0002: Group the chargen species picker by origin, with a note
+- Requested by: lore (owner asked 2026-10-17 to pick up a suggestion from an earlier session)
+- Needed for: character creation (`prospect/commands/chargen.py`, `_SPECIES_MENU`; `prospect/world/chargen.py`, `parse_species_text`). The picker today is a flat numbered list of seven unfamiliar names, and the bible's own classification (Section 5 opening paragraph: three ancestral peoples, one descended from all three, three engineered) reaches the player only as one sentence of preface prose above it. A new player has nothing to steer by before opening entries one at a time.
+- What's needed: render the menu in three groups, each with its one-line note, numbering kept continuous so `validate_species` by index is unchanged. The group headings and notes are now authored in `content/species.md` as `## ` headings that are not a people's name (the parser currently drops them, so nothing shows yet); Dev decides the mechanism, e.g. treat any non-species `## ` heading as a group header whose body is the note and whose members are the species headings that follow it, and build the menu from `load_species_entries()` rather than at import. Proposed rendering (notes in the description color, headings in the title color used by `_species_entry`):
+
+```
+  Ancestral peoples
+  The three original civilizations of the home system.
+    1. Kell
+    2. Drask
+    3. Lirra
+
+  Descended from all three
+  A long-established people with ancestry from the Kell, Drask and Lirra alike.
+    4. Revari
+
+  Engineered peoples
+  Made in the home system, long ago, for dangerous work in orbit, underground and underwater. Their ancestors were once legally property; on Elsewhere they are citizens like anyone else.
+    5. Astrel
+    6. Voldren
+    7. Selk
+```
+
+  The preface (shown once before the menu) also gained the note the owner remembered: "Your people shapes how you look, not who you are or what work you can take up" (bible 5.8). Once the grouped menu renders, Lore will trim the preface's "Three are ancestral peoples, one descends from all three, and three were engineered..." sentence, since the group notes then carry it; it stays until then so the classification is still visible somewhere.
+- Not needed: any change to the seven per-people entries or to `SPECIES_CHOICES`; no new canon (group wording is a reading of bible 5, 5.4-5.8 and `content/common-knowledge.md`).
+- Blocking: no (picker works as before until applied)
+- Status: drafted
+- Approved by: lore
+- Resolution: content side done on `lore` 2026-10-17 (`content/species.md`: three group headings with notes, one preface sentence). Dev: render the groups; tell Lore when it lands so the preface can be trimmed. `prospect/world/test_chargen.py`'s fixture heading `## Not A Listed People` currently asserts that unknown headings are dropped; it becomes a group header under the new reading, so adjust that test's expectation with the parser.
