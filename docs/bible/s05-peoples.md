@@ -228,5 +228,34 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 
 **Open questions for the owner, not answered here:** whether the engineered peoples' naming customs carry any trace of their history as assigned labour (names given by a commission, reclaimed names, chosen names at emancipation), whether any people uses a structure other than given + family, and whether family names pass down one line or both. Any of those would change a row's structure column and should be decided before the generator is treated as more than a placeholder.
 
----
+### 5.10 Sex differences, lifespans and iris colours — Draft proposal
 
+**Status:** Lore-lane proposal written 2026-10-17 at the owner's request, after the physical descriptions in 5.1–5.7 were approved. **Draft, pending the owner's decision**; nothing here is Established, and no content file uses it. Each heading can be approved, changed or rejected on its own. Once decided, the approved items move into the people's own entries and this subsection is removed.
+
+**Principles the proposal follows:** a difference between the sexes is visible enough that a description can say "a Kell woman" and a reader could have told; it never affects capability (5.8); it maps onto character creation's male/female choice; and no one sex is "the larger one" across all seven peoples. Lifespans stay near a human scale so that "generations ago" and "~150 years since the Bloom" keep the weight the bible gives them. The bible does not define the length of a year; the figures assume a year close to an Earth year under the translation convention (Section 2).
+
+**Sex differences:**
+
+- **Kell.** Same height. Males carry the full 25–30 cm ruff, which lifts more readily; females' ruff is shorter, 15–20 cm, ending between the shoulder blades, and their tail crest is longer instead. Male voices are lower. Dress is the same.
+- **Drask.** Females are the larger and heavier sex, at the top of the 95–110 kg range; males are lighter, with more pronounced brow-to-neck shingling and brighter banding. The reverse of the usual expectation, on purpose.
+- **Lirra.** Same size. The "crest is the brighter colour" rule is strongest in males; a female's crest usually matches her body colour, and her tail plume is longer.
+- **Revari.** Follow the Kell pattern (ruff length, tail crest, voice).
+- **Astrel, Voldren, Selk.** Little visible difference beyond reproductive anatomy and voice, with one light tell each: Astrel males' skin mottles earlier; Voldren females' brow ridge is lower; Selk males' countershading boundary sits higher on the flank. *(The engineered peoples' low dimorphism is written as a plain fact about them, with no claim about why the Commissions made them that way; if the owner wants a reason, that is a history decision for Section 4.)*
+
+**Lifespans (typical, in good health; "elderly" is when the ageing cues in 5.1–5.7 are plain):**
+
+| People | Typical lifespan | Adult by | Elderly from | Note |
+|---|---|---|---|---|
+| Kell | ~90 | ~18 | ~70 | Greying muzzle and ears |
+| Drask | ~120 | ~25 | ~95 | Slow to mature; scales dull and thicken at the edges with age (new cue) |
+| Lirra | ~70 | ~15 | ~55 | Fast to mature; moult thins and slows |
+| Revari | ~90 | ~18 | ~70 | As the Kell |
+| Astrel | ~85 | ~18 | ~65 | Skin mottling |
+| Voldren | ~95 | ~18 | ~75 | Skin cracking |
+| Selk | ~85 | ~18 | ~65 | Skin paling |
+
+Nothing in the engineered peoples' making shortens their lives. One consequence to accept or avoid: the Bloom (~150 years ago) falls within two Drask lifetimes, so an old Drask on Elsewhere could have known someone who saw Haven fall.
+
+**Kell iris colours (and, by extension, Revari):** amber, gold, copper, pale green and grey, with blue rare; no link between iris and coat colour. The reflective layer gives a green-gold eyeshine in dim light. Revari draw from the same set, with the pale Lirra-type iris as the inherited trait 5.4 already allows, and the same eyeshine.
+
+---
