@@ -87,10 +87,10 @@ class BuildQuestPropsTests(TestCase):
             "typeclasses.characters.Character", key="Tester", location=self.rooms["corner_cafe"]
         )
 
-    def test_builds_the_parcel_prop_in_the_cafe(self):
+    def test_builds_the_parcel_prop_in_the_civic_office(self):
         props = build()
         parcel = props["misdelivered_parcel_hint"]
-        self.assertEqual(parcel.location, self.rooms["corner_cafe"])
+        self.assertEqual(parcel.location, self.rooms["civic_office"])
         self.assertTrue(parcel.is_typeclass("typeclasses.objects.RoomObject", exact=False))
 
     def test_rerun_does_not_duplicate(self):
@@ -176,3 +176,5 @@ class BuildQuestPropsTests(TestCase):
                 "typeclasses.objects.CommitmentHintObject", exact=True
             )
         )
+        # The stale one sat in the café, its pre-2026-10-16 room: moved, not orphaned.
+        self.assertEqual(props["misdelivered_parcel_hint"].location, self.rooms["civic_office"])

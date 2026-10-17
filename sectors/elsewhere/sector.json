@@ -3,7 +3,7 @@
     "civic_information_display": {
       "content": "objects/civic_information_display.md",
       "kind": "revision_display",
-      "room": "corner_cafe"
+      "room": "daven_office"
     },
     "civic_office_skitter_ledger": {
       "aliases": [
@@ -78,7 +78,7 @@
         "commitment_type": "deliver_parcel",
         "visibility": "commitment_hint_visible"
       },
-      "room": "corner_cafe"
+      "room": "civic_office"
     },
     "old_quarter_square_signpost": {
       "content": "objects/old_quarter_square_signpost.md",

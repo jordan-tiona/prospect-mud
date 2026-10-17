@@ -1,7 +1,7 @@
 """
 Phase 2D's civic information display (docs/phase2-quest-prototype-
-design.md §14): one typeclasses.objects.RevisionDisplayObject in the
-café, visible to everyone - only its examined content is per-player
+design.md §14): one typeclasses.objects.RevisionDisplayObject in
+Daven's office, visible to everyone - only its examined content is per-player
 (see that class and world/noticeboard.py).
 
 Since MUD Editor Step C (docs/build-sector-proposal.md) this is a thin

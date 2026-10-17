@@ -7,7 +7,7 @@
       },
       "key": "a civic information display",
       "kind": "revision_display",
-      "room": "corner_cafe",
+      "room": "daven_office",
       "tag_category": "noticeboard_prop",
       "typeclass": "typeclasses.objects.RevisionDisplayObject"
     },
@@ -180,13 +180,13 @@
       "aliases": [],
       "attributes": {
         "desc": "A small, plainly wrapped parcel. The shipping label reads: \"Tarin Os, Maintenance Workshop.\" It was clearly meant to go there, not here.",
-        "probe_desc": "The wrapping is plain, folded tight and taped at the seams, and the parcel looks heavy for its size, the compact shape of something mechanical rather than anything soft. The label is printed, not handwritten: \"Tarin Os, Maintenance Workshop,\" with a short routing code beneath it that would mean something only to a courier. There is no sender's name. Someone has set it to one side of the counter, out of the way of the cups, where it has gathered a small ring of crumbs.",
-        "room_line": "A small parcel sits on the counter, unopened."
+        "probe_desc": "The wrapping is plain, folded tight and taped at the seams, and the parcel looks heavy for its size, the compact shape of something mechanical rather than anything soft. The label is printed, not handwritten: \"Tarin Os, Maintenance Workshop,\" with a short routing code beneath it that would mean something only to a courier. There is no sender's name. Someone has set it squarely at the records end of the counter, lined up with the trays beside it as if whoever put it there couldn't stand to leave it crooked, and it has plainly sat there longer than anything else on that counter is meant to.",
+        "room_line": "A small parcel sits at the records end of the public counter, unopened."
       },
       "key": "a small parcel",
       "kind": "quest_prop",
       "locks": "view:commitment_hint_visible(deliver_parcel);search:commitment_hint_visible(deliver_parcel);get:false()",
-      "room": "corner_cafe",
+      "room": "civic_office",
       "tag_category": "quest_prop",
       "typeclass": "typeclasses.objects.CommitmentHintObject"
     },
@@ -519,17 +519,17 @@
     "content/ambient/objects/concourse_arrival_directory.md": "7e5fdeb3bc267670f33d0e69f364f71035a0a022a75ecd3ddec302d8deaf27b0",
     "content/ambient/objects/square_noticeboard.md": "3c4c5759a41f5f784dce9926048a184c87fe1ba516ab06b71b74ed2414be8a9c",
     "content/ambient/objects/workshop_parts_tray.md": "f9498d0b8a514f1bf65f2f541fe3f3b0952c6cc7ddcd4bdb1d6a42df581f45b9",
-    "content/npcs/daven_varek.md": "777d6bd6a114bf55a6776704d15fc5104db9c4f23dce06a90738921cf1d199a9",
-    "content/npcs/given_marr.md": "3ca9b578e94b502fb3b245601ec92d4b09c13e9b9ce5593e012bbfab14f8aa7a",
-    "content/npcs/iri_vael.md": "4ee8dd3b1d5bdc4624b3a0bea8571d1234c6c7df22d5e204721088a1b8d4b912",
-    "content/npcs/mara_voss.md": "0106e85bd400454f9c7a763cdba44a4e06cd5066315f3387dc04c14c71d5155b",
-    "content/npcs/tarin_os.md": "4c06ea0282a07f6d4785e81dee544769d9563979881dd5ff1ac146ba68f965e1",
-    "content/npcs/veska_renn.md": "d32ad9fabc05154d310b3d554017799bd2771cd7c6f60ea1ca0549770426613e",
+    "content/npcs/daven_varek.md": "34844bfde92b099456f49b7e26c905579fec09aa867e0301e54211f5b790ed2c",
+    "content/npcs/given_marr.md": "c05c8f95553bc3ff9586d7d68a8162b069f15d3a1d0a9d3af5171036646f889f",
+    "content/npcs/iri_vael.md": "475aa9a450e7ac70c8991f994155ccf323e19978b1e58481c368d56045f161b3",
+    "content/npcs/mara_voss.md": "dda640b09d2f2f3c295b54beb23e6e29ebda44011e151a84594650763998d461",
+    "content/npcs/tarin_os.md": "c762c7e373404df105e64060b6bab69cd04588f05e7b17f2bc8f35c7be4f5a04",
+    "content/npcs/veska_renn.md": "1c100947493c120a7aa2a5db5f6e90c0f3db80e775596161748049f6dacc0400",
     "content/objects/civic_information_display.md": "a4a42210f3684cab3b4952a236266945d454765e6fbfee4f114a61a023f8286c",
     "content/objects/civic_office_skitter_ledger.md": "325776d41f0ddcb573556c303a53846fd6fcf2592adb7675f6b30ca2a31aeb98",
     "content/objects/faulty_heating_module_hint.md": "1c84ada12e1f746516319a62dc9312acc22df2aa251258ae6a68a9f7f2d7052c",
     "content/objects/gardening_kit.md": "8a5cb9a9f8c63711b9e2ecd04019a137d5f4e6b05196236038693b087e854ead",
-    "content/objects/misdelivered_parcel_hint.md": "bf57ac6b9fed2097b35d5fb12de944e0853d28221ccffaabdb64af7c6e0079de",
+    "content/objects/misdelivered_parcel_hint.md": "81d5725d931b65a5db217c42b3544c733ceeb78fbf9ee0f1ad5995ef710d26d2",
     "content/objects/old_quarter_square_signpost.md": "a2c80680cbc1a981d540c8fc46c524958a20a564279f56b0859820d2229dabac",
     "content/objects/planting_bed.md": "31389ee7940bf1389e082e79439832bae8d2741a6f2fa747004b634fbd5a5ea2",
     "content/rooms/civic_office.md": "7f026752051cc065fcd172d1242bb4bd0c1309dbb8c125dd9357b23bb8f76ca8",
@@ -541,6 +541,6 @@
     "content/rooms/old_quarter_square.md": "ffe14d1602989346e6e39538427f41b0b66d97451ac1572a41ba78781267b9f4",
     "content/rooms/old_quarter_street.md": "bb124de63b81d54211ce0dc05225d455f99a96e4bd69c552d1865db5966d4efa",
     "content/rooms/residential_courtyard.md": "4836c593f5608ec0735167b5ea988eb93120d906bd93a51d5563266df8145b2e",
-    "sectors/elsewhere/sector.json": "52044c8a7da27776b8ddd6b347b1bd6e3541c02b074aa1469919126061950bb9"
+    "sectors/elsewhere/sector.json": "03bdfe1ffc023ef4aa36e865008467335823aa815e7634f2f63c31643a51f173"
   }
 }
