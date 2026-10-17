@@ -61,6 +61,8 @@ content/npcs/<npc_id>.md      # persona, knowledge scope, permitted actions
 
 Each NPC prompt is assembled in this order: common-knowledge sheet → shared rules → persona file → scoped lore → conversation. Persona files begin with an HTML comment holding machine-readable metadata (`npc_id`, `room`, `prompt_version`, `knowledge_scope`, `actions`); parse it, and strip **all** HTML comments from content files before sending them to the model. `TODO(lore)` notes for the project owner live inside HTML comments, so they never reach a prompt.
 
+**Bump `prompt_version` on every edit that changes what reaches a persona's prompt**, whichever lane makes it: prose, `## Actions`, or metadata like `actions`. Each conversation-log turn records it (bible 14.7), and an unbumped edit makes logs from before and after the change indistinguishable. The 2026-10-16 species rename touched all six personas without a bump. Bump once per commit even when several sections change, and take the higher number when merging two branches that both bumped.
+
 If a content file doesn't exist yet, use a clearly marked stub and tell me, rather than writing the content.
 
 Personas and lore (personality, voice, knowledge, setting content) are authored by the project owner. The `## Actions` section of a persona file, and the tool-calling rules in `content/npc-shared-rules.md`, are different: they describe engine mechanics in prompt form, which is implementation work. Before writing or editing either, check **`docs/npc-action-prompt-guidelines.md`** for prompt-wording pitfalls found during playtesting — they recur with every new action regardless of model.
