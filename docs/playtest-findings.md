@@ -26,7 +26,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 07:47 / 07:59
 - Evidence: Veska, "What do you do?": the first reply answered ("I handle paperwork and keep records straight…"), the reaction pass replaced it with the parcel pitch, and the player asked again ("But what do you do?"). Iri's history answer was replaced by the planting-bed pitch. Daven, twice: suggestions (the square, the café, the Civic Office) were replaced by a bare route. Given, "I think I'm gonna be sick": reassurance replaced by directions.
 - Notes: The follow-up call sends the first reply back as the model's own earlier turn, so the model writes its reaction as a continuation (just the route, just the pitch). `commands/say.py` then shows only the reaction for FORCE_REACTION_ACTIONS, so the part the reaction assumed was already said is never seen. Hiding the first reply is deliberate when a call is rejected (engineering pitfall #8). Every case here had all calls applied.
-- Status: triaged → Dev
+- Status: fixed in e33a3ed (awaiting live verify)
 
 ## PF-0002: give_directions fires when nobody asked the way
 - Category: NPC/canon issue
@@ -62,7 +62,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 08:08
 - Evidence: "Actually, it's for Mara." → "If it's the faulty heating-unit module, I need to inspect it first." Then "you're the first to mention it today", then "It's a routine part of the job here."
 - Notes: The engine state in his prompt says the player carries the faulty module; nothing tells him not to act on it until the player brings it up.
-- Status: triaged → Dev
+- Status: fixed in edeab42 (awaiting live verify)
 
 ## PF-0006: Iri calls the Revari "mixed ancestry"
 - Category: NPC/canon issue
@@ -89,7 +89,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 07:46
 - Evidence: The reload after `resetcommitment` was followed by no command lines for the rest of the session; quest events logged `session_id: null`.
 - Notes: The login session_id lives in `account.ndb`, which a reload wipes.
-- Status: triaged → Dev
+- Status: fixed in ad72263
 
 ## PF-0009: Tests write into the real sessions.jsonl
 - Category: bug
@@ -98,4 +98,4 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: before 2026-10-17
 - Evidence: Quest events from actors Tester, Hunter, Other and EvalActor in the live log; three truncated lines (3431, 6687, 9061) from parallel test runs writing at once.
 - Notes: Pollutes playtest analysis and corrupts the file.
-- Status: triaged → Dev
+- Status: fixed in ad72263 (old test lines are still in the existing log)
