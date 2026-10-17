@@ -132,15 +132,6 @@ The degree of shared law, common defense, inter-habitat diplomacy, and political
 
 ---
 
-### 11.7 Personal communications across the Constellation
-
-**Status: Draft, awaiting project-owner approval (LR-DEV-0005, 2026-10-17). Not canon. Nothing here reaches an NPC prompt or a `content/` file until the owner approves it.** Proposed by the owner through the Dev lane as the fiction behind the `tell` command (a private voice message between players). As of 0.4.12 the bible says nothing about everyday communication beyond §16.1's general note that computers, expert systems and automation remained widespread, so both items below are new setting facts rather than readings of existing canon.
-
-1. **A Constellation-wide comms network.** A shared network carries voice calls between people on every habitat of the Constellation. The habitats orbit Prospect close enough together that a call is effectively immediate. Who runs the network, how it is paid for, whether it reaches Prospect's surface or the ruins of Haven, and whether it predates the Bloom are left open.
-2. **A personal comms earpiece.** Ordinary residents carry a small earpiece, and a voice call is heard through it. A call from someone new, or from someone not heard from in a while, is noticed as the earpiece crackling before the voice comes through. Whether everyone has one, what it costs, and what else it does are left open.
-
-Design note for the owner, not a setting fact: a network anyone can call on sits beside quests that send players across Elsewhere to speak to someone in person. NPCs do not take calls under the current design, which keeps those errands as they are.
-
 ## 12. Factions, institutions, and political conflict
 
 **Status:** Source-grounded political framework; no finalized roster of named contemporary factions exists in the reference. A habitat is a society with internal differences, not automatically a single faction. A species is not a political faction.
