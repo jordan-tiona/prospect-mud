@@ -74,10 +74,6 @@ class EvalResult:
     unexpected: list  # the called-action set from each non-matching trial
 
 
-def _setup_mara_parcel_offered(actor):
-    propose_commitment(actor, "deliver_parcel")
-
-
 def _setup_revision_check_accepted(actor):
     propose_commitment(actor, "verify_display_revision")
     accept_commitment(actor, "verify_display_revision")
@@ -86,9 +82,7 @@ def _setup_revision_check_accepted(actor):
 def _setup_parcel_accepted(actor):
     # Mirrors what _validate_accept_commitment does for real play: a
     # real, carried Parcel, not just the commitment-lifecycle state -
-    # accept_handoff's possession check needs the actual object. One
-    # commitment, either Tarin or Veska can complete it (2026-10-13
-    # redesign) - this setup is shared by both their eval scenarios.
+    # accept_handoff's possession check needs the actual object.
     propose_commitment(actor, "deliver_parcel")
     accept_commitment(actor, "deliver_parcel")
     _create_parcel_for(actor, get_open_commitment_id(actor, "deliver_parcel"))
@@ -96,7 +90,7 @@ def _setup_parcel_accepted(actor):
 
 def _setup_parcel_delivered_to_tarin(actor):
     # docs/phase2e-word-gets-around-design.md: the commitment is really
-    # fulfilled, but Mara's own proposer-side view stays "open" until
+    # fulfilled, but Veska's own proposer-side view stays "open" until
     # report_parcel_delivery tells her - called directly here rather
     # than through _validate_accept_handoff, same shortcut other
     # setups in this file take with the bare lifecycle functions.
@@ -105,11 +99,11 @@ def _setup_parcel_delivered_to_tarin(actor):
     fulfill_commitment_with_precondition(actor, "deliver_parcel", "tarin_os", True)
 
 
-_MARA_PARCEL_HANDED_OFF_CONTEXT = [
+_VESKA_PARCEL_HANDED_OFF_CONTEXT = [
     {"role": "user", "content": "I'll get it to Tarin."},
     {
         "role": "assistant",
-        "content": '*Mara hands over the parcel.* "Thanks for taking care of that - let me know how it goes."',
+        "content": '*slides the parcel across the counter.* "Thank you. Let me know when it\'s with him."',
     },
 ]
 
@@ -161,14 +155,14 @@ def _setup_iri_skitter_log_ready(actor):
         record_kill(actor)
 
 
-_MARA_PARCEL_OFFERED_CONTEXT = [
+_VESKA_PARCEL_OFFERED_CONTEXT = [
     {"role": "user", "content": "Anything I can help with today?"},
     {
         "role": "assistant",
         "content": (
-            '*Mara wipes down the counter.* "Actually, yeah - a courier left a parcel here '
-            'for Tarin by mistake. You could run it to his workshop, or drop it at the Civic '
-            'Office with Veska instead. Either works for me."'
+            '*glances at the parcel at her end of the counter.* "As it happens, yes. A courier '
+            'left that here by mistake - it\'s addressed to Tarin Os at the Maintenance '
+            'Workshop. I can\'t leave the counter. Could you take it to him?"'
         ),
     },
 ]
@@ -210,62 +204,40 @@ SCENARIOS = [
         ),
     ),
     # docs/phase2c-misdelivered-parcel-proposal.md scenarios below.
+    # The parcel moved from Mara to Veska 2026-10-16 (docs/errand-
+    # redistribution-plan.md); Mara's reliability history for these
+    # cases (prompt_versions 13-15) is in git history. Veska's have not
+    # been run yet.
     EvalScenario(
-        name="mara_propose_parcel_on_open_opener",
-        npc_id="mara_voss",
+        name="veska_propose_parcel_on_open_opener",
+        npc_id="veska_renn",
         player_message="Anything I can help with today?",
         expect_calls={"propose_commitment"},
         notes=(
-            "Tests guideline #11's failure mode (narrating the offer without calling "
-            "it) on a cold open. This only checks that *some* propose_commitment "
-            "fires, not that both routes were offered in the same turn - that needs "
-            "manual transcript inspection of the call arguments, not just the name set. "
-            "History: at prompt_version 13 this opener was ambiguous between the "
-            "parcel and Mara's then-still-unprompted heating-unit need, and the model "
-            "often narrated one or both without calling propose_commitment at all "
-            "(1/8). A prompt_version 14 wording fix (the rule holds even when the "
-            "parcel is only part of a multi-topic reply) raised this to 4/8, with 2 "
-            "of those 4 coming back with empty arguments (a model tool-calling quirk, "
-            "not a wording gap - commitments.py's get_scenario(None) check drops an "
-            "empty/unknown commitment_type safely, so this never corrupted state). "
-            "The real fix was a design change, not more wording: prompt_version 15 "
-            "retired the heating-unit need's unprompted-mention behavior (it had "
-            "already served its purpose for 2A's exit test, and the project owner "
-            "doesn't expect prototype content to survive past this phase), leaving "
-            "the parcel as Mara's only unprompted hook. That resolved the actual "
-            "ambiguity: 6/8 now fire with fully correct arguments, 1/8 fires with "
-            "empty arguments (same harmless quirk), 1/8 reasonably reinterprets the "
-            "opener as a drink order instead. Two NPCs stacking unprompted-mention "
-            "hooks is the thing to avoid; a single NPC with one unprompted hook plus "
-            "reactive-only actions (accept_handoff, report_commitment_outcome) is fine."
+            "Guideline #11's failure mode (narrating the offer without calling it) "
+            "on a cold open - the parcel is Veska's only unprompted hook."
         ),
     ),
     EvalScenario(
-        name="mara_accept_commitment_question_is_not_acceptance",
-        npc_id="mara_voss",
-        history=_MARA_PARCEL_OFFERED_CONTEXT,
-        player_message="Could I take it to Tarin?",
+        name="veska_accept_commitment_question_is_not_acceptance",
+        npc_id="veska_renn",
+        history=_VESKA_PARCEL_OFFERED_CONTEXT,
+        player_message="Where's the Maintenance Workshop?",
         expect_no_calls={"accept_commitment"},
-        notes="Guideline #10's exact failure shape, re-tested against the new action.",
+        notes="Guideline #10's exact failure shape.",
     ),
     EvalScenario(
-        name="mara_accept_commitment_clear_choice",
-        npc_id="mara_voss",
-        history=_MARA_PARCEL_OFFERED_CONTEXT,
+        name="veska_accept_commitment_clear_choice",
+        npc_id="veska_renn",
+        history=_VESKA_PARCEL_OFFERED_CONTEXT,
         player_message="Sure, I'll take care of it.",
         expect_calls={"accept_commitment"},
-        notes=(
-            "2026-10-13 redesign: deliberately destination-agnostic wording - "
-            "Mara must accept this without asking which NPC the player means, "
-            "since that's exactly the question that caused her to lock in a "
-            "guessed destination the player never actually chose."
-        ),
     ),
     EvalScenario(
         name="tarin_accept_handoff_on_clear_offer",
         npc_id="tarin_os",
         setup=_setup_parcel_accepted,
-        player_message="Here, this parcel's for you - Mara had it by mistake.",
+        player_message="Here, this parcel's for you - it ended up at the Civic Office by mistake.",
         expect_calls={"accept_handoff"},
     ),
     EvalScenario(
@@ -273,8 +245,7 @@ SCENARIOS = [
         npc_id="tarin_os",
         setup=_setup_parcel_accepted,
         player_message=(
-            "I've got your parcel, but I haven't decided whether to deliver it myself "
-            "or leave it at the Civic Office."
+            "I've got your parcel somewhere, I'll dig it out for you later."
         ),
         expect_no_calls={"accept_handoff"},
         notes=(
@@ -288,28 +259,33 @@ SCENARIOS = [
             "than accepting it. Making the hedge-check an explicit first step, "
             "phrased to catch the model's own conditional phrasing in its reply as "
             "the tell, fixed it to 8/8 in prompt_version 14 with no regression on "
-            "the positive case."
+            "the positive case. The player line was reworded 2026-10-16 once the "
+            "Civic Office stopped being an alternative destination (errand "
+            "redistribution); it hasn't been re-run since."
         ),
-    ),
-    EvalScenario(
-        name="veska_accept_handoff_on_explicit_deposit",
-        npc_id="veska_renn",
-        setup=_setup_parcel_accepted,
-        player_message="I'd like to leave this misdirected parcel here for Tarin Os. Please take it.",
-        expect_calls={"accept_handoff"},
-    ),
-    EvalScenario(
-        name="veska_accept_handoff_informational_question_does_not_fire",
-        npc_id="veska_renn",
-        setup=_setup_parcel_accepted,
-        player_message="Do you handle lost parcels here?",
-        expect_no_calls={"accept_handoff"},
     ),
     # docs/phase2-quest-prototype-design.md §14 / docs/phase2d-
     # noticeboard-check-proposal.md's genuine-corroboration scenario.
     # Pass/fail correctness itself is a deterministic Python unit
     # test (world/test_actions.py); these only check whether Iri
     # calls verify_revision_report at all for each phrasing.
+    # The display check moved to Daven 2026-10-16 (docs/errand-
+    # redistribution-plan.md). Mentoring is his real job, so the
+    # negative case matters as much as the positive one: the errand
+    # must never surface as a "what should I do?" suggestion.
+    EvalScenario(
+        name="daven_display_question_proposes",
+        npc_id="daven_varek",
+        player_message="What's that display on your wall?",
+        expect_calls={"propose_commitment"},
+        notes="Explain-and-ask in one reply; the old Mara version needed guideline #11's same-turn rule.",
+    ),
+    EvalScenario(
+        name="daven_what_should_i_do_does_not_propose",
+        npc_id="daven_varek",
+        player_message="I'm not sure what to do next. Any ideas?",
+        expect_no_calls={"propose_commitment"},
+    ),
     EvalScenario(
         name="iri_verify_revision_clear_report_fires",
         npc_id="iri_vael",
@@ -356,60 +332,53 @@ SCENARIOS = [
             "this should still fire and then simply fail the Python-level check."
         ),
     ),
-    # docs/phase2e-word-gets-around-design.md: Mara learning, via the
-    # player, that the parcel she handed off actually arrived.
+    # docs/phase2e-word-gets-around-design.md: the parcel's giver (Veska
+    # since the errand redistribution) learning, via the player, that
+    # the parcel she handed off actually arrived.
     EvalScenario(
-        name="mara_report_parcel_delivery_clear_report_fires",
-        npc_id="mara_voss",
+        name="veska_report_parcel_delivery_clear_report_fires",
+        npc_id="veska_renn",
         setup=_setup_parcel_delivered_to_tarin,
-        history=_MARA_PARCEL_HANDED_OFF_CONTEXT,
+        history=_VESKA_PARCEL_HANDED_OFF_CONTEXT,
         player_message="Tarin got your parcel - he took it off my hands.",
         expect_calls={"report_parcel_delivery"},
     ),
     EvalScenario(
-        name="mara_report_parcel_delivery_question_does_not_fire",
-        npc_id="mara_voss",
+        name="veska_report_parcel_delivery_unnamed_report_fires",
+        npc_id="veska_renn",
         setup=_setup_parcel_delivered_to_tarin,
-        history=_MARA_PARCEL_HANDED_OFF_CONTEXT,
-        player_message="Did Tarin get your parcel?",
-        expect_no_calls={"report_parcel_delivery"},
-    ),
-    EvalScenario(
-        name="mara_report_parcel_delivery_uncertain_does_not_fire",
-        npc_id="mara_voss",
-        setup=_setup_parcel_delivered_to_tarin,
-        history=_MARA_PARCEL_HANDED_OFF_CONTEXT,
-        player_message="I think I left it with one of them, not sure which.",
-        expect_no_calls={"report_parcel_delivery"},
-    ),
-    EvalScenario(
-        name="mara_report_parcel_delivery_vague_report_known_issue",
-        npc_id="mara_voss",
-        setup=_setup_parcel_delivered_to_tarin,
-        history=_MARA_PARCEL_HANDED_OFF_CONTEXT,
+        history=_VESKA_PARCEL_HANDED_OFF_CONTEXT,
         player_message="I delivered your parcel.",
-        expect_no_calls={"report_parcel_delivery"},
+        expect_calls={"report_parcel_delivery"},
         notes=(
-            "Known issue, guideline #17: correct behavior is to ask which NPC received "
-            "it, not call this at all, since neither Tarin nor Veska is named. Confirmed "
-            "live (2026-10-14) at roughly 1/5 - the model reliably fills "
-            "reported_recipient with a guessed default (the schema's first enum value) "
-            "instead, even after a wording rewrite aimed at this exact case produced no "
-            "measurable change (pattern 5/10's signal to stop iterating). Not treated as "
-            "a correctness bug and deliberately not chased further: the validator checks "
-            "the guess against the real fulfilled_by_npc_id regardless of how the model "
-            "arrived at it, so a wrong guess is just correctly rejected, never an unearned "
-            "success - this scenario's setup happens to make 'tarin' the correct answer, "
-            "so a 'miss' here only costs a skipped clarifying question, not corrupted "
-            "state. Worth re-running if this persona section changes again."
+            "Was guideline #17's known issue under Mara (the model guessed a "
+            "reported_recipient instead of asking which of Tarin or Veska). With "
+            "Tarin the only possible recipient the argument is gone (plan D1), so "
+            "an unnamed report is now a valid one and should fire."
         ),
     ),
     EvalScenario(
-        name="mara_asked_before_being_told_does_not_claim_knowledge",
-        npc_id="mara_voss",
+        name="veska_report_parcel_delivery_question_does_not_fire",
+        npc_id="veska_renn",
         setup=_setup_parcel_delivered_to_tarin,
-        history=_MARA_PARCEL_HANDED_OFF_CONTEXT,
-        player_message="Has my parcel arrived yet?",
+        history=_VESKA_PARCEL_HANDED_OFF_CONTEXT,
+        player_message="Did Tarin get the parcel?",
+        expect_no_calls={"report_parcel_delivery"},
+    ),
+    EvalScenario(
+        name="veska_report_parcel_delivery_still_in_transit_does_not_fire",
+        npc_id="veska_renn",
+        setup=_setup_parcel_delivered_to_tarin,
+        history=_VESKA_PARCEL_HANDED_OFF_CONTEXT,
+        player_message="I haven't dropped it off yet, I'll get to it later.",
+        expect_no_calls={"report_parcel_delivery"},
+    ),
+    EvalScenario(
+        name="veska_asked_before_being_told_does_not_claim_knowledge",
+        npc_id="veska_renn",
+        setup=_setup_parcel_delivered_to_tarin,
+        history=_VESKA_PARCEL_HANDED_OFF_CONTEXT,
+        player_message="Has the parcel reached Tarin yet?",
         expect_no_calls={"report_parcel_delivery"},
         notes=(
             "The real thing this checks (that she answers with genuine uncertainty, "

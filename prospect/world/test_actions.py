@@ -285,8 +285,8 @@ class CommitmentActionWiringTests(TestCase):
     """
     Tests the generic commitment actions' wiring to world.commitments
     directly against the private validators, not through
-    validate_and_apply. Uses verify_display_revision (Mara proposes/
-    holds, Iri is clerk) purely as an example holder+clerk scenario to
+    validate_and_apply. Uses verify_display_revision (Daven proposes/
+    holds since docs/errand-redistribution-plan.md, Iri is clerk) purely as an example holder+clerk scenario to
     exercise the shared propose/accept/decline/report_commitment_outcome
     lifecycle - not a test of that scenario's own content. (Originally
     used discrepancy_report; that scenario was removed 2026-10-16 - see
@@ -299,27 +299,28 @@ class CommitmentActionWiringTests(TestCase):
     def setUp(self):
         rooms = build_rooms()
         npcs = build_npcs()
-        self.mara = npcs["mara_voss"]  # the scenario's holder_npc_id
+        self.daven = npcs["daven_varek"]  # the scenario's holder_npc_id
+        self.mara = npcs["mara_voss"]  # its holder before the redistribution
         self.actor = create_object(
             "typeclasses.characters.Character", key="Tester", location=rooms["corner_cafe"]
         )
         self.iri = npcs["iri_vael"]  # the scenario's clerk_npc_id
 
     def test_propose_requires_known_commitment_type(self):
-        result = _validate_propose_commitment(self.mara, self.actor, {"commitment_type": "nonsense"})
+        result = _validate_propose_commitment(self.daven, self.actor, {"commitment_type": "nonsense"})
         self.assertFalse(result.applied)
 
     def test_propose_accept_then_clerk_acknowledges_then_holder_fulfills(self):
-        propose = _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
+        propose = _validate_propose_commitment(self.daven, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
         self.assertTrue(propose.applied)
 
-        accept = _validate_accept_commitment(self.mara, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
+        accept = _validate_accept_commitment(self.daven, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
         self.assertTrue(accept.applied)
 
-        # The player claims to Mara directly, without having visited
+        # The player claims to Daven directly, without having visited
         # Iri - must not fulfill.
         premature = _validate_report_commitment_outcome(
-            self.mara, self.actor, {"commitment_type": self.COMMITMENT_TYPE}
+            self.daven, self.actor, {"commitment_type": self.COMMITMENT_TYPE}
         )
         self.assertFalse(premature.applied)
 
@@ -332,20 +333,35 @@ class CommitmentActionWiringTests(TestCase):
         ack = record_acknowledgment(self.actor, self.COMMITMENT_TYPE, "iri_vael")
         self.assertTrue(ack.ok)
 
-        # Now Mara's call actually fulfills.
+        # Now Daven's call actually fulfills.
         fulfill = _validate_report_commitment_outcome(
-            self.mara, self.actor, {"commitment_type": self.COMMITMENT_TYPE}
+            self.daven, self.actor, {"commitment_type": self.COMMITMENT_TYPE}
         )
         self.assertTrue(fulfill.applied)
 
     def test_decline_closes_offer_without_obligation(self):
-        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
-        decline = _validate_decline_commitment(self.mara, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
+        _validate_propose_commitment(self.daven, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
+        decline = _validate_decline_commitment(self.daven, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
         self.assertTrue(decline.applied)
 
         # Declining isn't terminal - the offer can be made again.
-        reoffer = _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
+        reoffer = _validate_propose_commitment(self.daven, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
         self.assertTrue(reoffer.applied)
+
+    def test_former_holder_mara_has_no_role_any_more(self):
+        propose = _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
+        self.assertFalse(propose.applied)
+        self.assertIn("no proposer role", propose.reason)
+
+        _validate_propose_commitment(self.daven, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
+        _validate_accept_commitment(self.daven, self.actor, {"commitment_type": self.COMMITMENT_TYPE})
+        from world.commitments import record_acknowledgment
+
+        record_acknowledgment(self.actor, self.COMMITMENT_TYPE, "iri_vael")
+        fulfill = _validate_report_commitment_outcome(
+            self.mara, self.actor, {"commitment_type": self.COMMITMENT_TYPE}
+        )
+        self.assertFalse(fulfill.applied)
 
     def test_report_outcome_by_an_npc_with_no_role_is_dropped(self):
         bystander = create_object(
@@ -373,17 +389,13 @@ class CommitmentActionWiringTests(TestCase):
 
 class ParcelActionWiringTests(TestCase):
     """
-    docs/phase2c-misdelivered-parcel-proposal.md, redesigned
-    2026-10-13: Mara proposes one generic errand (no destination
-    chosen in conversation); whichever of Tarin or Veska the player
-    actually carries the real Parcel object to completes it. The
-    earlier design (two separate commitment types, destination picked
-    at accept time) let the model lock in a destination the player
-    never actually said - see git history for that version and why it
-    was replaced. Covers the full pipeline (parcel creation on accept,
-    the possession check, either-holder completion) through the
-    private validators, same level as CommitmentActionWiringTests
-    above.
+    docs/phase2c-misdelivered-parcel-proposal.md: Veska proposes the
+    errand (Mara until docs/errand-redistribution-plan.md, 2026-10-16)
+    and Tarin, its only holder (D2), completes it once the player
+    actually carries the real Parcel object to him. Covers the full
+    pipeline (parcel creation on accept, the possession check,
+    completion) through the private validators, same level as
+    CommitmentActionWiringTests above.
     """
 
     TYPE = "deliver_parcel"
@@ -391,9 +403,9 @@ class ParcelActionWiringTests(TestCase):
     def setUp(self):
         rooms = build_rooms()
         npcs = build_npcs()
-        self.mara = npcs["mara_voss"]
-        self.tarin = npcs["tarin_os"]
-        self.veska = npcs["veska_renn"]
+        self.veska = npcs["veska_renn"]  # the scenario's proposer
+        self.tarin = npcs["tarin_os"]  # its only holder
+        self.mara = npcs["mara_voss"]  # its proposer before the redistribution
         self.actor = create_object(
             "typeclasses.characters.Character", key="Tester", location=rooms["corner_cafe"]
         )
@@ -402,19 +414,19 @@ class ParcelActionWiringTests(TestCase):
         return [obj for obj in self.actor.contents if obj.is_typeclass("typeclasses.objects.Parcel", exact=False)]
 
     def _accept(self):
-        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
-        _validate_accept_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        _validate_propose_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
+        _validate_accept_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
 
     def test_accepting_creates_a_real_carried_parcel(self):
-        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        _validate_propose_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
         self.assertEqual(self._carried_parcels(), [])
-        _validate_accept_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        _validate_accept_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
         self.assertEqual(len(self._carried_parcels()), 1)
 
     def test_carried_parcel_has_a_description(self):
         # It shouldn't lose its description once handed over - a
         # player should be able to `look` at what they're carrying,
-        # same as they could examine it sitting in the cafe.
+        # same as they could examine it sitting on the counter.
         self._accept()
         parcel = self._carried_parcels()[0]
         self.assertTrue(parcel.db.desc)
@@ -436,19 +448,19 @@ class ParcelActionWiringTests(TestCase):
         # Custody actually transferred - the player no longer carries it.
         self.assertEqual(self._carried_parcels(), [])
 
-    def test_full_civic_office_route(self):
-        # Same single commitment type - Veska completing it instead of
-        # Tarin is exactly the point of the redesign: the destination
-        # is decided by who the player actually brings it to.
+    def test_giver_cannot_take_it_back(self):
+        # D2: the Civic Office no longer takes the parcel in as an
+        # alternative destination - only Tarin can.
         self._accept()
         result = _validate_accept_handoff(self.veska, self.actor, {"commitment_type": self.TYPE})
-        self.assertTrue(result.applied)
+        self.assertFalse(result.applied)
+        self.assertEqual(len(self._carried_parcels()), 1)
 
-    def test_cannot_complete_at_the_other_npc_after_one_completes(self):
+    def test_cannot_hand_it_over_twice(self):
         self._accept()
         _validate_accept_handoff(self.tarin, self.actor, {"commitment_type": self.TYPE})
 
-        result = _validate_accept_handoff(self.veska, self.actor, {"commitment_type": self.TYPE})
+        result = _validate_accept_handoff(self.tarin, self.actor, {"commitment_type": self.TYPE})
         self.assertFalse(result.applied)
 
     def test_stock_give_cannot_move_the_parcel(self):
@@ -467,112 +479,125 @@ class ParcelActionWiringTests(TestCase):
         # accept_commitment generically (for his own discrepancy_report
         # role) and, with no per-call role check, could also invoke
         # them for the parcel errand - handing over a parcel he never
-        # actually held, without Mara ever being involved.
+        # actually held, without its giver ever being involved.
         result = _validate_propose_commitment(self.tarin, self.actor, {"commitment_type": self.TYPE})
         self.assertFalse(result.applied)
         self.assertIn("no proposer role", result.reason)
 
+    def test_former_giver_mara_cannot_propose_it(self):
+        result = _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        self.assertFalse(result.applied)
+        self.assertIn("no proposer role", result.reason)
+
     def test_only_the_proposer_can_accept_it(self):
-        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        _validate_propose_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
         result = _validate_accept_commitment(self.tarin, self.actor, {"commitment_type": self.TYPE})
         self.assertFalse(result.applied)
         self.assertEqual(self._carried_parcels(), [])
 
     def test_only_the_proposer_can_decline_it(self):
-        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        _validate_propose_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
         result = _validate_decline_commitment(self.tarin, self.actor, {"commitment_type": self.TYPE})
         self.assertFalse(result.applied)
 
 
 class ParcelDeliveryRumorWiringTests(TestCase):
     """
-    docs/phase2e-word-gets-around-design.md: Mara's deliver_parcel
+    docs/phase2e-word-gets-around-design.md: the parcel giver's
+    (Veska's, since docs/errand-redistribution-plan.md) deliver_parcel
     proposer-side view is held at "open" until report_parcel_delivery
     actually tells her, even once the real commitment is fulfilled -
-    and the one-time Mara reputation credit survives a reset/replay of
-    the underlying commitment without being awarded twice.
+    and the one-time reputation credit survives a reset/replay of the
+    underlying commitment without being awarded twice.
     """
 
     TYPE = "deliver_parcel"
+    REPORT = {"confirmed": True}
 
     def setUp(self):
         rooms = build_rooms()
         npcs = build_npcs()
-        self.mara = npcs["mara_voss"]
-        self.tarin = npcs["tarin_os"]
         self.veska = npcs["veska_renn"]
+        self.tarin = npcs["tarin_os"]
+        self.mara = npcs["mara_voss"]
         self.actor = create_object(
             "typeclasses.characters.Character", key="Tester", location=rooms["corner_cafe"]
         )
 
-    def _deliver_to(self, holder):
-        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
-        _validate_accept_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
-        return _validate_accept_handoff(holder, self.actor, {"commitment_type": self.TYPE})
+    def _deliver(self):
+        _validate_propose_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
+        _validate_accept_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
+        return _validate_accept_handoff(self.tarin, self.actor, {"commitment_type": self.TYPE})
 
-    def _mara_state(self):
-        context = commitment_context_for("mara_voss", ["propose_commitment", "report_parcel_delivery"], self.actor)
-        return context
+    def _veska_state(self):
+        return commitment_context_for(
+            "veska_renn", ["propose_commitment", "report_parcel_delivery"], self.actor
+        )
 
-    def test_mara_does_not_know_before_being_told(self):
-        self._deliver_to(self.tarin)
-        context = self._mara_state()
+    def test_veska_does_not_know_before_being_told(self):
+        self._deliver()
+        context = self._veska_state()
         self.assertIn("open", context)
         self.assertNotIn("fulfilled", context)
 
-    def test_correct_report_succeeds_and_reveals_fulfillment(self):
-        self._deliver_to(self.tarin)
-        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+    def test_report_succeeds_and_reveals_fulfillment(self):
+        self._deliver()
+        result = _validate_report_parcel_delivery(self.veska, self.actor, self.REPORT)
         self.assertTrue(result.applied)
-        self.assertIn("fulfilled", self._mara_state())
+        self.assertIn("Tarin", result.narration)
+        self.assertIn("fulfilled", self._veska_state())
 
-    def test_correct_report_awards_reputation(self):
-        self._deliver_to(self.tarin)
+    def test_report_awards_reputation_to_veska(self):
+        self._deliver()
+        self.assertEqual(get_reputation(self.actor, "veska_renn"), 0)
+        _validate_report_parcel_delivery(self.veska, self.actor, self.REPORT)
+        self.assertEqual(get_reputation(self.actor, "veska_renn"), 1)
         self.assertEqual(get_reputation(self.actor, "mara_voss"), 0)
-        _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
-        self.assertEqual(get_reputation(self.actor, "mara_voss"), 1)
 
-    def test_report_naming_veska_when_tarin_actually_received_it_is_rejected(self):
-        self._deliver_to(self.tarin)
-        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "veska"})
+    def test_report_while_still_in_transit_is_rejected(self):
+        _validate_propose_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
+        _validate_accept_commitment(self.veska, self.actor, {"commitment_type": self.TYPE})
+        result = _validate_report_parcel_delivery(self.veska, self.actor, self.REPORT)
         self.assertFalse(result.applied)
-        self.assertEqual(get_reputation(self.actor, "mara_voss"), 0)
-        self.assertIn("open", self._mara_state())
+        self.assertEqual(get_reputation(self.actor, "veska_renn"), 0)
+        self.assertIn("open", self._veska_state())
 
     def test_report_with_no_fulfilled_commitment_is_rejected(self):
-        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+        result = _validate_report_parcel_delivery(self.veska, self.actor, self.REPORT)
         self.assertFalse(result.applied)
 
-    def test_only_mara_has_a_role_in_this_rumor(self):
-        self._deliver_to(self.tarin)
-        result = _validate_report_parcel_delivery(self.tarin, self.actor, {"reported_recipient": "tarin"})
-        self.assertFalse(result.applied)
+    def test_only_the_giver_has_a_role_in_this_rumor(self):
+        self._deliver()
+        for npc in (self.tarin, self.mara):
+            result = _validate_report_parcel_delivery(npc, self.actor, self.REPORT)
+            self.assertFalse(result.applied, npc.db.npc_id)
+            self.assertIn("no role", result.reason)
 
-    def test_repeated_correct_report_does_not_double_credit(self):
-        self._deliver_to(self.tarin)
-        _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
-        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+    def test_repeated_report_does_not_double_credit(self):
+        self._deliver()
+        _validate_report_parcel_delivery(self.veska, self.actor, self.REPORT)
+        result = _validate_report_parcel_delivery(self.veska, self.actor, self.REPORT)
         self.assertFalse(result.applied)
-        self.assertEqual(get_reputation(self.actor, "mara_voss"), 1)
+        self.assertEqual(get_reputation(self.actor, "veska_renn"), 1)
 
     def test_reputation_credited_only_once_across_multiple_commitment_instances(self):
         from world.commitments import reset_commitment
 
-        self._deliver_to(self.tarin)
-        _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
-        self.assertEqual(get_reputation(self.actor, "mara_voss"), 1)
+        self._deliver()
+        _validate_report_parcel_delivery(self.veska, self.actor, self.REPORT)
+        self.assertEqual(get_reputation(self.actor, "veska_renn"), 1)
 
         reset_commitment(self.actor, self.TYPE)
-        self._deliver_to(self.veska)
-        result = _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "veska"})
+        self._deliver()
+        result = _validate_report_parcel_delivery(self.veska, self.actor, self.REPORT)
         self.assertTrue(result.applied)  # the new instance can still be reported...
-        self.assertEqual(get_reputation(self.actor, "mara_voss"), 1)  # ...but credit doesn't stack
+        self.assertEqual(get_reputation(self.actor, "veska_renn"), 1)  # ...but credit doesn't stack
 
     def test_informed_knowledge_is_per_commitment_instance(self):
         from world.commitments import reset_commitment
 
-        self._deliver_to(self.tarin)
-        _validate_report_parcel_delivery(self.mara, self.actor, {"reported_recipient": "tarin"})
+        self._deliver()
+        _validate_report_parcel_delivery(self.veska, self.actor, self.REPORT)
         self.assertTrue(has_reputation_credit(self.actor))
 
 
@@ -638,7 +663,7 @@ class VerifyRevisionReportWiringTests(TestCase):
     def setUp(self):
         rooms = build_rooms()
         npcs = build_npcs()
-        self.mara = npcs["mara_voss"]
+        self.daven = npcs["daven_varek"]  # the scenario's holder
         self.iri = npcs["iri_vael"]
         self.tarin = npcs["tarin_os"]
         self.actor = create_object(
@@ -646,8 +671,8 @@ class VerifyRevisionReportWiringTests(TestCase):
         )
 
     def _accept(self):
-        _validate_propose_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
-        _validate_accept_commitment(self.mara, self.actor, {"commitment_type": self.TYPE})
+        _validate_propose_commitment(self.daven, self.actor, {"commitment_type": self.TYPE})
+        _validate_accept_commitment(self.daven, self.actor, {"commitment_type": self.TYPE})
 
     def test_correct_report_succeeds(self):
         from world.noticeboard import get_or_create_expected_revision
@@ -705,7 +730,7 @@ class VerifyRevisionReportWiringTests(TestCase):
         )
         self.assertTrue(result.applied)
 
-    def test_mara_closes_it_after_genuine_acknowledgment(self):
+    def test_daven_closes_it_after_genuine_acknowledgment(self):
         from world.noticeboard import get_or_create_expected_revision
 
         self._accept()
@@ -713,12 +738,12 @@ class VerifyRevisionReportWiringTests(TestCase):
         _validate_verify_revision_report(
             self.iri, self.actor, {"commitment_type": self.TYPE, "reported_revision": expected}
         )
-        result = _validate_report_commitment_outcome(self.mara, self.actor, {"commitment_type": self.TYPE})
+        result = _validate_report_commitment_outcome(self.daven, self.actor, {"commitment_type": self.TYPE})
         self.assertTrue(result.applied)
 
-    def test_mara_cannot_close_it_without_acknowledgment(self):
+    def test_daven_cannot_close_it_without_acknowledgment(self):
         self._accept()
-        result = _validate_report_commitment_outcome(self.mara, self.actor, {"commitment_type": self.TYPE})
+        result = _validate_report_commitment_outcome(self.daven, self.actor, {"commitment_type": self.TYPE})
         self.assertFalse(result.applied)
 
     def test_verify_revision_report_schema_requires_arguments(self):

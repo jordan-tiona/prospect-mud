@@ -38,21 +38,22 @@ from world.commitments import (
 # not a test of that scenario's own content - same reasoning as
 # world/test_actions.py's CommitmentActionWiringTests. (Originally
 # used discrepancy_report; removed 2026-10-16, see CLAUDE.md's "One
-# quest offer per NPC".) Mara has no other hint-eligible scenario
-# (deliver_parcel's holder_hint_pose is unset for her), so these tests
-# don't need any hunt_skitters-style isolation dance the way the
+# quest offer per NPC".) Daven (its holder since docs/errand-
+# redistribution-plan.md) has no other hint-eligible scenario, so these
+# tests don't need any hunt_skitters-style isolation dance the way the
 # original discrepancy_report fixture did once hunt_skitters joined
 # Tarin's roster.
 COMMITMENT_TYPE = "verify_display_revision"
-HOLDER = "mara_voss"
+HOLDER = "daven_varek"
 CLERK = "iri_vael"
+HOLDER_HINT_POSE = "glancing at the civic information display on the wall"
 
-# docs/phase2c-misdelivered-parcel-proposal.md's parcel scenario,
-# redesigned 2026-10-13: one commitment type, two valid holders -
-# whichever of Tarin or Veska the player reaches first.
+# docs/phase2c-misdelivered-parcel-proposal.md's parcel scenario: Veska
+# gives it, Tarin is its only holder (docs/errand-redistribution-plan.md
+# D2 - the Civic Office no longer takes it in as an alternative).
 PARCEL_TYPE = "deliver_parcel"
-PARCEL_HOLDER_A = "tarin_os"
-PARCEL_HOLDER_B = "veska_renn"
+PARCEL_HOLDER = "tarin_os"
+PARCEL_GIVER = "veska_renn"
 
 
 class QuestEventLoggingTests(TestCase):
@@ -355,21 +356,20 @@ class CommitmentLifecycleTests(TestCase):
 
     def test_context_for_unrelated_npc_is_none(self):
         # Every real NPC now has a role in *some* authored scenario
-        # (Mara, Tarin, Veska, Iri) - a genuinely fake npc_id is the
+        # (Daven, Tarin, Veska, Iri) - a genuinely fake npc_id is the
         # only reliably unrelated case left.
         propose_commitment(self.actor, COMMITMENT_TYPE)
         self.assertIsNone(commitment_context_for("nobody_npc", list(COMMITMENT_ACTIONS), self.actor))
 
     # -- discoverability hint pose ----------------------------------------
-    # Mara has no other hint-eligible scenario (deliver_parcel's own
-    # holder_hint_pose is unset for her), so unlike the original
+    # Daven has no other hint-eligible scenario, so unlike the original
     # discrepancy_report/hunt_skitters fixture these need no isolation
     # dance at all. The priority-tie mechanism itself (when an NPC
     # *does* have two hint-eligible scenarios) is tested independently
     # with synthetic scenarios in OneQuestAtATimeTests below.
 
     def test_hint_pose_shown_before_any_offer(self):
-        self.assertEqual(hint_pose_for(HOLDER, self.actor), "glancing at the café's information display")
+        self.assertEqual(hint_pose_for(HOLDER, self.actor), HOLDER_HINT_POSE)
 
     def test_hint_pose_gone_once_offered(self):
         propose_commitment(self.actor, COMMITMENT_TYPE)
@@ -381,14 +381,15 @@ class CommitmentLifecycleTests(TestCase):
         # Declining clears the offer flag, putting the state back to
         # "not offered" - deliberately still shows the hint again, the
         # same as before any offer, since nothing prevents re-offering.
-        self.assertEqual(hint_pose_for(HOLDER, self.actor), "glancing at the café's information display")
+        self.assertEqual(hint_pose_for(HOLDER, self.actor), HOLDER_HINT_POSE)
 
     def test_hint_pose_none_for_npc_with_no_holder_role(self):
         # Not CLERK (iri_vael) - she's also the holder of her own,
         # unrelated tend_planting_bed hint, so she'd legitimately show
         # one here. veska_renn currently holds no hint-eligible role
-        # at all (her only commitment role, deliver_parcel's alt-
-        # holder, has no holder_hint_pose set for her).
+        # at all (her only commitment role, deliver_parcel's proposer,
+        # has no proposer_hint_pose - the parcel prop on her counter is
+        # its cue instead).
         self.assertIsNone(hint_pose_for("veska_renn", self.actor))
         self.assertIsNone(hint_pose_for("nobody_npc", self.actor))
 
@@ -396,44 +397,43 @@ class CommitmentLifecycleTests(TestCase):
         other = create_object("typeclasses.characters.Character", key="Other")
         propose_commitment(self.actor, COMMITMENT_TYPE)
         self.assertIsNone(hint_pose_for(HOLDER, self.actor))
-        self.assertEqual(hint_pose_for(HOLDER, other), "glancing at the café's information display")
+        self.assertEqual(hint_pose_for(HOLDER, other), HOLDER_HINT_POSE)
 
 
-class MultiHolderFulfillmentTests(TestCase):
+class ParcelFulfillmentTests(TestCase):
     """
     docs/phase2c-misdelivered-parcel-proposal.md's parcel scenario,
-    redesigned 2026-10-13: one commitment type, two valid holders -
-    whichever of Tarin or Veska the player actually reaches first
-    fulfills it, and the other's later attempt must find it already
-    closed. No separate cross-holder exclusion logic exists; this is
-    the open-commitment check (shared with every other scenario)
-    doing double duty.
+    fulfilled through fulfill_commitment_with_precondition. Tarin is the
+    only holder since docs/errand-redistribution-plan.md D2 - before
+    that Veska was an alternative one, which is why the "giver can't
+    fulfill" case below is worth pinning.
     """
 
     def setUp(self):
         room = create_object("typeclasses.rooms.Room", key="Test Room")
         self.actor = create_object("typeclasses.characters.Character", key="Tester", location=room)
 
-    def test_either_holder_can_fulfill(self):
+    def test_giver_cannot_fulfill(self):
         propose_commitment(self.actor, PARCEL_TYPE)
         accept_commitment(self.actor, PARCEL_TYPE)
-        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER_B, True)
-        self.assertTrue(result.ok)
+        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_GIVER, True)
+        self.assertFalse(result.ok)
+        self.assertEqual(get_state_summary(self.actor, PARCEL_TYPE), "open")
 
-    def test_wrong_holder_role_dropped(self):
+    def test_former_giver_has_no_holder_role(self):
         propose_commitment(self.actor, PARCEL_TYPE)
         accept_commitment(self.actor, PARCEL_TYPE)
         result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, "mara_voss", True)
         self.assertFalse(result.ok)
 
     def test_no_open_commitment_dropped(self):
-        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER_A, True)
+        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER, True)
         self.assertFalse(result.ok)
 
     def test_false_precondition_dropped_even_with_open_commitment(self):
         propose_commitment(self.actor, PARCEL_TYPE)
         accept_commitment(self.actor, PARCEL_TYPE)
-        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER_A, False)
+        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER, False)
         self.assertFalse(result.ok)
         self.assertEqual(get_state_summary(self.actor, PARCEL_TYPE), "open")
 
@@ -441,21 +441,17 @@ class MultiHolderFulfillmentTests(TestCase):
         propose_commitment(self.actor, PARCEL_TYPE)
         accept_commitment(self.actor, PARCEL_TYPE)
         commitment_id = get_open_commitment_id(self.actor, PARCEL_TYPE)
-        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER_A, True)
+        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER, True)
         self.assertTrue(result.ok)
         self.assertEqual(result.commitment_id, commitment_id)
         self.assertEqual(get_state_summary(self.actor, PARCEL_TYPE), "fulfilled")
 
-    def test_the_other_holder_cannot_also_fulfill_it(self):
-        # The exact bug this redesign fixes: once one NPC completes
-        # it, the commitment is closed - the other NPC's attempt
-        # (even with a theoretically-valid precondition) must fail,
-        # without needing any destination to have been chosen earlier.
+    def test_cannot_fulfill_twice(self):
         propose_commitment(self.actor, PARCEL_TYPE)
         accept_commitment(self.actor, PARCEL_TYPE)
-        fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER_A, True)
+        fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER, True)
 
-        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER_B, True)
+        result = fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER, True)
         self.assertFalse(result.ok)
 
     def test_get_open_commitment_id_none_when_nothing_open(self):
@@ -480,7 +476,7 @@ class RecordAcknowledgmentWithPreconditionTests(TestCase):
     def test_wrong_clerk_role_dropped(self):
         propose_commitment(self.actor, self.TYPE)
         accept_commitment(self.actor, self.TYPE)
-        result = record_acknowledgment_with_precondition(self.actor, self.TYPE, "mara_voss", True)
+        result = record_acknowledgment_with_precondition(self.actor, self.TYPE, "daven_varek", True)
         self.assertFalse(result.ok)
 
     def test_no_open_commitment_dropped(self):
@@ -517,14 +513,14 @@ class RecordAcknowledgmentWithPreconditionTests(TestCase):
         result = record_acknowledgment_with_precondition(self.actor, self.TYPE, self.CLERK, True)
         self.assertFalse(result.ok)
 
-    def test_mara_can_still_fulfill_after_genuine_acknowledgment(self):
+    def test_holder_can_still_fulfill_after_genuine_acknowledgment(self):
         # fulfill_commitment (the existing, unconditional holder check)
         # must keep working unchanged against an ack created by the
         # new precondition-gated path - same ack shape either way.
         propose_commitment(self.actor, self.TYPE)
         accept_commitment(self.actor, self.TYPE)
         record_acknowledgment_with_precondition(self.actor, self.TYPE, self.CLERK, True)
-        result = fulfill_commitment(self.actor, self.TYPE, "mara_voss")
+        result = fulfill_commitment(self.actor, self.TYPE, "daven_varek")
         self.assertTrue(result.ok)
 
 
@@ -629,3 +625,49 @@ class OneQuestAtATimeTests(TestCase):
         snapshot = reset_commitment(self.actor, "fake_mandatory")
         self.assertTrue(snapshot["had_declined"])
         self.assertFalse(has_been_declined(self.actor, "fake_mandatory"))
+
+
+class ErrandRedistributionTests(TestCase):
+    """
+    docs/errand-redistribution-plan.md (2026-10-16): the parcel moved
+    from Mara to Veska and the display check to Daven, so each
+    quest-giving NPC has exactly one errand. Checked against the real
+    persona files and SCENARIOS together, since a mismatch between the
+    two (an NPC granted commitment actions with nothing to offer, or
+    the reverse) is exactly the "narrating an action it can't take"
+    failure the plan's Step 4 ordering exists to avoid.
+    """
+
+    def setUp(self):
+        room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.actor = create_object("typeclasses.characters.Character", key="Tester", location=room)
+
+    def _context(self, npc_id):
+        from world.npc_profile import parse_persona
+
+        return commitment_context_for(npc_id, parse_persona(npc_id).actions, self.actor)
+
+    def test_mara_has_no_commitment_actions_or_state(self):
+        from world.npc_profile import parse_persona
+
+        self.assertFalse(COMMITMENT_ACTIONS & set(parse_persona("mara_voss").actions))
+        self.assertNotIn("report_parcel_delivery", parse_persona("mara_voss").actions)
+        self.assertIsNone(self._context("mara_voss"))
+
+    def test_veska_sees_only_the_parcel(self):
+        context = self._context("veska_renn")
+        self.assertIn("'deliver_parcel'", context)
+        self.assertNotIn("'verify_display_revision'", context)
+        self.assertEqual(context.count("Engine state for"), 1)
+
+    def test_daven_sees_only_the_display_check(self):
+        context = self._context("daven_varek")
+        self.assertIn("'verify_display_revision'", context)
+        self.assertNotIn("'deliver_parcel'", context)
+        self.assertEqual(context.count("Engine state for"), 1)
+
+    def test_veska_no_longer_holds_accept_handoff(self):
+        from world.npc_profile import parse_persona
+
+        self.assertNotIn("accept_handoff", parse_persona("veska_renn").actions)
+        self.assertEqual(SCENARIOS["deliver_parcel"].holder_npc_ids, ("tarin_os",))

@@ -217,7 +217,7 @@ def log_rumor_reset(
     *,
     previous_informed_commitment_ids: list,
     previous_reputation_credited: bool,
-    previous_mara_reputation: int,
+    previous_reputations: dict,
     actor_key: str,
     actor_dbref: str,
     path: Optional[Path] = None,
@@ -226,15 +226,19 @@ def log_rumor_reset(
     Append a marker record for the rumor/reputation portion of a
     `resetcommitment` command (see commands/admin.py's
     CmdResetCommitment) - a human clearing a player's phase 2E
-    parcel-rumor knowledge and Mara reputation credit mid-test. Its own
-    `"event": "rumor_reset"`, parallel to `log_commitment_reset`.
+    parcel-rumor knowledge and the giver's reputation credit mid-test.
+    Its own `"event": "rumor_reset"`, parallel to `log_commitment_reset`.
+    `previous_reputations` maps npc_id -> the nonzero value cleared;
+    it replaced the single `previous_mara_reputation` field when the
+    parcel moved to Veska (docs/errand-redistribution-plan.md), so
+    older records in the log still carry that field instead.
     """
     record = {
         "event": "rumor_reset",
         "timestamp": _now_iso(),
         "previous_informed_commitment_ids": previous_informed_commitment_ids,
         "previous_reputation_credited": previous_reputation_credited,
-        "previous_mara_reputation": previous_mara_reputation,
+        "previous_reputations": previous_reputations,
         "actor_key": actor_key,
         "actor_dbref": actor_dbref,
     }

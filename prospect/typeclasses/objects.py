@@ -102,7 +102,7 @@ class RevisionDisplayObject(RoomObject):
     <object>` genuinely varies by who's looking, rather than every
     looker getting the same static db.desc.
 
-    Always visible to everyone (ordinary café furniture, not gated
+    Always visible to everyone (ordinary office furniture, not gated
     behind commitment state like typeclasses.objects.CommitmentHintObject) -
     only its *content* is per-player, not its presence.
     """

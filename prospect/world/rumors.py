@@ -1,15 +1,16 @@
 """
 Phase 2E (docs/phase2e-word-gets-around-design.md): the "deliver_parcel"
-commitment's proposer, Mara Voss, does not automatically learn that the
-parcel reached Tarin or Veska just because the commitment itself
-becomes STATUS_FULFILLED - that fact belongs to whichever NPC actually
+commitment's proposer (Veska Renn since docs/errand-redistribution-
+plan.md, 2026-10-16; originally Mara Voss) does not automatically learn
+that the parcel reached Tarin just because the commitment itself
+becomes STATUS_FULFILLED - that fact belongs to the NPC who actually
 took physical custody of it. She only learns it once the player tells
 her, through a separate validated action (world/actions.py's
 _validate_report_parcel_delivery) that checks the player's report
 against the real commitment record before recording anything.
 
-This module owns that per-player "has Mara been told" state, plus the
-one-time reputation credit for successfully relaying it, and the
+This module owns that per-player "has the giver been told" state, plus
+the one-time reputation credit for successfully relaying it, and the
 projector function wired into world/commitments.py's SCENARIOS entry
 for "deliver_parcel". world/commitments.py has no idea any of this
 exists - it only knows a scenario may supply a proposer_knowledge_
@@ -52,18 +53,19 @@ def mark_reputation_credited(actor) -> None:
     _save_state(actor, state)
 
 
-def project_mara_parcel_knowledge(actor, state: str) -> str:
+def project_giver_parcel_knowledge(actor, state: str) -> str:
     """
     world/commitments.py's proposer_knowledge_projector for
     "deliver_parcel". Only intercepts the "fulfilled" state - every
-    other state (not offered, offered, open) already means Mara hasn't
-    learned anything she shouldn't, since those are all stages she's
-    actively part of. Once the real commitment is fulfilled, this holds
-    her view at "open" (an ongoing errand she's still waiting to hear
-    about) until the specific fulfilled commitment_id has been reported
-    to her - looked up fresh each time, never cached, so a reset that
-    clears the commitment can't leave a stale "fulfilled" view behind
-    either (get_fulfilled_commitment would simply find nothing).
+    other state (not offered, offered, open) already means the giver
+    hasn't learned anything she shouldn't, since those are all stages
+    she's actively part of. Once the real commitment is fulfilled, this
+    holds her view at "open" (an ongoing errand she's still waiting to
+    hear about) until the specific fulfilled commitment_id has been
+    reported to her - looked up fresh each time, never cached, so a
+    reset that clears the commitment can't leave a stale "fulfilled"
+    view behind either (get_fulfilled_commitment would simply find
+    nothing).
     """
     if state != STATUS_FULFILLED:
         return state

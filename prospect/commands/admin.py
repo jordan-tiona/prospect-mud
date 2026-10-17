@@ -11,7 +11,7 @@ its own, since it lives on `ndb`, not persisted to the database.
 from evennia.utils.utils import inherits_from
 
 from world.actions import QUEST_MODULE_EXCHANGE_KEY, cleanup_stray_parcels, get_quest_state
-from world.commitments import known_commitment_types_for, reset_commitment
+from world.commitments import SCENARIOS, known_commitment_types_for, reset_commitment
 from world.conversation_log import (
     log_commitment_reset,
     log_memory_reset,
@@ -28,6 +28,12 @@ from world.rumors import reset_rumor
 from world.skitters import reset_banked_kills, reset_kills
 
 from .command import Command
+
+# Every NPC whose reputation the parcel-rumor credit has ever gone to:
+# the current giver, plus past givers whose stored credit a reset still
+# has to clear (engineering-pitfalls #3). Mara was the giver until the
+# errand redistribution (docs/errand-redistribution-plan.md, D3/D5).
+PARCEL_GIVER_NPC_IDS = tuple(dict.fromkeys((SCENARIOS["deliver_parcel"].effective_proposer_npc_id, "mara_voss")))
 
 
 class CmdForget(Command):
@@ -195,16 +201,22 @@ class CmdResetCommitment(Command):
         # are both downstream of deliver_parcel - coordinated here
         # rather than a separate `resetrumor` command, so a tester
         # resetting commitments can't forget the other half and leave
-        # Mara believing the parcel arrived (or still crediting
-        # reputation) from an instance that no longer exists.
+        # the giver believing the parcel arrived (or still crediting
+        # reputation) from an instance that no longer exists. Clears
+        # every NPC that has ever been the parcel's giver, not just the
+        # current one (engineering-pitfalls #3): Mara held it until the
+        # errand redistribution (docs/errand-redistribution-plan.md).
         rumor_snapshot = reset_rumor(target)
-        previous_mara_reputation = reset_reputation(target, "mara_voss")
+        previous_reputations = {
+            npc_id: reset_reputation(target, npc_id) for npc_id in PARCEL_GIVER_NPC_IDS
+        }
+        previous_reputations = {npc_id: value for npc_id, value in previous_reputations.items() if value}
         rumor_cleared = bool(rumor_snapshot["informed_commitment_ids"]) or rumor_snapshot["reputation_credited"]
-        if rumor_cleared or previous_mara_reputation:
+        if rumor_cleared or previous_reputations:
             log_rumor_reset(
                 previous_informed_commitment_ids=rumor_snapshot["informed_commitment_ids"],
                 previous_reputation_credited=rumor_snapshot["reputation_credited"],
-                previous_mara_reputation=previous_mara_reputation,
+                previous_reputations=previous_reputations,
                 actor_key=target.key,
                 actor_dbref=target.dbref,
             )
@@ -217,7 +229,7 @@ class CmdResetCommitment(Command):
             or previous_skitter_kills
             or previous_logged_skitters
             or rumor_cleared
-            or previous_mara_reputation
+            or previous_reputations
         ):
             caller.msg(f"You reset {target.key}'s commitment progress back to the start.")
             if removed_parcels:
@@ -230,8 +242,8 @@ class CmdResetCommitment(Command):
                 caller.msg(f"Cleared their skitter kill count (was {previous_skitter_kills}).")
             if previous_logged_skitters:
                 caller.msg(f"Cleared their logged skitter total (was {previous_logged_skitters}).")
-            if rumor_cleared or previous_mara_reputation:
-                caller.msg("Cleared their parcel-delivery rumor knowledge and Mara's reputation credit.")
+            if rumor_cleared or previous_reputations:
+                caller.msg("Cleared their parcel-delivery rumor knowledge and reputation credit.")
         else:
             caller.msg(f"{target.key} has no commitment progress to reset.")
 

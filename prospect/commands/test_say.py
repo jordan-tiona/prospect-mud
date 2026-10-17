@@ -885,7 +885,7 @@ class SayCommandTests(_SayTestBase):
         mock_chat.side_effect = [
             _reply(
                 "Thanks for letting me know it got to Tarin. That's a weight off my mind.",
-                tool_calls=[{"name": "report_parcel_delivery", "arguments": {"reported_recipient": "tarin"}}],
+                tool_calls=[{"name": "report_parcel_delivery", "arguments": {"confirmed": True}}],
             ),
             _reply("I can't confirm that yet - there's no record of it being handed off."),
         ]

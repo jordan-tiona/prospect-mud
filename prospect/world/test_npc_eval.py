@@ -107,7 +107,7 @@ class RunScenarioTests(TestCase):
             accept_commitment(actor, "verify_display_revision")
 
         scenario = EvalScenario(
-            name="t", npc_id="mara_voss", player_message="x", setup=setup
+            name="t", npc_id="daven_varek", player_message="x", setup=setup
         )
 
         run_scenario(scenario, trials=1)

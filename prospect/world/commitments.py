@@ -80,15 +80,14 @@ class ScenarioConfig:
     # fulfill_commitment_with_precondition's structured-fact check.
     # In 2B this was also the NPC who proposes/accepts/declines; 2C
     # (docs/phase2c-misdelivered-parcel-proposal.md) is the first
-    # scenario where those are different NPCs (Mara proposes, Tarin
-    # or Veska completes), which is why proposer_npc_id exists below.
+    # scenario where those are different NPCs (Veska proposes, Tarin
+    # completes), which is why proposer_npc_id exists below.
     holder_npc_id: str
     # Other NPCs who can *also* fulfill this commitment, besides
-    # holder_npc_id - the 2C parcel redesign (2026-10-13): rather than
-    # the player naming a destination in conversation (unreliable, see
-    # that redesign's rationale), either Tarin or Veska can complete
-    # the same single commitment, whichever one the player actually
-    # reaches first. Empty for a single-holder scenario like 2B's.
+    # holder_npc_id. Added for the 2C parcel redesign (2026-10-13),
+    # when either Tarin or Veska could complete it; empty for every
+    # scenario since the errand redistribution (docs/errand-
+    # redistribution-plan.md D2), kept as reusable infrastructure.
     alt_holder_npc_ids: tuple = ()
     # The NPC who records corroborating evidence the holder checks
     # before fulfilling (fulfill_commitment's pattern). Leave "" for a
@@ -110,7 +109,7 @@ class ScenarioConfig:
     # The proposer-side equivalent of holder_hint_pose, for a scenario
     # where the proposer isn't also the holder - deliver_parcel hit
     # this same asymmetry and solved it with a physical object instead
-    # (Mara had one available). Same "not offered" gating as
+    # (the parcel itself, on the giver's counter). Same "not offered" gating as
     # holder_hint_pose, via hint_pose_for below. Currently unused (its
     # only scenario, unverified_notice, was removed 2026-10-16) - kept
     # as reusable infrastructure for the next proposer/holder-split
@@ -168,15 +167,15 @@ class ScenarioConfig:
     # Phase 2E (docs/phase2e-word-gets-around-design.md): lets a
     # scenario keep its proposer from automatically learning its own
     # commitment's real fulfillment the instant a *different* NPC
-    # fulfills it - deliver_parcel's Mara doesn't find out the parcel
+    # fulfills it - deliver_parcel's Veska doesn't find out the parcel
     # arrived until a separate validated action tells her, even though
     # the commitment itself is already STATUS_FULFILLED underneath.
     # Takes (actor, state) and returns the state string to show the
     # proposer instead - commitment_context_for applies this only on
-    # the proposer's own line, never the holder's, so Tarin/Veska still
-    # see their own real fulfillment accurately. None (the default)
+    # the proposer's own line, never the holder's, so Tarin still
+    # sees his own real fulfillment accurately. None (the default)
     # means no projection - every other scenario is unaffected. This
-    # module has no idea what Mara or a parcel are; the function itself
+    # module has no idea what Veska or a parcel are; the function itself
     # lives in whatever scenario-specific module needs it (world/
     # rumors.py for deliver_parcel), same separation of concerns
     # fulfill_commitment_with_precondition keeps from a parcel's actual
@@ -216,17 +215,14 @@ class ScenarioConfig:
 # engine roles.
 SCENARIOS = {
     # docs/phase2c-misdelivered-parcel-proposal.md's "Scenario Premise",
-    # redesigned 2026-10-13: Mara proposes a single generic errand, not
-    # a destination to pick in conversation - either Tarin or Veska can
-    # complete it, whichever one the player actually brings the parcel
-    # to. That NPC's own fulfillment (see fulfill_commitment_with_
-    # precondition's holder_npc_ids check) is what decides the route,
-    # not a verbal commitment extracted by Mara beforehand.
+    # moved from Mara to Veska 2026-10-16 (docs/errand-redistribution-
+    # plan.md): Veska proposes, Tarin is the only one who can take it
+    # in (D2 - no alternative holder; bringing it back to the giver
+    # would make no sense).
     "deliver_parcel": ScenarioConfig(
         commitment_type="deliver_parcel",
         holder_npc_id="tarin_os",
-        alt_holder_npc_ids=("veska_renn",),
-        proposer_npc_id="mara_voss",
+        proposer_npc_id="veska_renn",
         propose_narration="{npc} explains the mixed-up parcel and asks {actor} to help get it where it belongs.",
         accept_narration="{npc} hands {actor} the parcel.",
         decline_narration="{npc} accepts that {actor} can't help with the parcel right now.",
@@ -235,7 +231,8 @@ SCENARIOS = {
         # import (world/rumors.py imports from this module).
     ),
     # docs/phase2-quest-prototype-design.md §14 / docs/phase2d-
-    # noticeboard-check-proposal.md: Mara proposes/closes, Iri
+    # noticeboard-check-proposal.md: Daven proposes/closes (Mara until
+    # docs/errand-redistribution-plan.md, 2026-10-16), Iri
     # corroborates - but unlike discrepancy_report's unconditional
     # acknowledgment, Iri's check is gated on a real structured fact
     # (world/noticeboard.py's stored per-player revision), via
@@ -243,10 +240,11 @@ SCENARIOS = {
     # first scenario where corroboration can genuinely fail.
     "verify_display_revision": ScenarioConfig(
         commitment_type="verify_display_revision",
-        holder_npc_id="mara_voss",
+        holder_npc_id="daven_varek",
         clerk_npc_id="iri_vael",
-        holder_hint_pose="glancing at the café's information display",
-        propose_narration="{npc} asks {actor} to confirm the café's display is showing the current revision.",
+        # Authored by Lore, LR-DEV-0003 item 3.
+        holder_hint_pose="glancing at the civic information display on the wall",
+        propose_narration="{npc} asks {actor} to confirm the display is showing the current revision.",
         accept_narration="{npc} is glad {actor} is willing to check the number with the Civic Office.",
         ack_narration="{npc} confirms the revision {actor} reported matches the record.",
         fulfill_narration="{npc} is glad to hear the display's revision checked out.",

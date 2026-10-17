@@ -333,8 +333,8 @@ class ResetCommitmentCommandTests(TestCase):
 
     def test_reset_clears_rumor_knowledge_and_reputation_credit(self):
         # docs/phase2e-word-gets-around-design.md: resetcommitment must
-        # also clear the parcel-rumor's "informed" flag and Mara's
-        # reputation credit, since both are downstream of deliver_parcel
+        # also clear the parcel-rumor's "informed" flag and the giver's
+        # (Veska's) reputation credit, since both are downstream of deliver_parcel
         # and a stale one would otherwise survive the underlying
         # commitment being cleared out from under it.
         from world.actions import (
@@ -347,24 +347,40 @@ class ResetCommitmentCommandTests(TestCase):
         from world.rumors import has_reputation_credit
 
         tarin = self.npcs["tarin_os"]
-        mara = self.npcs["mara_voss"]
+        veska = self.npcs["veska_renn"]
         # Uses the validators (not the bare commitments.py lifecycle
         # functions) specifically because deliver_parcel's accept also
         # creates the real carried Parcel object accept_handoff's
         # possession check needs - see ParcelActionWiringTests in
         # world/test_actions.py for the same requirement.
-        _validate_propose_commitment(mara, self.actor, {"commitment_type": "deliver_parcel"})
-        _validate_accept_commitment(mara, self.actor, {"commitment_type": "deliver_parcel"})
+        _validate_propose_commitment(veska, self.actor, {"commitment_type": "deliver_parcel"})
+        _validate_accept_commitment(veska, self.actor, {"commitment_type": "deliver_parcel"})
         _validate_accept_handoff(tarin, self.actor, {"commitment_type": "deliver_parcel"})
-        _validate_report_parcel_delivery(mara, self.actor, {"reported_recipient": "tarin"})
-        self.assertEqual(get_reputation(self.actor, "mara_voss"), 1)
+        _validate_report_parcel_delivery(veska, self.actor, {"confirmed": True})
+        self.assertEqual(get_reputation(self.actor, "veska_renn"), 1)
+
+        self.actor.execute_cmd("resetcommitment")
+
+        self.assertEqual(get_reputation(self.actor, "veska_renn"), 0)
+        self.assertFalse(has_reputation_credit(self.actor))
+        self.assertTrue(any("rumor knowledge" in m for m in self.messages))
+        self.mock_log_rumor_reset.assert_called_once()
+        self.assertEqual(self.mock_log_rumor_reset.call_args.kwargs["previous_reputations"], {"veska_renn": 1})
+
+    def test_reset_still_clears_legacy_mara_parcel_credit(self):
+        # Engineering-pitfalls #3: a character credited under the old
+        # wiring (Mara was the parcel's giver until docs/errand-
+        # redistribution-plan.md) still has that reputation stored, and
+        # the reset must find it even though Mara has no role any more.
+        from world.reputation import adjust_reputation, get_reputation
+
+        adjust_reputation(self.actor, "mara_voss", 1)
 
         self.actor.execute_cmd("resetcommitment")
 
         self.assertEqual(get_reputation(self.actor, "mara_voss"), 0)
-        self.assertFalse(has_reputation_credit(self.actor))
-        self.assertTrue(any("rumor knowledge" in m for m in self.messages))
         self.mock_log_rumor_reset.assert_called_once()
+        self.assertEqual(self.mock_log_rumor_reset.call_args.kwargs["previous_reputations"], {"mara_voss": 1})
 
     def test_reset_with_no_rumor_progress_does_not_mention_it_or_log(self):
         self.actor.execute_cmd("resetcommitment")

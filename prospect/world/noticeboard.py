@@ -5,7 +5,7 @@ per-player expected revision number - the "hashed password" the
 model never sees. Generated lazily, the first time a given player
 examines the display (typeclasses.objects.RevisionDisplayObject),
 and stable after that until a builder reset - not tied to accepting
-the commitment, since the display is ordinary café furniture, not a
+the commitment, since the display is ordinary office furniture, not a
 quest-gated prop.
 
 CLAUDE.md hard rule 2 applies: the actual pass/fail comparison

@@ -70,6 +70,8 @@ Daven has a modest office **beyond the square, down a short street**. He is appr
 
 **Daven is not the quest giver for the three activities.** He can suggest that the player visit Mara, Iri, or Tarin, and can help with confusion, but those characters present their own needs. The player should also be able to discover the quests independently, without first receiving a Daven-issued task.
 
+*Placeholder (2026-10-16):* Daven currently has one small side errand of his own: checking his office's civic display revision with Iri (`verify_display_revision`, moved from Mara; see `docs/errand-redistribution-plan.md`). This is a stopgap, because with one errand per NPC, five errands needed five NPCs, and giving it to Given didn't fit. It isn't part of his intended role, and he never offers it as a suggested next step. When a new NPC joins the neighborhood, move the display check to them and return Daven to being a mentor only.
+
 ### Orientation objective
 
 Getting from the medical bay to Daven's office is the introductory **navigation/orientation objective**, separate from the three main quests. The square's already existing notice board/directory should indicate the route to the new street and Daven's office, using **actual engine exit directions**, supplied and checked by Claude.

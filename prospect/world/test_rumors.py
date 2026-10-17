@@ -20,7 +20,7 @@ from world.rumors import (
     is_informed_of,
     mark_informed,
     mark_reputation_credited,
-    project_mara_parcel_knowledge,
+    project_giver_parcel_knowledge,
     reset_rumor,
 )
 
@@ -65,7 +65,7 @@ class RumorStateTests(TestCase):
         self.assertFalse(snapshot["reputation_credited"])
 
 
-class ProjectMaraParcelKnowledgeTests(TestCase):
+class ProjectGiverParcelKnowledgeTests(TestCase):
     def setUp(self):
         room = create_object("typeclasses.rooms.Room", key="Test Room")
         self.actor = create_object("typeclasses.characters.Character", key="Tester", location=room)
@@ -77,19 +77,19 @@ class ProjectMaraParcelKnowledgeTests(TestCase):
 
     def test_non_fulfilled_states_pass_through_unchanged(self):
         for state in ("not offered", "offered, awaiting the player's answer", "open"):
-            self.assertEqual(project_mara_parcel_knowledge(self.actor, state), state)
+            self.assertEqual(project_giver_parcel_knowledge(self.actor, state), state)
 
     def test_fulfilled_is_hidden_until_informed(self):
         self._fulfill_parcel()
-        self.assertEqual(project_mara_parcel_knowledge(self.actor, "fulfilled"), "open")
+        self.assertEqual(project_giver_parcel_knowledge(self.actor, "fulfilled"), "open")
 
     def test_fulfilled_is_revealed_once_informed(self):
         self._fulfill_parcel()
         commitment = get_fulfilled_commitment(self.actor, "deliver_parcel")
         mark_informed(self.actor, commitment["commitment_id"])
-        self.assertEqual(project_mara_parcel_knowledge(self.actor, "fulfilled"), "fulfilled")
+        self.assertEqual(project_giver_parcel_knowledge(self.actor, "fulfilled"), "fulfilled")
 
     def test_fulfilled_with_no_matching_commitment_passes_through(self):
         # Defensive case: "fulfilled" reported with nothing actually on
         # record (shouldn't happen in practice, but must not crash).
-        self.assertEqual(project_mara_parcel_knowledge(self.actor, "fulfilled"), "fulfilled")
+        self.assertEqual(project_giver_parcel_knowledge(self.actor, "fulfilled"), "fulfilled")

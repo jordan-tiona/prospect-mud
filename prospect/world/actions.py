@@ -37,14 +37,14 @@ from world.rumors import has_reputation_credit as _has_reputation_credit
 from world.rumors import is_informed_of as _is_informed_of
 from world.rumors import mark_informed as _mark_informed
 from world.rumors import mark_reputation_credited as _mark_reputation_credited
-from world.rumors import project_mara_parcel_knowledge as _project_mara_parcel_knowledge
+from world.rumors import project_giver_parcel_knowledge as _project_giver_parcel_knowledge
 
 # Phase 2E: wired here, not in world/commitments.py's SCENARIOS
 # literal, since world/rumors.py imports from world/commitments.py and
 # this avoids a circular import. SCENARIOS is the same dict object
 # commitments.py's own functions read from, so mutating this field in
 # place is visible everywhere, not just through this module.
-SCENARIOS["deliver_parcel"].proposer_knowledge_projector = _project_mara_parcel_knowledge
+SCENARIOS["deliver_parcel"].proposer_knowledge_projector = _project_giver_parcel_knowledge
 
 
 @dataclass
@@ -328,7 +328,7 @@ PARCEL_TAG_CATEGORY = "parcel_commitment"
 
 def _create_parcel_for(actor, commitment_id: str) -> None:
     """
-    Mara's side of accepting a parcel-commitment offer: puts a real,
+    The giver's side of accepting a parcel-commitment offer: puts a real,
     locked typeclasses.objects.Parcel (see that class's docstring)
     directly into the player's inventory, tagged with this exact
     commitment *instance* id - never the type in the abstract, so a
@@ -343,10 +343,10 @@ def _create_parcel_for(actor, commitment_id: str) -> None:
         key="a small misdirected parcel",
         location=actor,
     )
-    # Same information the discoverable hint object in the café gave
-    # (world/build_quest_props.py) - without that version's "not here"
-    # framing, which only made sense sitting on Mara's counter and
-    # would read oddly once the player is carrying it elsewhere.
+    # Same information the discoverable hint object on the Civic
+    # Office counter gives (content/objects/misdelivered_parcel_hint.md)
+    # - without that version's room-specific framing, which would read
+    # oddly once the player is carrying it elsewhere.
     parcel.db.desc = (
         'A small, plainly wrapped parcel. The shipping label reads: '
         '"Tarin Os, Maintenance Workshop."'
@@ -554,42 +554,32 @@ def _validate_verify_revision_report(npc, actor, arguments: dict) -> ActionResul
     return ActionResult(True, scenario.ack_narration.format(npc=npc.key, actor=actor.key))
 
 
-# Phase 2E (docs/phase2e-word-gets-around-design.md): Mara doesn't
-# automatically learn that her misdelivered parcel reached Tarin or
-# Veska - see world/rumors.py's project_mara_parcel_knowledge, wired
-# into the "deliver_parcel" scenario's proposer_knowledge_projector.
-# This is the action that actually tells her, once the player reports
-# it - scenario-specific to Mara and the parcel errand, not a generic
-# commitment action, the same way the old module-exchange quest's
-# actions were each specific to their one scenario rather than routed
-# through commitments.py's generic lifecycle.
-_RUMOR_RECIPIENT_NPC_IDS = {"tarin": "tarin_os", "veska": "veska_renn"}
-_RUMOR_RECIPIENT_DISPLAY_NAMES = {"tarin_os": "Tarin", "veska_renn": "Veska"}
+# Phase 2E (docs/phase2e-word-gets-around-design.md): the parcel's
+# giver doesn't automatically learn that it reached Tarin - see
+# world/rumors.py's project_giver_parcel_knowledge, wired into the
+# "deliver_parcel" scenario's proposer_knowledge_projector. This is the
+# action that actually tells her, once the player reports it -
+# scenario-specific to the parcel errand, not a generic commitment
+# action, the same way the old module-exchange quest's actions were
+# each specific to their one scenario rather than routed through
+# commitments.py's generic lifecycle.
+#
+# Since the errand redistribution (docs/errand-redistribution-plan.md
+# D1, 2026-10-16) Tarin is the only possible recipient, so there's no
+# reported_recipient to check any more - the fulfilled commitment
+# record is the whole fact. confirmed is the trivial required argument
+# guideline #7 calls for; its value is ignored.
 
 
 def _validate_report_parcel_delivery(npc, actor, arguments: dict) -> ActionResult:
     npc_id = npc.db.npc_id
-    if npc_id != "mara_voss":
+    giver_npc_id = SCENARIOS["deliver_parcel"].effective_proposer_npc_id
+    if npc_id != giver_npc_id:
         return ActionResult(False, "", reason=f"{npc_id!r} has no role in the parcel-delivery rumor")
-
-    reported_recipient = arguments.get("reported_recipient")
-    reported_npc_id = _RUMOR_RECIPIENT_NPC_IDS.get(reported_recipient)
-    if reported_npc_id is None:
-        return ActionResult(False, "", reason=f"invalid reported_recipient: {reported_recipient!r}")
 
     commitment = _get_fulfilled_commitment(actor, "deliver_parcel")
     if commitment is None:
         return ActionResult(False, "", reason="no fulfilled deliver_parcel commitment on record")
-
-    if reported_npc_id != commitment["fulfilled_by_npc_id"]:
-        return ActionResult(
-            False,
-            "",
-            reason=(
-                f"reported recipient {reported_recipient!r} does not match the actual "
-                f"recipient {commitment['fulfilled_by_npc_id']!r}"
-            ),
-        )
 
     commitment_id = commitment["commitment_id"]
     if _is_informed_of(actor, commitment_id):
@@ -598,10 +588,9 @@ def _validate_report_parcel_delivery(npc, actor, arguments: dict) -> ActionResul
     _mark_informed(actor, commitment_id)
     if not _has_reputation_credit(actor):
         _mark_reputation_credited(actor)
-        _adjust_reputation(actor, "mara_voss", 1)
+        _adjust_reputation(actor, giver_npc_id, 1)
 
-    recipient_name = _RUMOR_RECIPIENT_DISPLAY_NAMES[reported_npc_id]
-    return ActionResult(True, f"{npc.key} is glad to hear the parcel reached {recipient_name}.")
+    return ActionResult(True, f"{npc.key} is glad to hear the parcel reached Tarin.")
 
 
 # docs/prospect-initial-playtest-design-spec.md §6, Quest 2 ("A Little
@@ -1030,25 +1019,21 @@ ACTION_SCHEMAS = {
             "name": "report_parcel_delivery",
             "description": (
                 "Record that the player has just told you your misdelivered parcel actually "
-                "reached its recipient. Call it the moment they affirmatively report this, "
-                "naming which of Tarin or Veska took it in. The engine checks that against the "
-                "real record and will tell you the result - it is not something you can tell "
-                "just by what they say. Do not call it for a question ('Did Tarin get it?'), a "
-                "guess between options ('Was it Tarin or Veska?'), a case where they're unsure, "
-                "or a claim that leaves it unresolved ('I think I left it with one of them'). If "
-                "they haven't clearly named one recipient as their report, ask instead of "
-                "calling this."
+                "reached Tarin. Call it the moment they affirmatively report that it's been "
+                "delivered. The engine checks that against the real record and will tell you the "
+                "result - it is not something you can tell just by what they say. Do not call it "
+                "for a question ('Did Tarin get it?'), a case where they're unsure, or a claim "
+                "that it's still on its way."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "reported_recipient": {
-                        "type": "string",
-                        "enum": ["tarin", "veska"],
-                        "description": "Which of Tarin or Veska the player says actually received the parcel.",
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Always true: the player has just reported the parcel delivered.",
                     }
                 },
-                "required": ["reported_recipient"],
+                "required": ["confirmed"],
             },
         },
     },
