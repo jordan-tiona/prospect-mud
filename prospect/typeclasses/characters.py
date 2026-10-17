@@ -12,6 +12,7 @@ from evennia.objects.objects import DefaultCharacter
 
 from world.appearance import identity_phrase
 from world.session_log import log_room_changed, session_id_for
+from world.stealth import is_hidden, is_staff, suppressed_for
 
 from .objects import ObjectParent, indent_paragraphs
 
@@ -46,7 +47,28 @@ class Character(ObjectParent, DefaultCharacter):
     into if their next command happens much later, or isn't a move at
     all.
 
+    Also where staff stealth (world/stealth.py) takes effect on the
+    receiving end: `msg` drops anything a hidden character broadcast
+    unless this character is staff.
+
     """
+
+    def msg(self, text=None, from_obj=None, session=None, options=None, **kwargs):
+        if suppressed_for(self, from_obj):
+            return
+        super().msg(text=text, from_obj=from_obj, session=session, options=options, **kwargs)
+
+    def at_look(self, target, **kwargs):
+        text = super().at_look(target, **kwargs)
+        if text and is_hidden(self) and target is not None and target == self.location:
+            text += "\n|x(You are hidden from players.)|n"
+        return text
+
+    def get_display_name(self, looker=None, **kwargs):
+        name = super().get_display_name(looker, **kwargs)
+        if looker is not None and looker is not self and is_hidden(self) and is_staff(looker):
+            name += " |x(hidden)|n"
+        return name
 
     def at_post_move(self, source_location, move_type="move", **kwargs):
         if self.location.access(self, "view"):

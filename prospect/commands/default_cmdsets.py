@@ -34,6 +34,7 @@ from commands.look import CmdLook
 from commands.probe import CmdProbe
 from commands.say import CmdSay
 from commands.scripted_login import CmdScriptedLogin
+from commands.stealth import CmdPose, CmdStealth
 from commands.tannoy import CmdTannoy
 from commands.use import CmdUse
 
@@ -73,6 +74,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdDescribe())
         self.add(CmdNoMatch())
         self.add(CmdFeedback())
+        self.add(CmdStealth())
+        # Stock pose, but revealing a hidden speaker first.
+        self.add(CmdPose())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

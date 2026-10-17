@@ -80,13 +80,18 @@ def _write(record: dict, path: Optional[Path]) -> None:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def log_session_start(*, session_id: str, account_key: str, path: Optional[Path] = None) -> None:
+def log_session_start(
+    *, session_id: str, account_key: str, staff: bool = False, path: Optional[Path] = None
+) -> None:
+    # `staff` lets a playtest-review pass tell the owner's or a mod's
+    # sessions apart from testers' (world/stealth.py).
     _write(
         {
             "event": "session_start",
             "timestamp": _now_iso(),
             "session_id": session_id,
             "account_key": account_key,
+            "staff": staff,
         },
         path,
     )

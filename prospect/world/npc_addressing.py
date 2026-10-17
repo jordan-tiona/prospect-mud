@@ -22,6 +22,8 @@ import re
 
 from evennia.utils.utils import inherits_from
 
+from world.stealth import is_staff
+
 
 def _candidate_names(npc):
     names = [npc.key] + list(npc.aliases.all())
@@ -41,10 +43,19 @@ def present_talkative_npcs(room):
 _present_talkative_npcs = present_talkative_npcs
 
 
-def _present_players(room):
+def _present_players(room, speaker=None):
+    """Players who count toward the lone-player rule. Staff other than
+    the speaker don't (world/stealth.py): a mod standing in the room,
+    hidden or not, mustn't stop a tester's plain `say` reaching the
+    NPC. A staff speaker still counts themselves, so an admin alone
+    with an NPC is addressed implicitly like anyone else."""
     if room is None:
         return []
-    return [obj for obj in room.contents if inherits_from(obj, "typeclasses.characters.Character")]
+    return [
+        obj
+        for obj in room.contents
+        if inherits_from(obj, "typeclasses.characters.Character") and (obj is speaker or not is_staff(obj))
+    ]
 
 
 def _name_pattern(name, anchored):
@@ -80,12 +91,14 @@ def _match_mentioned_name(npcs, speech):
     return best[1] if best else None
 
 
-def resolve_addressee(speech, room, focus=None):
+def resolve_addressee(speech, room, focus=None, speaker=None):
     """
     `room` is the room the `say` happened in, used to find present
     talk-capable NPCs and players. `focus` is the NPC this same
     player was last addressing in this room (commands/say.py tracks
     this per player, cleared whenever they change rooms), or None.
+    `speaker` is the player talking, so staff in the room can be left
+    out of the lone-player count without leaving out the speaker.
 
     Returns (npc, message): `npc` is the talk-capable NPC this `say`
     addresses, or None for ambient speech. `message` is what the NPC
@@ -111,7 +124,7 @@ def resolve_addressee(speech, room, focus=None):
     if npc is not None:
         return npc, speech
 
-    if len(npcs) == 1 and len(_present_players(room)) == 1:
+    if len(npcs) == 1 and len(_present_players(room, speaker)) == 1:
         return npcs[0], speech
 
     if focus is not None and focus in npcs:

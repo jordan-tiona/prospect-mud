@@ -60,6 +60,7 @@ from world.npc_profile import parse_persona
 from world.output_check import is_flagged
 from world.prompt_builder import build_system_prompt
 from world.speech_format import normalize_speech
+from world.stealth import reveal_for_speech
 
 MAX_HISTORY_EXCHANGES = 8  # player+NPC message pairs kept per player per NPC
 
@@ -788,6 +789,8 @@ class CmdSay(DefaultCmdSay):
             caller.msg("Say what?")
             return
 
+        reveal_for_speech(caller)
+
         # The NPC this player was last addressing in this same room,
         # if any - cleared implicitly by the room check below the
         # moment they're somewhere else, so a stale focus from a
@@ -795,7 +798,7 @@ class CmdSay(DefaultCmdSay):
         stored_focus = caller.ndb.addressing_focus
         focus = stored_focus[1] if stored_focus and stored_focus[0] == caller.location else None
 
-        target, message = resolve_addressee(self.args, caller.location, focus=focus)
+        target, message = resolve_addressee(self.args, caller.location, focus=focus, speaker=caller)
         if target is not None:
             caller.ndb.addressing_focus = (caller.location, target)
         # An explicit "to <name>" prefix is addressing syntax, not

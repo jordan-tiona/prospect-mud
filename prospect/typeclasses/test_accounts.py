@@ -25,7 +25,7 @@ class AccountSessionLoggingTests(TestCase):
 
         session_id = account_session_id(self.account)
         self.assertTrue(session_id)
-        mock_log_start.assert_called_once_with(session_id=session_id, account_key="Tester")
+        mock_log_start.assert_called_once_with(session_id=session_id, account_key="Tester", staff=False)
 
     @patch("typeclasses.accounts.log_session_start")
     def test_each_login_gets_a_fresh_session_id(self, mock_log_start):
