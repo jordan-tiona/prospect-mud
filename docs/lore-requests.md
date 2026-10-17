@@ -206,3 +206,12 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Status: open
 - Approved by:
 - Resolution:
+
+## LR-DEV-0006: Teach PLAYTEST and TELL in the Medical Bay tannoy
+- Requested by: dev
+- Needed for: the new `playtest`/`pt` channel (commands/playtest.py) and `tell` (commands/tell.py), both built 2026-10-17; testers have no way to learn they exist except `help`
+- What's needed: Proposed wording for `_ROOM_TANNOYS["medical_bay"]` in `prospect/world/tutorial.py` (a Dev-lane file: write the new text in Resolution and Dev applies it), adding: PLAYTEST (or PT) followed by a message reaches every tester and the staff running the playtest, and PLAYTEST OFF turns it off; TELL followed by someone's name and a message sends them a private message. The playtest channel is out-of-character and temporary, so it may need framing that doesn't pretend to be in-world (the tannoy is already OOC instruction, per the module docstring). Current text, for reference: "Attention, new arrivals. To talk to someone, type SAY and then what you want to say. To move, type a direction, such as NORTH or SOUTHWEST. To look at something you can see, type LOOK and then its name. To study it more closely, type PROBE and then its name. To change how others see you, type DESCRIBE. To hear this again, type TANNOY." It is already long; trimming elsewhere is fine.
+- Blocking: no (both commands are in `help`)
+- Status: open
+- Approved by:
+- Resolution:
