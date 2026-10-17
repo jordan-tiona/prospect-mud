@@ -96,18 +96,22 @@ class TellTests(TestCase):
         self.assertEqual((target, message), (self.ravis, "hi"))
 
     def test_lead_in_on_first_tell_and_after_a_gap_only(self):
-        with patch.object(tell, "TELL_LEAD_IN", "LEAD-IN {name}"), patch("commands.tell.time.time") as clock:
+        with patch("commands.tell.time.time") as clock:
             clock.return_value = 1000
             self.ana.execute_cmd("tell Ravis one")
             clock.return_value = 1000 + 60
             self.ana.execute_cmd("tell Ravis two")
             clock.return_value = 1060 + tell.LEAD_IN_GAP_SECONDS + 1
             self.ana.execute_cmd("tell Ravis three")
-        self.assertEqual(self._seen_by(self.ravis).count("LEAD-IN Ana Pell"), 2)
+        self.assertEqual(self._seen_by(self.ravis).count("you hear the voice of Ana Pell"), 2)
+        self.assertEqual(self._seen_by(self.ana).count("a line opens to Ravis Vardur"), 2)
 
-    def test_no_lead_in_until_lore_approves_one(self):
+    def test_lead_in_comes_before_the_tell(self):
         self.ana.execute_cmd("tell Ravis one")
-        self.assertEqual(len(self.received[self.ravis]), 1)
+        self.assertEqual(
+            self.received[self.ravis],
+            ["Your comms crackle, and you hear the voice of Ana Pell.", 'Ana Pell tells you, |Y"One."|n'],
+        )
 
     @patch("commands.command.log_command")
     @patch("commands.command.session_id_for", return_value="sid")

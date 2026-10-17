@@ -48,7 +48,7 @@ class TannoyTests(TestCase):
 
     def test_tannoy_text_for_room_matches_medical_bay(self):
         text = tannoy_text_for_room(self.rooms["medical_bay"])
-        for command in ("SAY", "NORTH", "LOOK", "PROBE", "TANNOY"):
+        for command in ("SAY", "NORTH", "LOOK", "PROBE", "DESCRIBE", "TELL", "PLAYTEST", "TANNOY"):
             self.assertIn(command, text)
         # The spoken part is bright cyan, like other dialogue; the lead-in isn't.
         self.assertTrue(text.startswith("A tannoy near the ceiling crackles to life: "))

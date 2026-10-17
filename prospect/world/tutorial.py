@@ -86,10 +86,13 @@ _ROOM_TANNOYS = {
         "A tannoy near the ceiling crackles to life:",
         "Attention, new arrivals. To talk to someone, type SAY and then what "
         "you want to say. To move, type a direction, such as NORTH or "
-        "SOUTHWEST. To look at something you can see, type LOOK and then its "
-        "name. To study it more closely, type PROBE and then its name. To "
-        "change how others see you, type DESCRIBE. To hear this again, type "
-        "TANNOY.",
+        "SOUTHWEST. To look at something, type LOOK and then its name; to "
+        "study it more closely, type PROBE and then its name. To change how "
+        "others see you, type DESCRIBE. To speak privately with someone, "
+        "wherever they are, type TELL, then their name, then your message. "
+        "To talk with the other testers and the staff running this playtest, "
+        "type PLAYTEST, or PT, and then your message; to stop hearing that "
+        "channel, type PLAYTEST OFF. To hear this again, type TANNOY.",
     ),
 }
 

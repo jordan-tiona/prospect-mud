@@ -11,8 +11,10 @@ Evennia's stock `page` (owner, 2026-10-17, after Achaea).
 - Not logged: the session log records that a tell was sent, never who
   to or what it said (`log_input = False`, commands/command.py).
 
-The comms lead-in line before a tell (LR-DEV-0005) is wired up but
-off until the Lore lane's wording is approved.
+Before a tell from someone you haven't heard from lately, a comms
+lead-in line; the sender gets a matching line (LR-DEV-0005, owner-
+approved 2026-10-17). The lines say only "your comms": a Constellation-
+wide network is an open question (bible 17), so don't elaborate them.
 """
 
 import time
@@ -22,9 +24,9 @@ from evennia.server.sessionhandler import SESSION_HANDLER
 from commands.command import Command
 from world.speech_format import normalize_speech
 
-# TODO(lore): LR-DEV-0005 - the "you hear <name> over your comms" lead-in.
-# A format string with {name}; None shows no lead-in.
-TELL_LEAD_IN = None
+# LR-DEV-0005. {name} is the other person as the reader sees them.
+TELL_LEAD_IN = "Your comms crackle, and you hear the voice of {name}."
+TELL_SENDER_LEAD_IN = "Your comms click as a line opens to {name}."
 
 # A sender's next tell gets the lead-in again after this long.
 LEAD_IN_GAP_SECONDS = 10 * 60
@@ -116,7 +118,6 @@ class CmdTell(Command):
             return
 
         message, _ = normalize_speech(message)
-        caller.msg(f'You tell {target.get_display_name(caller)}, |Y"{message}"|n')
         _deliver(caller, target, message)
 
 
@@ -124,9 +125,14 @@ def _deliver(sender, target, message):
     heard = target.ndb.tells_heard_at or {}
     last = heard.get(sender.id)
     now = time.time()
-    if TELL_LEAD_IN and (last is None or now - last > LEAD_IN_GAP_SECONDS):
-        target.msg(TELL_LEAD_IN.format(name=sender.get_display_name(target)))
+    fresh_line = last is None or now - last > LEAD_IN_GAP_SECONDS
     heard[sender.id] = now
     target.ndb.tells_heard_at = heard
     target.db.last_tell_from = sender
+
+    if fresh_line and TELL_SENDER_LEAD_IN:
+        sender.msg(TELL_SENDER_LEAD_IN.format(name=target.get_display_name(sender)))
+    sender.msg(f'You tell {target.get_display_name(sender)}, |Y"{message}"|n')
+    if fresh_line and TELL_LEAD_IN:
+        target.msg(TELL_LEAD_IN.format(name=sender.get_display_name(target)))
     target.msg(f'{sender.get_display_name(target)} tells you, |Y"{message}"|n')
