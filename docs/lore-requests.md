@@ -157,3 +157,11 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Blocking: no (the errand still completes if the player offers on their own)
 - Status: open
 - Resolution:
+
+## LR-TOOLS-0004: Voldren translated descriptive surnames for the name generator
+- Requested by: tools
+- Needed for: the name generator (`ops/namegen/`), built from bible 5.9. The Voldren row allows "2 / 2, or a translated surname" (illustrative: *Stonebreaker*), and the shared exclusion rule makes translated descriptive surnames the one deliberate exception to the no-English-words rule. A generator can't make these up without inventing lore (hard rule 7), so until a list exists it emits only the two-syllable Voldren family-name form.
+- What's needed: (1) An authored list of translated Voldren surnames the generator may draw from, as many as you're comfortable with (a dozen or more gives useful variety), in a content file such as `content/names/voldren-translated-surnames.md` with one surname per line. The generator only picks from the list, so the list carries any meaning the surnames have. (2) Roughly how often a Voldren should carry a translated surname rather than a two-syllable one (e.g. "about 1 in 4"), or leave it to Tools. (3) Whether any other people may use translated surnames. 5.9 says "only where a row allows them," and only Voldren's row does today.
+- Blocking: no (the generator works without it; Voldren output just lacks this form)
+- Status: open
+- Resolution:
