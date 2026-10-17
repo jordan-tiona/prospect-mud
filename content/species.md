@@ -50,7 +50,7 @@ A long-established people whose ancestry draws on the Kell, Drask and Lirra alik
 
 ## Engineered peoples
 
-Made in the home system, long ago, for dangerous work in orbit, underground and underwater. Their ancestors were legally property there. That ended generations ago, everywhere, and they are citizens like anyone else.
+Made in the home system, long ago, for dangerous work in orbit, underground and underwater. Their ancestors were legally property there. That ended generations ago, everywhere.
 
 ## Astrel
 
