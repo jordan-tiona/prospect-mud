@@ -2,70 +2,165 @@ _Part of the split design bible - see [`00-index.md`](00-index.md) for the statu
 
 ## 5. The seven peoples
 
-**Status:** All seven **working species names** have now been selected, but the project owner may revise them. On 2026-10-16 the owner renamed six of them for distinctness and readability (Kethari → **Kell**, Sylari → **Drask**, Aevyrin → **Lirra**, Naevari → **Revari**, Otheryn → **Astrel**, Neshyr → **Selk**; Voldren unchanged); the earlier names are **superseded** and should not be reused. Any resemblance between a new name and an English word (*Astrel*, *Selk*) is a reader's-side coincidence under the translation convention in Section 2, not an in-world meaning. Their ancestral/hybrid/engineered classifications and the broad established biology below are retained. Some fine anatomical details remain proposals, not completed specifications. These are sapient peoples, not biologically determined personality types or professional classes.
+**Status:** All seven **working species names** have now been selected, but the project owner may revise them. On 2026-10-16 the owner renamed six of them for distinctness and readability (Kethari → **Kell**, Sylari → **Drask**, Aevyrin → **Lirra**, Naevari → **Revari**, Otheryn → **Astrel**, Neshyr → **Selk**; Voldren unchanged); the earlier names are **superseded** and should not be reused. Any resemblance between a new name and an English word (*Astrel*, *Selk*) is a reader's-side coincidence under the translation convention in Section 2, not an in-world meaning. Their ancestral/hybrid/engineered classifications and the broad established biology below are retained. Each people's physical description was settled with the project owner and approved on 2026-10-17 (5.1–5.7, and the height ladder in 5.8); what each entry still leaves open is listed at its end. These are sapient peoples, not biologically determined personality types or professional classes.
 
 The seven principal peoples comprise three ancestral civilizations, one established hybrid-descended people, and three subsequently engineered, self-reproducing peoples. Their species names are represented as transliterations of in-world self-designations, not English labels based on physical appearance.
 
 ### 5.1 Kell — Ancestral A
 
-The **Kell** are furred, predominantly **canine-looking**, digitigrade humanoids, with functional hands, expressive/mobile ears and individual variation in coats and proportions. Tail length, muzzle proportions and specific physiological traits still need decisions. Their visual character is more canine than the previously considered mustelid alternative, although they are not literal Earth dogs or wolves.
+The **Kell** are furred, predominantly **canine-looking**, digitigrade humanoids, with functional hands, expressive/mobile ears and individual variation in coats and proportions. Their visual character is more canine than the previously considered mustelid alternative, although they are not literal Earth dogs or wolves.
+
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17):**
+
+- **Build.** Rangy: around 2 m tall and about 65 kg on average, with long legs, a narrow chest, light bones, a long neck and a short torso. The reference silhouette is a maned wolf, not a wolf; the lean build is the people's shape, not under-nourishment. On the Constellation's height ladder (5.8) the Kell stand with the four other mid-height peoples.
+- **Head and muzzle.** A medium-long, narrow muzzle, finer than a wolf's, ending in a dry, ridged keratin nose plate with slit nostrils that can close. There is no wet nose.
+- **Eyes.** Visible whites and round pupils, with a reflective layer behind the retina: in a dim room a Kell's eyes catch light at an angle and flash. Iris colours are **not decided**.
+- **Ears.** Large, erect and rigid, closer to a fennec's or a bat's than a dog's: thin, leathery skin with little or no fur, translucent at the edge, darkening with heat or exertion. They are mobile and expressive, and large enough that other peoples habitually read them.
+- **Dorsal ruff.** Longer guard hairs run from the crown down the spine: 25–30 cm at the crown and nape, tapering to about 10 cm at the small of the back, ending above the tail base. Lying flat, the ruff drapes down the back; raised, it stands as a crest from skull to shoulders, visible across a room. It lifts with strong emotion or alarm.
+- **Tail.** Full length, carried low and relaxed, lifting as a mood tell, with a milder crest of 6–8 cm guard hairs along its top continuing the dorsal line.
+- **Hands.** Four fingers and a thumb. Blunt, non-retracting claws kept filed short, dark against the fur. Leathery pads on the fingertips and the heel of the palm, the same texture as the ears; fur thins to bare skin on the palm side.
+- **Feet.** Digitigrade and padded, and always bare. Light cloth wraps are casual wear; thicker, padded wraps are worn for work. Kell do not wear shoes.
+- **Coat.** Colours outside the Earth-canid range: slate, blue-grey, russet and cream, in dappling or brindle rather than wolf masks and saddles. Fur greys around the muzzle and ears with age. The palette may be extended; these are the first approved colours, not the only ones.
+- **Dress.** Most Kell wear no top. When they do, it is a backless, sleeveless garment somewhere between a dress and an apron: a front panel held by strips of cloth over the shoulders and tied at the hips or lower back, leaving the spine and the ruff uncovered. This is the one cultural item in the list; it concerns Kell dress only, and the other peoples' styles of dress remain undecided (11.2).
+- **Sexes.** Same height. Males carry the full 25–30 cm ruff, which lifts more readily; females' ruff is shorter, 15–20 cm, ending between the shoulder blades, and their tail crest is longer instead. Male voices are lower. Dress is the same.
+- **Lifespan.** Around 90 years in good health; adult by about 18, elderly from about 70, when the greying of muzzle and ears is plain.
+- **Iris colours.** Amber, gold, copper, pale green and grey, with blue rare; no link between iris and coat colour. The reflective layer gives a green-gold eyeshine in dim light.
+
+Still **Unresolved**: teeth and diet.
 
 **Scientific heritage (established):** The two original discoverers of the Venn–Saye field were Kell. Their scientific and educational institutions developed an especially long tradition of Venn–Saye dynamics, preserved across the voyage and subsequent settlement. Many Kell communities regard this as an important cultural achievement. A modest **proposed** player species bonus to relevant starting proficiency or learning would express inherited educational and cultural traditions, **not innate biological superiority**; exact mechanics are unresolved.
 
 ### 5.2 Drask — Ancestral B
 
-The **Drask** are scaled, plantigrade humanoids with a distinctly **lizardlike face and elongated snout**, rather than a flat humanoid face with cosmetic scales. Distinctive cranial features, scale patterns and a substantial tail are likely, though their exact forms are unfinished. They have a fully functional humanoid body plan and hands.
+The **Drask** are scaled, plantigrade humanoids with a distinctly **lizardlike face and elongated snout**, rather than a flat humanoid face with cosmetic scales. They have a fully functional humanoid body plan and hands, and are anatomically distinct from the Kell.
 
-Their reptilian appearance should not automatically entail Earth-reptile physiology or a need for special heated environments; warm-blooded or otherwise self-regulating metabolism is a **suggested solution**, not a finalized biological specification. They are anatomically distinct from the Kell.
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17):**
+
+- **Build.** Dense and broad-chested, the heaviest of the five mid-height peoples: around 1.9 m and 95–110 kg on average. At the same height as the Kell they read as opposites, mass against reach.
+- **Metabolism.** Warm-blooded and self-regulating. Drask do not bask, need no heated environments, and share ordinary rooms and streets on the same terms as everyone else; the earlier "suggested solution" is now the answer.
+- **Head and face.** Elongated snout with the teeth hidden at rest; a Drask's teeth show only when the mouth is open. From the brow back over the skull and down the neck the scales are larger and protrude, angled backward like shingles: a hand run from brow to neck slides over them, and a hand run from neck to brow catches and pulls. The tongue is dark and unforked.
+- **Ears.** No external ears. Hearing is through a covered membrane flush with the side of the head.
+- **Scales.** Fine and smooth on the face, hands and underside; larger and keeled on the back, shoulders and tail. Colours outside the Earth-reptile range: ochre, slate-green, rust and bone, in banding rather than spots. Drask shed in patches rather than whole skins, and treat it as grooming.
+- **Tail.** Thick and muscular, long enough to touch the ground, carried clear of the floor when walking. It dictates how a Drask sits: on stools, on the front edge of a chair, or on seats made with a gap for it.
+- **Hands and feet.** Plantigrade. Four digits on each hand (read as three fingers and an opposable thumb) and on each foot. Claws are left untrimmed but are short, a few centimetres at most, never talons.
+- **Dress.** Ordinary shirts and upper garments, with no need for the open backs the Kell prefer. Below the waist a loincloth, not necessarily thin, which exists mainly to cover and protect the genitals; trousers are not the norm.
+- **Sexes.** Females are the larger and heavier sex, at the top of the 95–110 kg range; males are lighter, with more pronounced brow-to-neck shingling and brighter banding.
+- **Lifespan.** Around 120 years; slow to mature, adult by about 25, elderly from about 95, when the scales dull and thicken at the edges. The Bloom (~150 years ago) falls within two Drask lifetimes, so an old Drask could have known someone who saw Haven fall.
+
+Still **Unresolved**: eye details (pupil shape, iris colours, any inner eyelid).
 
 ### 5.3 Lirra — Ancestral C
 
-The **Lirra** are avian-influenced, feathered or featherlike humanoids, with distinctive balance, skeletal proportions, expressive plumage or crests and functional hands. Whether they have a pronounced beak, intermediate birdlike facial anatomy, and any residual flight-related structures remains **unresolved**. Flightlessness remains a plausible direction, not established fact.
+The **Lirra** are avian-influenced, feathered humanoids, with distinctive balance, skeletal proportions, expressive plumage or crests and functional hands.
+
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17):**
+
+- **Build.** The lightest of the five mid-height peoples: around 1.9 m and 50–55 kg on average, light-boned. The mid-height peoples therefore run from Lirra through Kell to Drask by weight.
+- **Flightless.** The Lirra do not fly and have no wings. Long flight-feather fringes run along the forearms and, shorter, along the upper arms; they are vestigial and decorative.
+- **Face.** A short, blunt, beak-like muzzle with a hard edge where lips would be, teeth behind it. The face is feathered and keeps enough movement for expression; it is not a full beak.
+- **Eyes.** Raptor-like: the eye fills the socket so little or no white shows, with a pale, intense iris under a bony brow shelf. Set more to the sides than a Kell's, so a Lirra turns the head to look straight at someone.
+- **Ears.** No external ears; the ear opening sits behind the eye under a small fan of short feathers.
+- **Crest.** Long feathers from the brow back over the head, raised and flattened with mood, the Lirra's tell as the ruff and ears are the Kell's. Unlike the Kell ruff it is confined to the head.
+- **Feathers.** True feathers on the head, neck, arms and back, short down on the body; they moult, which shows age and health.
+- **Tail.** A long, thin true tail, feathered flat along its length with a short plume at the tip, not a fan or rudder.
+- **Legs and feet.** Digitigrade, with scaled lower legs that are properly muscular rather than thin bird legs, somewhat slimmer than a Kell's but not strikingly so. Three forward toes and a rear toe. Bare, as the Kell's are.
+- **Hands.** Scaled and bare like the lower legs, four long fingers and a thumb; the finest grip of the seven peoples.
+- **Colours.** A small palette per individual, two colours at most, with the crest usually the brighter one. Within that rule players and NPCs have wide freedom.
+- **Dress.** Loose, draped garments, wrapped and pinned, that cover the body fully (unlike the Kell's open backs) while leaving the arms free so the fringes are not crushed.
+- **Sexes.** Same size. The "crest is the brighter colour" rule is strongest in males; a female's crest usually matches her body colour, and her tail plume is longer.
+- **Lifespan.** Around 70 years; fast to mature, adult by about 15, elderly from about 55, when the moult thins and slows.
+
+Still **Unresolved**: voice.
 
 ### 5.4 Revari — Hybrid-descended
 
-The **Revari** are a long-established, self-reproducing people with ancestry involving the Kell, Drask and Lirra. Their general body plan most closely resembles the furred, digitigrade Kell, but individuals show varying inherited traits associated with the scaled Drask and feathered Lirra. Examples such as localized scales, feathered crests, and differing ear or tail shapes are **visual proposals**, not rigid traits possessed by every Revari.
+The **Revari** are a long-established, self-reproducing people with ancestry involving the Kell, Drask and Lirra. Their general body plan most closely resembles the furred, digitigrade Kell, but individuals show varying inherited traits associated with the scaled Drask and feathered Lirra. They are a recognizable people with broad inherited variation, **not arbitrary assemblages of body parts**. Their name is their own identity, not a literal translation of *hybrid*. Their historical reproductive compatibility with the three ancestral peoples still requires explanation, potentially involving ancient reproductive biotechnology; it is not solved by the name, and nothing below touches it.
 
-They should look like a recognizable people with broad inherited variation, **not arbitrary assemblages of body parts**. Their name is their own identity, not a literal translation of *hybrid*. Their historical reproductive compatibility with the three ancestral peoples still requires explanation, potentially involving ancient reproductive biotechnology; it is not solved by the name.
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17):**
+
+- **Base.** The Kell silhouette (5.1): rangy, digitigrade, furred, mid-height, with a full tail. Weight stays close to the Kell's, around 2 m and 65–70 kg on average.
+- **Trait menu and cap.** An individual shows at most two or three visible non-Kell traits, drawn only from this list: patches of fine scales on the hands, forearms, shins, brow, shoulder blades, abdomen or hips; a feather fringe on the forearms, a feather crest on the crown in place of the ruff, or feathers mixed through the ruff itself; a scaled Drask-like tail, Kell-sized or heavier and often furred at the tip, or a thin feathered Lirra-like one; Drask-style covered ear membranes in place of Kell ears; a shorter, broader muzzle. (Menu widened 2026-10-17 on the owner's decision, for the admin character Ravis Vardur.) Everything not on the list is Kell.
+- **Family resemblance.** Traits run in families rather than appearing at random; a Revari's parents and siblings share most of their visible traits.
+- **Never present.** A full Drask snout, a beak, true feathers over the whole body, or Lirra legs and feet. Those remain with the ancestral peoples.
+- **Eyes.** Kell eyes by default, including the reflective layer; a pale Lirra-type iris is a possible inherited trait.
+- **Colours.** The Kell palette and patterning (5.1); scale and feather patches follow the Drask and Lirra colour rules (5.2, 5.3) where they appear.
+- **Dress.** Mixed by family: Revari with a ruff dress as the Kell do, the rest wear ordinary clothes. The loincloth remains a Drask custom.
+- **Sexes, lifespan and eyes.** As the Kell (5.1): ruff length and tail crest differ by sex, male voices lower; around 90 years, adult by about 18, elderly from about 70; irises from the Kell set, with the pale Lirra-type iris as the inherited trait above, and the same green-gold eyeshine.
+
+Still **Unresolved**: the reproductive history above.
 
 ### 5.5 Astrel — Engineered; “Void Walkers”
 
 The **Astrel** were engineered for hazardous orbital construction, spacecraft maintenance, and other reduced-gravity or extraterrestrial industrial work. Their colloquial or historic occupational designation is **Void Walkers**.
 
-**Provisional anatomical detail within the established body plan:**
-- Tall, slender or lanky humanoid proportions, with long limbs and dexterous hands.
-- Smooth skin with little or no hair.
-- Adaptations for prolonged low-gravity activity and enhanced radiation resilience.
-- Possible discomfort or functional disadvantage in high gravity, still to be quantified.
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17). Their looks point to none of the three ancestral peoples in particular, in keeping with Section 18's safeguard against assuming each engineered people derives from its commissioning people:**
 
-Radiation tolerance does **not** grant survival in vacuum; protective suits and life support remain necessary. Astrel today are free to pursue any profession in societies recognizing their rights; their engineering purpose must not be presented as their inevitable vocation.
+- **Build.** The tallest people (5.8): 2.3–2.4 m and 70–80 kg on average. Long limbs, narrow shoulders and a long neck; a frame that looks stretched rather than thin.
+- **Skin.** Smooth and hairless. Deep charcoal through ash grey, sometimes mottled; the skin dulls and mottles further with age.
+- **Face.** A short, blunt, hairless muzzle with a nose, lips and an expressive mouth; neither Kell, Drask nor Lirra in cast.
+- **Eyes.** Large, suited to dim work in shadowed structures, with visible whites and a transparent inner lid that closes against glare.
+- **Ears.** Small and flat to the head, nothing that would catch inside a helmet.
+- **Hands.** Four long fingers with an extra joint, and one thumb.
+- **Feet.** Prehensile, with a grasping big toe, so an Astrel can anchor by foot in low gravity. Shoes fit badly; bare or open-toed feet are the everyday norm.
+- **Tail.** None.
+- **Gravity.** At full gravity they tire faster over a long shift and favour sitting or leaning, so Astrel are often found perched on rails and ledges. A tendency for description, not a game mechanic.
+- **Radiation.** Enhanced radiation resilience, which does **not** grant survival in vacuum; suits and life support remain necessary.
+- **Dress.** Close-fitting layered garments with attachment loops and many pockets, a habit carried over from generations of suit liners and now worn by choice.
+- **Sexes.** Little visible difference beyond reproductive anatomy and voice; males' skin mottles earlier. This is a plain fact about the Astrel, with no claim about why they were made so.
+- **Lifespan.** Around 85 years; adult by about 18, elderly from about 65, when the mottling is plain. Nothing in their making shortens their lives.
+
+Astrel today are free to pursue any profession in societies recognizing their rights; their engineering purpose must not be presented as their inevitable vocation. Still **Unresolved**: iris colours.
 
 ### 5.6 Voldren — Engineered; “Cave Crawlers”
 
 The **Voldren** were engineered for mining, excavation and other dangerous work underground. **Cave Crawlers** is an occupational or colloquial designation, potentially harsher or more derogatory in some circumstances than the other two engineered peoples' labels. Precisely who uses it neutrally, disparagingly or as a reclaimed term is **unresolved**.
 
-**Provisional anatomical detail within the established body plan:**
-- Short, broad, exceptionally powerful and muscular builds.
-- Thick, resilient, possibly leathery and textured skin.
-- Heavy-duty joints and limbs adapted to confined industrial environments.
-- Small or recessed external ears and protected auditory structures that avoid snagging in tunnels.
-- Resistance to particular workplace hazards such as heat, contaminants and abrasion, not universal invulnerability.
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17). Their looks point to none of the three ancestral peoples in particular (Section 18 safeguard):**
 
-Their stature follows functional subterranean engineering rather than an inherited fantasy-dwarf identity. *Dwarfs* was an out-of-world early placeholder, **superseded** by the name Voldren. Modern Voldren need not be miners.
+- **Build.** The shortest people (5.8): 1.3–1.4 m and 90–110 kg on average, as heavy as a Drask at two thirds the height. Broad shoulders, a thick neck, short limbs, big hands, and a low centre of gravity that makes a Voldren very hard to knock over.
+- **Skin.** Thick, leathery, textured and hairless, with harder keratin plating over the wear surfaces: forearms, shoulders, shins and the backs of the hands. Rock colours: umber, red-brown, dark olive and basalt grey. With age the skin lines and cracks like dried mud rather than wrinkling.
+- **Face.** A heavy brow ridge and a short, broad muzzle, teeth hidden at rest. Wide nostrils with dense bristles inside that filter dust.
+- **Eyes.** Small and deep-set under the brow, with large pupils for low light. Bright light makes them squint, so Voldren on Elsewhere habitually wear a brimmed cap or visor under the axial light.
+- **Ears.** Small and recessed, under a flap of skin that keeps grit out.
+- **Hands.** Four thick fingers and a thumb, with heavy hoof-like nails rather than claws. The strongest grip of the seven peoples and the least fine control.
+- **Feet.** Plantigrade, broad, thick-soled. Even so, the conditions they were made for punished bare feet and hands, so Voldren have always worked in boots and gloves. Gloves are rarer now; the preference for a good pair of boots remains.
+- **Tail.** None.
+- **Hazards.** Resistance to heat, contaminants and abrasion, never invulnerability.
+- **Dress.** Sturdy layered clothing with reinforced knees and elbows, worn by habit even by Voldren who have never been underground, with good boots and the cap or visor above.
+- **Sexes.** Little visible difference beyond reproductive anatomy and voice; females' brow ridge is lower. A plain fact about the Voldren, with no claim about why they were made so.
+- **Lifespan.** Around 95 years; adult by about 18, elderly from about 75, when the skin's cracking is plain. Nothing in their making shortens their lives.
+
+Their stature follows functional subterranean engineering rather than an inherited fantasy-dwarf identity. *Dwarfs* was an out-of-world early placeholder, **superseded** by the name Voldren. Modern Voldren need not be miners. Still **Unresolved**: iris colours.
 
 ### 5.7 Selk — Engineered; “Sea Walkers”
 
 The **Selk** were engineered for hazardous underwater construction, deep-water extraction, salvage and related work. Their historical or colloquial designation is **Sea Walkers**. The earlier *Aquarians* label was a working placeholder and is **superseded**, as is the 2026-10-10 working name *Neshyr*.
 
-**Provisional anatomical detail within the established body plan:**
-- Sharklike or shark-inspired humanoid appearance, with smooth streamlined skin.
-- Powerful swimming musculature and potentially webbed extremities or a swimming tail.
-- Pressure adaptations and exceptional breath-holding or oxygen storage.
-- Effective terrestrial locomotion and ordinary participation in dry, shared living environments.
-
 **Settled design constraint:** Selk are **air-breathing** and do **not** need permanently submerged accommodations. They could live aboard the Nine across generations without specially flooded ship compartments. Their aquatic adaptations are not immunity to Prospect's alien ocean hazards. They are not restricted to aquatic professions.
 
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17). Their looks point to none of the three ancestral peoples in particular (Section 18 safeguard):**
+
+- **Build.** Mid-height (5.8): 1.9–2.0 m and 85–95 kg on average, dense swimming muscle with a deep chest for lung capacity; the second heaviest of the mid-height peoples after the Drask.
+- **Skin.** Smooth, hairless and cool to the touch, needing no water to stay healthy. Countershaded, dark above and pale below: slate blue, dark green or grey-brown over cream. Scars heal white and stay visible; the skin pales with age.
+- **Head and face.** A broad, slightly flattened head with a short wide muzzle and a wide mouth, teeth hidden at rest. The shark reference is the head shape only; there is no dorsal fin.
+- **Eyes.** Set wide, with visible whites and a protective inner lid that sweeps across while swimming.
+- **Ears and nose.** No external ears, only small openings. Nostrils that seal shut, closed reflexively when startled.
+- **Sensory line.** A line of fine sensory pits along the jaw and down each flank reads pressure and movement in water, and faintly in air; a Selk tends to notice someone moving behind them before anyone else does.
+- **Fins.** Fin-like stabilising appendages along the outer forearms and calves, folded flat against the limb on land and spread in water for stability.
+- **Hands and feet.** Four fingers and a thumb with mild webbing. Plantigrade feet that are very fully webbed, so ordinary shoes do not fit and Selk wear footwear made for them.
+- **Tail.** None.
+- **Breath and pressure.** Exceptional breath-holding and oxygen storage, and tolerance of pressure at depth.
+- **Dress.** Simple fitted clothing, often sleeveless, in water-shedding fabrics, cut to let the fins lie flat, with a dislike of heavy layers and of anything that would drag in water.
+- **Sexes.** Little visible difference beyond reproductive anatomy and voice; males' countershading boundary sits higher on the flank. A plain fact about the Selk, with no claim about why they were made so.
+- **Lifespan.** Around 85 years; adult by about 18, elderly from about 65, when the paling is plain. Nothing in their making shortens their lives.
+
+Still **Unresolved**: iris colours.
+
 ### 5.8 Shared species-design and naming boundaries
+
+**Sexes and lifespans (Established; project-owner decisions, approved 2026-10-17):** each people's entry gives its visible sex differences and typical lifespan. The differences are visible enough that a description can say "a Kell female", never affect capability, map onto character creation's male/female choice, and no one sex is the larger one across all seven peoples. Lifespans sit near a human scale, assuming a year close to an Earth year under the translation convention (Section 2), so that "generations ago" and "~150 years since the Bloom" keep their weight. **Wording (owner's decision, 2026-10-17):** content and prompts say *male* and *female* ("a Revari male", "the Voldren female who runs the café"), never *man*, *woman*, *men* or *women*, which read as human-coded.
+
+**Height ladder (Established; project-owner decision, approved 2026-10-17):** the Voldren are the shortest people, engineered to work in confined spaces, and the Astrel the tallest, engineered for low gravity; the other five peoples are fairly close to one another in height. Relative weights are **not decided** beyond each people's own entry.
 
 All seven peoples must be capable of broadly shared habitation and ordinary community life. Species may affect appearance, anatomy, environmental tolerance or modest gameplay capabilities, but must not determine intelligence, morality, personality, politics, class, or profession. Citizenship, upbringing, culture, economic position and personal experience are separate character dimensions.
 
@@ -150,4 +245,3 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 **Open questions for the owner, not answered here:** whether the engineered peoples' naming customs carry any trace of their history as assigned labour (names given by a commission, reclaimed names, chosen names at emancipation), whether any people uses a structure other than given + family, and whether family names pass down one line or both. Any of those would change a row's structure column and should be decided before the generator is treated as more than a placeholder.
 
 ---
-
