@@ -24,13 +24,13 @@
       "kind": "ambient_object",
       "room": "lift_concourse"
     },
-    "concourse_otheryn_courier": {
-      "content": "ambient/npcs/concourse_otheryn_courier.md",
+    "concourse_astrel_courier": {
+      "content": "ambient/npcs/concourse_astrel_courier.md",
       "kind": "ambient_npc",
       "room": "lift_concourse"
     },
-    "courtyard_neshyr_neighbor": {
-      "content": "ambient/npcs/courtyard_neshyr_neighbor.md",
+    "courtyard_selk_neighbor": {
+      "content": "ambient/npcs/courtyard_selk_neighbor.md",
       "kind": "ambient_npc",
       "room": "residential_courtyard"
     },
@@ -95,8 +95,8 @@
       "kind": "planting_bed",
       "room": "old_quarter_square"
     },
-    "square_elderly_kethari": {
-      "content": "ambient/npcs/square_elderly_kethari.md",
+    "square_elderly_kell": {
+      "content": "ambient/npcs/square_elderly_kell.md",
       "kind": "ambient_npc",
       "room": "old_quarter_square"
     },

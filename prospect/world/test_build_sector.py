@@ -227,6 +227,20 @@ class BuildSectorTests(TestCase):
         self.assertEqual(len(report.pruned), 1)
         self.assertEqual(len(search_tag(key="t_thing", category=AMBIENT)), 0)
 
+    def test_renamed_ambient_npc_id_prunes_the_old_object(self):
+        # An NPC is a DefaultObject, not a character, so the character
+        # guard doesn't keep the old-id one (LR-LORE-0001's id rename).
+        npc = {"kind": "ambient_npc", "typeclass": "typeclasses.npcs.NPC", "tag_category": AMBIENT,
+               "room": "t_room_a", "key": "a neighbor", "aliases": [], "attributes": {"desc": "A neighbor."}}
+        self.manifest["entities"]["t_old_neighbor"] = copy.deepcopy(npc)
+        self.build()
+        del self.manifest["entities"]["t_old_neighbor"]
+        self.manifest["entities"]["t_new_neighbor"] = copy.deepcopy(npc)
+        report = self.build(prune=True)
+        self.assertEqual(len(report.pruned), 1)
+        self.assertEqual(len(search_tag(key="t_old_neighbor", category=AMBIENT)), 0)
+        self.assertEqual(one("t_new_neighbor", AMBIENT).location, self.room("t_room_a"))
+
     def test_untagged_old_script_object_not_in_manifest_is_an_orphan(self):
         self.build()
         stray = create_object("typeclasses.objects.RoomObject", key="stray", location=self.room("t_room_a"))

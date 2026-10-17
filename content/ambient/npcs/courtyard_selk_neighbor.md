@@ -1,5 +1,5 @@
 <!--
-ambient_id: courtyard_neshyr_neighbor
+ambient_id: courtyard_selk_neighbor
 room: residential_courtyard
 status: Provisional
 approval: Approved

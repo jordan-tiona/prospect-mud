@@ -1,5 +1,5 @@
 <!--
-ambient_id: square_elderly_kethari
+ambient_id: square_elderly_kell
 room: old_quarter_square
 status: Provisional
 approval: Approved

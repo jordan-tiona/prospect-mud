@@ -1,5 +1,5 @@
 <!--
-ambient_id: concourse_otheryn_courier
+ambient_id: concourse_astrel_courier
 room: lift_concourse
 status: Provisional
 approval: Approved

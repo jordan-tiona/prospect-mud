@@ -52,13 +52,13 @@
       "tag_category": "phase1_ambient",
       "typeclass": "typeclasses.objects.RoomObject"
     },
-    "concourse_otheryn_courier": {
+    "concourse_astrel_courier": {
       "aliases": [],
       "attributes": {
         "desc": "A worn carrying strap crosses the courier's work jacket, and a few scuffs mark the stacked containers beside them. They compare the contents of a handheld display with the labels on the containers, occasionally adjusting the strap on their shoulder. For the moment, their attention is firmly on the delivery.",
         "probe_desc": "The courier's jacket is a working one, patched at the elbows, with a pale square on the chest where some badge or patch used to be. The containers are the standard stacking kind, each with a routing tag, and a couple of the tags have been crossed out and rewritten by hand. The handheld display shows a list, and the courier works down it with a thumb, now and then frowning at a line and glancing at the stack before moving on. They have the look of someone who has done this a thousand times and would like to be done with it by the end of the shift."
       },
-      "key": "An Otheryn courier",
+      "key": "An Astrel courier",
       "kind": "ambient_npc",
       "poses": [
         "checking the labels on a stack of delivery containers",
@@ -69,13 +69,13 @@
       "tag_category": "phase1_ambient",
       "typeclass": "typeclasses.npcs.NPC"
     },
-    "courtyard_neshyr_neighbor": {
+    "courtyard_selk_neighbor": {
       "aliases": [],
       "attributes": {
-        "desc": "A Neshyr resident tends the plants beside the courtyard path, pausing now and then to clear away a leaf or inspect a stem. Their everyday clothes are smudged at the knees from working near the soil. They seem comfortable making an unhurried job of it.",
+        "desc": "A Selk resident tends the plants beside the courtyard path, pausing now and then to clear away a leaf or inspect a stem. Their everyday clothes are smudged at the knees from working near the soil. They seem comfortable making an unhurried job of it.",
         "probe_desc": "The neighbor works along the row with a small hand fork and a cloth bag for whatever they pull up, one plant at a time. These beds are better kept than the square's: the soil is dark and loose, the edges tidy, a few stakes labelled in a neat hand. Their sleeves are pushed past the elbow, and their everyday clothes have clearly been worn for this before, the knees permanently darkened. When a door opens somewhere above, they glance up, nod to whoever it is, and go back to the stem they were checking."
       },
-      "key": "A Neshyr neighbor",
+      "key": "A Selk neighbor",
       "kind": "ambient_npc",
       "poses": [
         "checking the soil around a row of small plants",
@@ -91,7 +91,7 @@
         "Daven"
       ],
       "attributes": {
-        "desc": "Daven Varek is a Kethari with a relaxed, attentive manner and a well-worn set of everyday clothes. He looks like someone used to speaking with strangers, though there's nothing rehearsed about the way he listens.",
+        "desc": "Daven Varek is a Kell with a relaxed, attentive manner and a well-worn set of everyday clothes. He looks like someone used to speaking with strangers, though there's nothing rehearsed about the way he listens.",
         "npc_id": "daven_varek",
         "probe_desc": "Daven's clothes have the softness of being worn and washed many times: a plain jacket over a shirt that was once a brighter color, and nothing on him that suggests a uniform or a rank. His coat is neatly kept, his ears easy and attentive, turning toward whoever is speaking. The desk in front of him is arranged for the next visitor rather than the last one, a few information sheets squared up and a cup pushed to one side. He has the knack of sitting still while someone works out what they want to ask, and the slight lift of the ears that says he's heard the question before and doesn't mind hearing it again."
       },
@@ -136,7 +136,7 @@
         "Given"
       ],
       "attributes": {
-        "desc": "Given Marr is a Neshyr medical technician in plain work clothes, his attention moving easily between his patient and the nearby monitors. His manner is unhurried, as though answering another confused question is a perfectly ordinary part of the shift.",
+        "desc": "Given Marr is a Selk medical technician in plain work clothes, his attention moving easily between his patient and the nearby monitors. His manner is unhurried, as though answering another confused question is a perfectly ordinary part of the shift.",
         "npc_id": "given_marr",
         "probe_desc": "Given's work clothes are the plain, washable kind, with a small pocket of instruments at the chest and an identification tag clipped to the collar. His hands are steady and clean, and he keeps them where a patient can see them. He checks the nearest display with a glance that takes in several readings at once, then gives the patient his attention again as if the display had only confirmed what he'd already noticed. He has the look of someone a long way into a shift that has gone, so far, exactly as expected, and who sees no reason to rush the end of it."
       },
@@ -151,7 +151,7 @@
         "Iri"
       ],
       "attributes": {
-        "desc": "Iri Vael is a young Naevari woman in casual, slightly rumpled clothes with a volunteer's badge clipped over the top and a tablet tucked under one arm. She has the bright, slightly impatient attentiveness of someone who finds most things interesting.",
+        "desc": "Iri Vael is a young Revari woman in casual, slightly rumpled clothes with a volunteer's badge clipped over the top and a tablet tucked under one arm. She has the bright, slightly impatient attentiveness of someone who finds most things interesting.",
         "npc_id": "iri_vael",
         "probe_desc": "Iri's tablet goes everywhere with her, its edge chipped and its screen crowded with open notes; she holds it the way other people hold a cup, for something to do with her hands. Her clothes are the kind a student wears from a lecture straight to a shift somewhere, comfortable and a little creased, the volunteer's badge clipped on as an afterthought. Her fur is tidy without being fussed over. She listens with her whole face, leaning in a little, and when something catches her interest she visibly stores it away, half a word already forming before you've finished. She's at ease here, but still has the air of someone learning the place rather than someone who has always belonged to it."
       },
@@ -224,13 +224,13 @@
       "tag_category": "garden_prop",
       "typeclass": "typeclasses.objects.PlantingBed"
     },
-    "square_elderly_kethari": {
+    "square_elderly_kell": {
       "aliases": [],
       "attributes": {
-        "desc": "Gray has crept into the fur around the Kethari's muzzle and ears. A slim reading tablet rests in their lap, held at an easy angle, while their ears occasionally turn toward the sounds of the square. They seem content to read and let the bustle carry on around them.",
+        "desc": "Gray has crept into the fur around the Kell's muzzle and ears. A slim reading tablet rests in their lap, held at an easy angle, while their ears occasionally turn toward the sounds of the square. They seem content to read and let the bustle carry on around them.",
         "probe_desc": "The tablet in their lap is an old one, its casing scuffed pale at the corners, and the text on it is set large. They read slowly and without hurry, one ear swivelling toward any raised voice or rattling cart while the other stays trained on the page. A walking stick leans against the bench beside them, its handle worn to a shine. Their coat is well brushed, their clothes neat and a little old-fashioned, and the bench they have chosen is the one with the best view of the whole square."
       },
-      "key": "An elderly Kethari",
+      "key": "An elderly Kell",
       "kind": "ambient_npc",
       "poses": [
         "reading quietly from a tablet resting in their lap",
@@ -259,7 +259,7 @@
         "Tarin"
       ],
       "attributes": {
-        "desc": "Tarin Os is a Sylari in worn work overalls, scaled and long-snouted, with a loop of tools at his belt that has seen more use than the rest of him. He gives a newcomer a brief, measuring glance before going back to whatever is in his hands.",
+        "desc": "Tarin Os is a Drask in worn work overalls, scaled and long-snouted, with a loop of tools at his belt that has seen more use than the rest of him. He gives a newcomer a brief, measuring glance before going back to whatever is in his hands.",
         "npc_id": "tarin_os",
         "probe_desc": "Up close, the overalls are stained the way they get on someone who works on the same kinds of equipment over and over: a dark smear in the same place on each thigh, a pale worn patch where a tool rests against his hip. The scales along the backs of his hands are flecked with old nicks, and his fingers are careful and exact. A pair of magnifying lenses hangs around his neck, pushed aside while he talks, and a tagged component sits half-disassembled on the bench in front of him, each piece laid out in the order it came off. He doesn't fidget. When he isn't speaking he's usually looking at whatever he was working on, as if the conversation is a pause in the job rather than the other way round."
       },
@@ -274,7 +274,7 @@
         "Veska"
       ],
       "attributes": {
-        "desc": "Veska Renn is an Aevyrin woman in neat, plain work clothes at the records end of the counter, her plumage kept as tidy as the trays of reports at her elbow. She looks up when someone approaches, but not before she has finished the line she's on.",
+        "desc": "Veska Renn is a Lirra woman in neat, plain work clothes at the records end of the counter, her plumage kept as tidy as the trays of reports at her elbow. She looks up when someone approaches, but not before she has finished the line she's on.",
         "npc_id": "veska_renn",
         "probe_desc": "Veska's end of the counter is the orderly one: a slim terminal, a tray of reports that have been filed and a tray of reports that haven't, and nothing in between. Her work clothes are plain and pressed, and the feathers at her crown lie smooth, settled rather than styled. She has the stillness of someone who does one thing at a time. When a visitor starts talking she waits, stylus raised, until she's sure what they're actually saying; then she writes it down in short, exact strokes, and reads it back only if asked. Nothing about her is unfriendly. She simply doesn't seem to find paperwork, or the people who bring it, any more dramatic than they are."
       },
@@ -512,19 +512,19 @@
   },
   "sector_id": "elsewhere",
   "sources": {
-    "content/ambient/npcs/concourse_otheryn_courier.md": "8ea64887b8de597c5efed953c95669db5caaae39445133e5739513a09cd7f312",
-    "content/ambient/npcs/courtyard_neshyr_neighbor.md": "8c5e520d730bc80af213342b6d1f6f6e9ace8b9035cea342acc4e2f5fdbefaaf",
-    "content/ambient/npcs/square_elderly_kethari.md": "336f5519575ff7bfca08e22c5afe1970e1ddaefced6899510b32c77651f84445",
+    "content/ambient/npcs/concourse_astrel_courier.md": "1e3d9903dd366ced5e3452fdb8aa559e6c897702d4e177555bda3bfba9602d3a",
+    "content/ambient/npcs/courtyard_selk_neighbor.md": "b53bc1970487456a28001446e3a5e0e1f2723ea6737edec52bab8faa413d7da8",
+    "content/ambient/npcs/square_elderly_kell.md": "dbc8c47fb90d066b80e2e7e9f6ba16f66717110288a0f8164a4f5756e6272149",
     "content/ambient/objects/civic_services_board.md": "789f2b5986f484e2632c30ec7e44410c6c254111ce2ccf76c61ed6121ae54948",
     "content/ambient/objects/concourse_arrival_directory.md": "7e5fdeb3bc267670f33d0e69f364f71035a0a022a75ecd3ddec302d8deaf27b0",
     "content/ambient/objects/square_noticeboard.md": "3c4c5759a41f5f784dce9926048a184c87fe1ba516ab06b71b74ed2414be8a9c",
     "content/ambient/objects/workshop_parts_tray.md": "f9498d0b8a514f1bf65f2f541fe3f3b0952c6cc7ddcd4bdb1d6a42df581f45b9",
-    "content/npcs/daven_varek.md": "34844bfde92b099456f49b7e26c905579fec09aa867e0301e54211f5b790ed2c",
-    "content/npcs/given_marr.md": "c05c8f95553bc3ff9586d7d68a8162b069f15d3a1d0a9d3af5171036646f889f",
-    "content/npcs/iri_vael.md": "475aa9a450e7ac70c8991f994155ccf323e19978b1e58481c368d56045f161b3",
-    "content/npcs/mara_voss.md": "dda640b09d2f2f3c295b54beb23e6e29ebda44011e151a84594650763998d461",
-    "content/npcs/tarin_os.md": "c762c7e373404df105e64060b6bab69cd04588f05e7b17f2bc8f35c7be4f5a04",
-    "content/npcs/veska_renn.md": "1c100947493c120a7aa2a5db5f6e90c0f3db80e775596161748049f6dacc0400",
+    "content/npcs/daven_varek.md": "4b68a46e368325aa376bc8e8d188539e052b8861e9a7832f27ddc1f1690e6b6f",
+    "content/npcs/given_marr.md": "30bf6d418b6a832f6fed223fc6979ee4c94a39ceb78032ef80377dd1fdd05504",
+    "content/npcs/iri_vael.md": "664a457df4275bc17425790608dd66d9caf40c06204891072e69492abccec68c",
+    "content/npcs/mara_voss.md": "9a15fbad7a8fac58a551a95c91d778e26efaa463388a2697fec5f32cf69cf51a",
+    "content/npcs/tarin_os.md": "0bdcc394e862b1cac0540a7e647409726fc7ab7bdcd36f3ca097569bb8873ca2",
+    "content/npcs/veska_renn.md": "6f76420121247cd1efd919b6fd64e3019ff4c70603434852b74700c79155201d",
     "content/objects/civic_information_display.md": "a4a42210f3684cab3b4952a236266945d454765e6fbfee4f114a61a023f8286c",
     "content/objects/civic_office_skitter_ledger.md": "325776d41f0ddcb573556c303a53846fd6fcf2592adb7675f6b30ca2a31aeb98",
     "content/objects/faulty_heating_module_hint.md": "1c84ada12e1f746516319a62dc9312acc22df2aa251258ae6a68a9f7f2d7052c",
@@ -541,6 +541,6 @@
     "content/rooms/old_quarter_square.md": "ffe14d1602989346e6e39538427f41b0b66d97451ac1572a41ba78781267b9f4",
     "content/rooms/old_quarter_street.md": "bb124de63b81d54211ce0dc05225d455f99a96e4bd69c552d1865db5966d4efa",
     "content/rooms/residential_courtyard.md": "4836c593f5608ec0735167b5ea988eb93120d906bd93a51d5563266df8145b2e",
-    "sectors/elsewhere/sector.json": "03bdfe1ffc023ef4aa36e865008467335823aa815e7634f2f63c31643a51f173"
+    "sectors/elsewhere/sector.json": "d9224fde53cfdf8080ca674b6a04f30b040ef3a4b007237aaa611348ae1803ca"
   }
 }

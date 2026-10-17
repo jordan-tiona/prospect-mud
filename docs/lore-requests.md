@@ -144,4 +144,4 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   - **Owner docs:** `docs/prospect-initial-playtest-design-spec.md` (Section 3 list and the Given/Daven species notes), `docs/prospect-playtest-new-characters-and-rooms.md`, `docs/phase2b-records-discrepancy-proposal.md` still use the old names; historical snapshots under `docs/prospect-constellation-design-v0.*.md` are left as written.
 - Blocking: yes (chargen picker is empty until Dev's part lands alongside the content change)
 - Status: open
-- Resolution: content side done on `lore` 2026-10-16; code, data and spec follow-ups pending.
+- Resolution: content side done on `lore` 2026-10-16. Tools part done on `tools` 2026-10-16: ambient ids renamed to `square_elderly_kell`, `courtyard_selk_neighbor`, `concourse_astrel_courier` (files, `ambient_id`, both JSON files) and Elsewhere re-exported; the rebuild needs `prune=True` to remove the old-id NPCs. Code and spec follow-ups pending.
