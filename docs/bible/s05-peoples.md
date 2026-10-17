@@ -83,15 +83,68 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 - **Borrowing:** cosmopolitan Elsewhere should show overlap. A generator may draw a minority of names from a neighbouring people's table; the proportion is a Tools-lane choice, and the Revari table is built from borrowing by design.
 - **Spread within a table:** the textures below were chosen so that no two rows share an onset style, an ending style and a syllable count. Keep that spread when adding to a table; a new pattern that fits two rows fits neither.
 
-| People | Syllables (given / family) | Onsets | Vowels | Endings | Avoid | Illustrative output (not canon) |
-|---|---|---|---|---|---|---|
-| **Kell** | 1–2 / 1–2 | Hard stop: *k, t, d, b, g* | *a, e, o* | Soft single consonant: *-l, -n, -m, -r* | Sibilants; clusters; open-vowel endings | Kedd Tolan, Bannel Dor, Galen Tobb |
-| **Drask** | 1–2 / 1 | Clusters: *dr, tr, kr, br, sk, st* | Short *a, o, u* | Hard: *-k, -t, -s, -sk, -st* | Liquids as the only consonants; vowel endings; more than two syllables | Krast Vost, Oskan Trak, Brust Dorn |
-| **Lirra** | 2–3 / 2 | Vowel or liquid: *a, e, i, o, l, r, w, y* | Open, often two in a row | Open vowel: *-a, -i, -o, -e*; doubled *ll, rr, nn* in the middle | Any consonant cluster; hard codas | Alira Wenno, Orro Elis, Issa Rowen |
-| **Revari** | 2–3 / 1–2 | Any, drawn from the other six tables | Any | Familiar to an English reader: *-an, -en, -in, -is, -el* | A name that clearly belongs to one other people only; three-syllable *-ari* forms | Corin Hale, Tamsin Ellis, Maren Dole |
-| **Astrel** | 1–2 / 1–2 | *s*-clusters: *st, sk, sp, sl*, or a bare vowel | *a, e, i* | *-l, -n, -s* | Three syllables; doubled consonants; open-vowel endings | Oslen Stav, Islan Nist, Tesper Ask |
-| **Voldren** | 2 / 2, or a translated surname | Voiced: *v, b, d, g* | *a, o, u* | *-ar, -or, -ur, -en*, after a heavy middle cluster (*-ld-, -rd-, -nd-, -rg-*) | Light or liquid-only names; one-syllable given names | Vordan Belgar, Golva Durn, Hald Stonebreaker |
-| **Selk** | 1–2 / 1 | Sibilant or soft: *s, sh, th, m* | *e, i, u* | Closed consonant: *-k, -l, -m, -n, -sk* | Open-vowel endings; *r*-heavy names; three syllables | Sim Thesk, Selm Ussan, Shenn Isk |
+#### Kell
+
+- **Syllables (given / family):** 1–2 / 1–2
+- **Onsets:** Hard stop: *k, t, d, b, g*
+- **Vowels:** *a, e, o*
+- **Endings:** Soft single consonant: *-l, -n, -m, -r*
+- **Avoid:** Sibilants; clusters; open-vowel endings
+- **Illustrative output (not canon):** Kedd Tolan, Bannel Dor, Galen Tobb
+
+#### Drask
+
+- **Syllables (given / family):** 1–2 / 1
+- **Onsets:** Clusters: *dr, tr, kr, br, sk, st*
+- **Vowels:** Short *a, o, u*
+- **Endings:** Hard: *-k, -t, -s, -sk, -st*
+- **Avoid:** Liquids as the only consonants; vowel endings; more than two syllables
+- **Illustrative output (not canon):** Krast Vost, Oskan Trak, Brust Dorn
+
+#### Lirra
+
+- **Syllables (given / family):** 2–3 / 2
+- **Onsets:** Vowel or liquid: *a, e, i, o, l, r, w, y*
+- **Vowels:** Open, often two in a row
+- **Endings:** Open vowel: *-a, -i, -o, -e*; doubled *ll, rr, nn* in the middle
+- **Avoid:** Any consonant cluster; hard codas
+- **Illustrative output (not canon):** Alira Wenno, Orro Elis, Issa Rowen
+
+#### Revari
+
+- **Syllables (given / family):** 2–3 / 1–2
+- **Onsets:** Any, drawn from the other six tables
+- **Vowels:** Any
+- **Endings:** Familiar to an English reader: *-an, -en, -in, -is, -el*
+- **Avoid:** A name that clearly belongs to one other people only; three-syllable *-ari* forms
+- **Illustrative output (not canon):** Corin Hale, Tamsin Ellis, Maren Dole
+
+#### Astrel
+
+- **Syllables (given / family):** 1–2 / 1–2
+- **Onsets:** *s*-clusters: *st, sk, sp, sl*, or a bare vowel
+- **Vowels:** *a, e, i*
+- **Endings:** *-l, -n, -s*
+- **Avoid:** Three syllables; doubled consonants; open-vowel endings
+- **Illustrative output (not canon):** Oslen Stav, Islan Nist, Tesper Ask
+
+#### Voldren
+
+- **Syllables (given / family):** 2 / 2, or a translated surname
+- **Onsets:** Voiced: *v, b, d, g*
+- **Vowels:** *a, o, u*
+- **Endings:** *-ar, -or, -ur, -en*, after a heavy middle cluster (*-ld-, -rd-, -nd-, -rg-*)
+- **Avoid:** Light or liquid-only names; one-syllable given names
+- **Illustrative output (not canon):** Vordan Belgar, Golva Durn, Hald Stonebreaker
+
+#### Selk
+
+- **Syllables (given / family):** 1–2 / 1
+- **Onsets:** Sibilant or soft: *s, sh, th, m*
+- **Vowels:** *e, i, u*
+- **Endings:** Closed consonant: *-k, -l, -m, -n, -sk*
+- **Avoid:** Open-vowel endings; *r*-heavy names; three syllables
+- **Illustrative output (not canon):** Sim Thesk, Selm Ussan, Shenn Isk
 
 **Open questions for the owner, not answered here:** whether the engineered peoples' naming customs carry any trace of their history as assigned labour (names given by a commission, reclaimed names, chosen names at emancipation), whether any people uses a structure other than given + family, and whether family names pass down one line or both. Any of those would change a row's structure column and should be decided before the generator is treated as more than a placeholder.
 
