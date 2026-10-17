@@ -96,6 +96,7 @@ Only certain chronological relationships are established. Dates marked approxima
 | Following centuries | Haven expands horizontally, then vertically after reaching its practical protected footprint |
 | Approximately 400 years before present (working age) | Elsewhere is founded as the first independent orbital habitat; over centuries its cylinder expands lengthwise away from the docking end |
 | Following centuries | Additional habitats emerge, developing into the Constellation; Elsewhere becomes a mature, economically diverse civic republic |
+| Before the Bloom (ordering relative to Elsewhere's founding undecided) | Emancipation of the engineered peoples is complete across Haven and the habitats; hereditary servitude is history everywhere by the time of the Bloom, not something Elsewhere alone ended |
 | ~150 years before present | The Bloom and ensuing containment catastrophe cause the fall of Haven |
 | Present | The Constellation survives; Prospect remains a dangerous resource and exploration destination |
 
