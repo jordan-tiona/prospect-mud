@@ -57,8 +57,8 @@ The **Lirra** are avian-influenced, feathered humanoids, with distinctive balanc
 - **Build.** The lightest of the five mid-height peoples: around 1.9 m and 50–55 kg on average, light-boned. The mid-height peoples therefore run from Lirra through Kell to Drask by weight.
 - **Flightless.** The Lirra do not fly and have no wings. Long flight-feather fringes run along the forearms and, shorter, along the upper arms; they are vestigial and decorative.
 - **Face.** A short, blunt, beak-like muzzle with a hard edge where lips would be, teeth behind it. The face is feathered and keeps enough movement for expression; it is not a full beak.
-- **Eyes.** *(Lore-lane recommendation, confirm or veto.)* Raptor-like: the eye fills the socket so little or no white shows, with a pale, intense iris under a bony brow shelf. Set more to the sides than a Kell's, so a Lirra turns the head to look straight at someone.
-- **Ears.** *(Lore-lane recommendation, confirm or veto.)* No external ears; the ear opening sits behind the eye under a small fan of short feathers.
+- **Eyes.** Raptor-like: the eye fills the socket so little or no white shows, with a pale, intense iris under a bony brow shelf. Set more to the sides than a Kell's, so a Lirra turns the head to look straight at someone.
+- **Ears.** No external ears; the ear opening sits behind the eye under a small fan of short feathers.
 - **Crest.** Long feathers from the brow back over the head, raised and flattened with mood, the Lirra's tell as the ruff and ears are the Kell's. Unlike the Kell ruff it is confined to the head.
 - **Feathers.** True feathers on the head, neck, arms and back, short down on the body; they moult, which shows age and health.
 - **Tail.** A long, thin true tail, feathered flat along its length with a short plume at the tip, not a fan or rudder.
@@ -73,9 +73,21 @@ Still **Unresolved** after this pass: whether the sexes differ in plumage, lifes
 
 ### 5.4 Revari — Hybrid-descended
 
-The **Revari** are a long-established, self-reproducing people with ancestry involving the Kell, Drask and Lirra. Their general body plan most closely resembles the furred, digitigrade Kell, but individuals show varying inherited traits associated with the scaled Drask and feathered Lirra. Examples such as localized scales, feathered crests, and differing ear or tail shapes are **visual proposals**, not rigid traits possessed by every Revari.
+The **Revari** are a long-established, self-reproducing people with ancestry involving the Kell, Drask and Lirra. Their general body plan most closely resembles the furred, digitigrade Kell, but individuals show varying inherited traits associated with the scaled Drask and feathered Lirra. They are a recognizable people with broad inherited variation, **not arbitrary assemblages of body parts**. Their name is their own identity, not a literal translation of *hybrid*. Their historical reproductive compatibility with the three ancestral peoples still requires explanation, potentially involving ancient reproductive biotechnology; it is not solved by the name, and nothing below touches it.
 
-They should look like a recognizable people with broad inherited variation, **not arbitrary assemblages of body parts**. Their name is their own identity, not a literal translation of *hybrid*. Their historical reproductive compatibility with the three ancestral peoples still requires explanation, potentially involving ancient reproductive biotechnology; it is not solved by the name.
+**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and the earlier "visual proposals" become the fixed trait menu):**
+
+- **Base.** The Kell silhouette (5.1): rangy, digitigrade, furred, mid-height, with a full tail. Weight stays close to the Kell's, around 2 m and 65–70 kg on average.
+- **Trait menu and cap.** An individual shows at most two or three visible non-Kell traits, drawn only from this list: patches of fine scales on the hands, forearms, shins or brow; a feather fringe on the forearms, or a feather crest on the crown in place of the ruff; a heavier Drask-like tail, or a thin feathered Lirra-like one; Drask-style covered ear membranes in place of Kell ears; a shorter, broader muzzle. Everything not on the list is Kell.
+- **Family resemblance.** Traits run in families rather than appearing at random; a Revari's parents and siblings share most of their visible traits.
+- **Never present.** A full Drask snout, a beak, true feathers over the whole body, or Lirra legs and feet. Those remain with the ancestral peoples.
+- **Eyes.** Kell eyes by default, including the reflective layer; a pale Lirra-type iris is a possible inherited trait.
+- **Colours.** The Kell palette and patterning (5.1); scale and feather patches follow the Drask and Lirra colour rules (5.2, 5.3) where they appear.
+- **Dress.** Mixed by family: Revari with a ruff dress as the Kell do, the rest wear ordinary clothes. The loincloth remains a Drask custom.
+
+Still **Unresolved** after this pass: the reproductive history above, and any trait that is more common in one sex.
+
+**Content follow-ups once approved (Lore lane):** one physical sentence in the Revari entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.4.md` chunk, and one or two named traits for Iri Vael, whose description currently gives her only "fur tidy without being fussed over" (tracked in LR-LORE-0003).
 
 ### 5.5 Astrel — Engineered; “Void Walkers”
 

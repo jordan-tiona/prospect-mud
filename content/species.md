@@ -46,7 +46,7 @@ A long-established people with ancestry from the Kell, Drask and Lirra alike.
 
 A long-established people whose ancestry draws on the Kell, Drask and Lirra alike. Most resemble the furred Kell in general build, but individuals carry varying inherited traits from all three lines, so no two families look quite the same. They are a people in their own right, not a mixture, and their name is their own.
 
-<!-- Left out as visual proposals in bible 5.4: localized scales, feathered crests, differing ear or tail shapes. The origin of their cross-ancestry is unresolved and not mentioned. -->
+<!-- Draft (bible 5.4 physical description, 2026-10-17; pending owner approval, then move this sentence into the entry above after the second sentence): "Those traits run in families: a patch of fine scales here, a feather crest or fringe there, a heavier tail or covered ears, never more than a few on one person." The origin of their cross-ancestry is unresolved and not mentioned. -->
 
 ## Engineered peoples
 

@@ -28,6 +28,15 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 
 ---
 
+## LR-LORE-0003: Rewrite NPC descriptions that conflict with the 2026-10-17 appearance canon
+- Requested by: owner (worldbuilding session with the Lore lane, 2026-10-17)
+- Needed for: every `desc`/`probe_desc` line and ambient pose that describes a person, once bible 5.1-5.7's new physical descriptions are approved
+- What's needed: The owner's rule for the session: any NPC whose current description conflicts with what the session establishes gets rewritten; none are exceptions. Known so far: **Daven Varek** (Kell) wears "a plain jacket over a shirt", against 5.1's dress item (no top, or a backless apron-like garment); **Tarin Os** (Drask) wears "worn work overalls" with stains "on each thigh", against 5.2's dress item, and the owner's call is a durable, protective loincloth on the lines of a blacksmith's apron; **Iri Vael** (Revari) has only "fur tidy without being fussed over" and needs one or two named traits from 5.4's menu, chosen so they run in her family; **Veska Renn** (Lirra) has "neat, plain work clothes" and "feathers at her crown lie smooth", to be checked against 5.3's loose draped dress and head crest; the **elderly Kell** in the square can take a light touch-up (ruff, ears). Mara Voss, Given Marr, the Selk neighbor and the Astrel courier follow once 5.5-5.7 are decided. Each rewrite bumps the persona's `prompt_version`.
+- Blocking: no
+- Status: open (waits on the owner approving the Draft sections of bible 5)
+- Approved by: owner
+- Resolution:
+
 ## LR-0001: Civic Office skitter ledger and Iri's pest-log framing
 - Requested by: dev
 - Needed for: post-quest skitter loop (`world/build_skitter_ledger.py`, `content/npcs/iri_vael.md`'s `## Actions`)
