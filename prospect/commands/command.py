@@ -48,17 +48,24 @@ class _SessionCommandLoggingMixin:
     truthy, so this always returns None.
     """
 
+    # A command that sets this False logs only the word typed, not its
+    # arguments (commands/tell.py: tells are private, owner 2026-10-17).
+    log_input = True
+
     def at_pre_cmd(self):
         caller = self.caller
         if inherits_from(caller, "typeclasses.characters.Character"):
             session_id = session_id_for(caller)
             if session_id:
+                raw_input = getattr(self, "raw_string", "") or ""
+                if not self.log_input:
+                    raw_input = self.cmdstring
                 log_command(
                     session_id=session_id,
                     actor_key=caller.key,
                     actor_dbref=caller.dbref,
                     location=caller.location.key if caller.location else "",
-                    raw_input=getattr(self, "raw_string", "") or "",
+                    raw_input=raw_input,
                 )
         return super().at_pre_cmd()
 

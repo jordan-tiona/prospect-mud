@@ -37,6 +37,7 @@ from commands.say import CmdSay
 from commands.scripted_login import CmdScriptedLogin
 from commands.stealth import CmdPose, CmdStealth
 from commands.tannoy import CmdTannoy
+from commands.tell import CmdTell
 from commands.use import CmdUse
 
 
@@ -76,6 +77,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdNoMatch())
         self.add(CmdFeedback())
         self.add(CmdStealth())
+        self.add(CmdTell())
         # Stock pose, but revealing a hidden speaker first.
         self.add(CmdPose())
 
@@ -99,6 +101,9 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         # any commands you add below will overload the default ones.
         #
         self.add(CmdPlaytest())
+        # Replaced by commands/tell.py's `tell`, which stays private
+        # and online-only.
+        self.remove(default_cmds.CmdPage)
 
 
 class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):
