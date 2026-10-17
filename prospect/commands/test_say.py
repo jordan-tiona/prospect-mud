@@ -191,6 +191,29 @@ class _SayTestBase(TestCase):
 
 
 class SayCommandTests(_SayTestBase):
+    # -- other players present: one hint per room visit -----------------
+
+    @patch("commands.say.chat")
+    def test_unaddressed_line_with_other_players_hints_once(self, mock_chat):
+        self._add_other_player()
+        self._say("hello")
+        self._say("anyone here?")
+        hints = [m for m in self.messages if "won't assume you mean them" in m]
+        self.assertEqual(len(hints), 1)
+        self.assertIn("say to Mara", hints[0])
+        mock_chat.assert_not_called()
+
+    @patch("commands.say.chat")
+    def test_hint_comes_back_in_a_new_room(self, mock_chat):
+        self._add_other_player()
+        self._add_other_player(location=self.workshop)
+        self._say("hello")
+        self.actor.location = self.workshop
+        self._say("hello")
+        hints = [m for m in self.messages if "won't assume you mean them" in m]
+        self.assertEqual(len(hints), 2)
+        self.assertIn("say to Tarin", hints[1])
+
     # -- addressing: lone player, lone NPC -----------------------------
 
     @patch("commands.say.chat")

@@ -844,10 +844,24 @@ class CmdSay(DefaultCmdSay):
             # moment ago and drops the name on a follow-up line (a
             # perfectly natural thing to do in real conversation).
             # This nudge is sent only to the speaker, not broadcast.
-            if len(present_talkative_npcs(caller.location)) > 1:
+            npcs = present_talkative_npcs(caller.location)
+            if len(npcs) > 1:
                 caller.msg(
                     "(More than one person here might answer that - say who you mean, "
                     "e.g. 'say to Veska, ...', or just use their name.)"
+                )
+            elif npcs and caller.ndb.other_players_hint_room != caller.location:
+                # One NPC, but other players here too, so the lone-
+                # player rule didn't apply and the line went to the
+                # room (found before the 5-8 player playtest: everyone
+                # starts in the Medical Bay with Given). Once per room
+                # visit, since players chatting with each other would
+                # otherwise get it on every line.
+                caller.ndb.other_players_hint_room = caller.location
+                first_name = npcs[0].key.split()[0]
+                caller.msg(
+                    f"(With other people here, {first_name} won't assume you mean them - "
+                    f"use their name, e.g. 'say to {first_name}, ...', to talk to them.)"
                 )
             return
         if not message:

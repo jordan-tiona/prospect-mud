@@ -227,3 +227,13 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   > A tannoy near the ceiling crackles to life: "Attention, new arrivals. To talk to someone, type SAY and then what you want to say. To move, type a direction, such as NORTH or SOUTHWEST. To look at something, type LOOK and then its name; to study it more closely, type PROBE and then its name. To change how others see you, type DESCRIBE. To speak privately with someone, wherever they are, type TELL, then their name, then your message. To talk with the other testers and the staff running this playtest, type PLAYTEST, or PT, and then your message; to stop hearing that channel, type PLAYTEST OFF. To hear this again, type TANNOY."
 
   Notes: the TELL sentence says "wherever they are" rather than naming the earpiece, so it holds whether or not LR-DEV-0005 is approved. The PLAYTEST sentence names testers and staff outright, since the tannoy is already OOC framing and pretending the channel is in-world would mislead. The only trim is "something you can see" to "something"; if the owner finds the whole thing too long, the first cuts are the direction examples ("such as NORTH or SOUTHWEST") and the PLAYTEST OFF clause (`help playtest` covers it). Presentation suggestion for Dev, optional: break the string before the PLAYTEST sentence so the OOC channel instruction stands apart from the in-game commands.
+
+## LR-DEV-0007: Persona fixes from playtest findings PF-0003, PF-0006, PF-0010
+- Requested by: dev (on the owner's behalf, 2026-10-17)
+- Needed for: the public playtest with 5-8 people; PF-0003 and PF-0010 decide whether quests are discovered naturally
+- What's needed: Three findings in `docs/playtest-findings.md` are triaged to Lore but weren't in this queue, so they may not have been seen. Full evidence and notes are in each entry. (1) **PF-0003:** Tarin denies the skittering his own hint pose describes; his skitter triggers should include the noise and his frown, and he should know he hears it (Daven's display section is the model). (2) **PF-0006:** Iri calls the Revari "mixed ancestry"; check against bible 5 as merged 2026-10-17. (3) **PF-0010:** Veska offers the parcel on small talk; her persona says it comes up in general conversation, while Tarin's bar is the reverse. Raise hers to the parcel itself or an offer of help. All three are persona prose. Bump `prompt_version`, and mark each finding's status `fixed in <commit>` when done.
+- Blocking: yes for the public playtest (PF-0003, PF-0010)
+- Status: open
+- Approved by:
+- Resolution:
+
