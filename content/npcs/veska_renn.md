@@ -8,7 +8,6 @@ pronouns: she/her
 prompt_version: 11
 status: Provisional
 approval: Approved
-body: Draft (LR-DEV-0002/LR-DEV-0003, 2026-10-16; What you know, People you know, Your misdelivered parcel as giver, holder prose removed); pending owner approval
 knowledge_scope (bible sections, Established content only):
   11.1, 11.2.1, 11.2.5, 11.2.6, 5.8
 actions: accept_handoff, remember_fact

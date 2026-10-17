@@ -8,7 +8,6 @@ pronouns: he/him
 prompt_version: 3
 status: Provisional
 approval: Approved
-body: Draft (LR-DEV-0002, 2026-10-16; who's-who line gains each neighbor's subject); pending owner approval
 knowledge_scope (bible sections, Established content only):
   11.2.1, 11.2.2, 11.2.3, 11.2.6
 actions: remember_fact, give_directions

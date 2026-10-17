@@ -8,7 +8,6 @@ pronouns: she/her
 prompt_version: 19
 status: Provisional
 approval: Approved
-body: Draft (LR-DEV-0002/LR-DEV-0003, 2026-10-16; What you know trimmed to history, People you know, display now in Daven's office); pending owner approval
 knowledge_scope (bible sections, Established content only):
   3, 4.4, 10.1, 10.4, 11.1, 11.5, 11.2.1, 11.2.5
 actions: give_directions, remember_fact, verify_revision_report, propose_commitment, accept_commitment, decline_commitment, confirm_bed_tended, log_dead_skitters_with_iri

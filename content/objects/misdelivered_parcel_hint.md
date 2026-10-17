@@ -4,8 +4,6 @@ status: Provisional
 approval: Approved
 moved_from: prospect/world/build_quest_props.py QUEST_PROPS (verbatim, Tools lane, 2026-10-16)
 Lore review (LR-TOOLS-0001, 2026-10-16): text kept as moved. Owner approved 2026-10-16; nothing to copy back to code.
-short_description: Draft (LR-DEV-0003, 2026-10-16; parcel moved from the café counter to the Civic Office counter); pending owner approval
-probe_description: Draft (LR-DEV-0003, 2026-10-16; last sentence rewritten for the Civic Office); pending owner approval
 -->
 
 # a small parcel
