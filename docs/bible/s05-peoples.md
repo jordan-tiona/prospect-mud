@@ -73,7 +73,7 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 
 ### 5.9 Provisional personal-name guidance
 
-**Status:** **Draft, 2026-10-16, pending project-owner approval.** Rewritten by the Lore lane after the species rename so that each people's personal names (a) sound as if they come from the same language as the people's own name, (b) are distinguishable from every other people's names, and (c) are specified tightly enough for a Tools-lane name generator. It remains creative guidance, **not established linguistic or cultural canon**: there is still no settled language family, etymology or species-wide naming law, no existing character is to be renamed, and a resident's family, upbringing and personal choice can override any of it.
+**Status:** Approved by the project owner 2026-10-16 as creative guidance (owner's note: approved as a working basis for a name generator, to be judged against its output later). Rewritten by the Lore lane after the species rename so that each people's personal names (a) sound as if they come from the same language as the people's own name, (b) are distinguishable from every other people's names, and (c) are specified tightly enough for a Tools-lane name generator. It remains creative guidance, **not established linguistic or cultural canon**: there is still no settled language family, etymology or species-wide naming law, no existing character is to be renamed, and a resident's family, upbringing and personal choice can override any of it.
 
 **Shared rules for every people, and for any generator:**
 
