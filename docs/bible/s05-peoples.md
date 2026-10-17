@@ -31,9 +31,22 @@ Still **Unresolved** after this pass: iris colours, any visible difference betwe
 
 ### 5.2 Drask — Ancestral B
 
-The **Drask** are scaled, plantigrade humanoids with a distinctly **lizardlike face and elongated snout**, rather than a flat humanoid face with cosmetic scales. Distinctive cranial features, scale patterns and a substantial tail are likely, though their exact forms are unfinished. They have a fully functional humanoid body plan and hands.
+The **Drask** are scaled, plantigrade humanoids with a distinctly **lizardlike face and elongated snout**, rather than a flat humanoid face with cosmetic scales. They have a fully functional humanoid body plan and hands, and are anatomically distinct from the Kell.
 
-Their reptilian appearance should not automatically entail Earth-reptile physiology or a need for special heated environments; warm-blooded or otherwise self-regulating metabolism is a **suggested solution**, not a finalized biological specification. They are anatomically distinct from the Kell.
+**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and the earlier "cranial features, scale patterns and a substantial tail are likely, though their exact forms are unfinished" gap is closed):**
+
+- **Build.** Dense and broad-chested, the heaviest of the five mid-height peoples: around 1.9 m and 95–110 kg on average. At the same height as the Kell they read as opposites, mass against reach.
+- **Metabolism.** Warm-blooded and self-regulating. Drask do not bask, need no heated environments, and share ordinary rooms and streets on the same terms as everyone else; the earlier "suggested solution" is now the answer.
+- **Head and face.** Elongated snout with the teeth hidden at rest; a Drask's teeth show only when the mouth is open. From the brow back over the skull and down the neck the scales are larger and protrude, angled backward like shingles: a hand run from brow to neck slides over them, and a hand run from neck to brow catches and pulls. The tongue is dark and unforked.
+- **Ears.** No external ears. Hearing is through a covered membrane flush with the side of the head.
+- **Scales.** Fine and smooth on the face, hands and underside; larger and keeled on the back, shoulders and tail. Colours outside the Earth-reptile range: ochre, slate-green, rust and bone, in banding rather than spots. Drask shed in patches rather than whole skins, and treat it as grooming.
+- **Tail.** Thick and muscular, long enough to touch the ground, carried clear of the floor when walking. It dictates how a Drask sits: on stools, on the front edge of a chair, or on seats made with a gap for it.
+- **Hands and feet.** Plantigrade. Four digits on each hand (read as three fingers and an opposable thumb) and on each foot. Claws are left untrimmed but are short, a few centimetres at most, never talons.
+- **Dress.** Ordinary shirts and upper garments, with no need for the open backs the Kell prefer. Below the waist a loincloth, not necessarily thin, which exists mainly to cover and protect the genitals; trousers are not the norm.
+
+Still **Unresolved** after this pass: eye details (pupil shape, any inner eyelid), iris and scale-pattern variation between the sexes, lifespan.
+
+**Content follow-ups once approved (Lore lane):** one physical sentence in the Drask entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.2.md` chunk, and a revised `desc`/`probe_desc` for Tarin Os, whose "worn work overalls" with stains "on each thigh" conflict with the dress item unless the owner wants him in protective overalls as workshop wear.
 
 ### 5.3 Lirra — Ancestral C
 

@@ -30,7 +30,7 @@ Furred, canine-looking people who walk on the balls of their feet, with mobile, 
 
 Scaled people with a distinctly lizardlike face and elongated snout, on an otherwise upright body plan with fully capable hands. One of the three ancestral peoples of the home system. They need no special warmth or conditions, and share the same streets and rooms as everyone else.
 
-<!-- Left out as unfinished in bible 5.2: cranial features, scale patterns, the tail. The third sentence rests on 5.2's design boundary (no Earth-reptile physiology or heated environments) and 5.8's shared-habitation rule, not on a settled metabolism. -->
+<!-- Draft (bible 5.2 physical description, 2026-10-17; pending owner approval, then move this sentence into the entry above after the first sentence): "Broad and heavy, with larger scales shingled back from the brow, no outer ears, and a thick tail that reaches the ground." Once 5.2 is approved the third sentence rests on an established warm-blooded metabolism, not only on the design boundary. -->
 
 ## Lirra
 
