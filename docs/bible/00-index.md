@@ -4,8 +4,8 @@
 
 | Field | Value |
 |---|---|
-| Document version | 0.4.7 |
-| Last organized | 2026-10-16 |
+| Document version | 0.4.8 |
+| Last organized | 2026-10-17 |
 | Development stage | Early development |
 | Project | Text-based multiplayer science-fiction MUD |
 | Creative direction | Science fantasy grounded in consistent speculative science; atmosphere and political/technological influences from Alastair Reynolds' *Revelation Space* universe |

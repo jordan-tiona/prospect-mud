@@ -106,7 +106,7 @@ These activities provide an important foundation for quests, character professio
 
 ## 8. The founding of Haven
 
-**Status:** Separate settlements, protected connections, eventual political union, and a common protection network are established. The first approximately fifty years is a planning interval. Sealed tunnels are a possible early transport form. Constitutional details, specific political actors, emancipation timing, and retained local autonomy remain unresolved.
+**Status:** Separate settlements, protected connections, eventual political union, and a common protection network are established. The first approximately fifty years is a planning interval. Sealed tunnels are a possible early transport form. Constitutional details, specific political actors, and retained local autonomy remain unresolved. Emancipation timing is partly decided (owner, 2026-10-17): complete everywhere before the Bloom; whether it preceded or followed Elsewhere's founding is still open.
 
 ### 8.1 The original nine settlements
 
@@ -152,7 +152,7 @@ The differing legal status of engineered peoples was a particularly important so
 
 Some settlements may have emancipated their engineered populations, while others continued to enforce hereditary servitude. Political integration would force those incompatible legal systems into direct confrontation.
 
-The exact constitutional settlement, timing of emancipation, and degree of retained district autonomy have not been decided.
+The exact constitutional settlement and degree of retained district autonomy have not been decided. On emancipation, the owner decided 2026-10-17 that it was complete across Haven and the habitats before the Bloom, so by the present day hereditary servitude is history for every people everywhere in the Constellation; whether it came before or after Elsewhere's founding is undecided. Elsewhere's founding commitment to equal citizenship (Section 11.2) was therefore not unique in its outcome, only early or firm in its wording, and should not be presented as if Elsewhere alone ended servitude. Prejudice against the engineered peoples, and unequal treatment short of servitude on some habitats, remain possible and unresolved.
 
 ### 8.4 The establishment of Haven
 
