@@ -73,10 +73,29 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 
 ### 5.9 Provisional personal-name guidance
 
-**Status:** Creative brainstorming guidance, **not established linguistic or cultural canon**. These are loose possibilities for future character names, not exclusive rules for a species or a requirement to rename existing characters.
+**Status:** **Draft, 2026-10-16, pending project-owner approval.** Rewritten by the Lore lane after the species rename so that each people's personal names (a) sound as if they come from the same language as the people's own name, (b) are distinguishable from every other people's names, and (c) are specified tightly enough for a Tools-lane name generator. It remains creative guidance, **not established linguistic or cultural canon**: there is still no settled language family, etymology or species-wide naming law, no existing character is to be renamed, and a resident's family, upbringing and personal choice can override any of it.
 
-| People | Possible naming texture, for exploration |
-|---|---|
+**Shared rules for every people, and for any generator:**
+
+- **Structure:** every existing character uses a given name and a family name (Daven Varek, Tarin Os, Veska Renn, Iri Vael, Mara Voss, Given Marr, Sera Venn, Talin Saye). Whether any people uses a single name, a patronymic or another structure is **unresolved**; until decided, generate given + family for all seven, with the family name drawn from the same table as the given name.
+- **Readability:** no name may need a pronunciation note. No *ae*, *ei*, *y*-as-vowel in a stressed syllable, or apostrophes. If it cannot be read aloud on first sight, reject it.
+- **Exclusions:** never emit the seven peoples' names (Kell, Drask, Lirra, Revari, Astrel, Voldren, Selk), the superseded names (Kethari, Sylari, Aevyrin, Naevari, Otheryn, Neshyr), place or field names (Prospect, Haven, Elsewhere, Venn, Saye), existing character names, or any English dictionary word (a text game and the NPC model both read *Silk* as cloth). Translated descriptive surnames are the one deliberate exception, and only where a row allows them.
+- **Borrowing:** cosmopolitan Elsewhere should show overlap. A generator may draw a minority of names from a neighbouring people's table; the proportion is a Tools-lane choice, and the Revari table is built from borrowing by design.
+- **Spread within a table:** the textures below were chosen so that no two rows share an onset style, an ending style and a syllable count. Keep that spread when adding to a table; a new pattern that fits two rows fits neither.
+
+| People | Syllables (given / family) | Onsets | Vowels | Endings | Avoid | Illustrative output (not canon) |
+|---|---|---|---|---|---|---|
+| **Kell** | 1–2 / 1–2 | Hard stop: *k, t, d, b, g* | *a, e, o* | Soft single consonant: *-l, -n, -m, -r* | Sibilants; clusters; open-vowel endings | Kedd Tolan, Bannel Dor, Galen Tobb |
+| **Drask** | 1–2 / 1 | Clusters: *dr, tr, kr, br, sk, st* | Short *a, o, u* | Hard: *-k, -t, -s, -sk, -st* | Liquids as the only consonants; vowel endings; more than two syllables | Krast Vost, Oskan Trak, Brust Dorn |
+| **Lirra** | 2–3 / 2 | Vowel or liquid: *a, e, i, o, l, r, w, y* | Open, often two in a row | Open vowel: *-a, -i, -o, -e*; doubled *ll, rr, nn* in the middle | Any consonant cluster; hard codas | Alira Wenno, Orro Elis, Issa Rowen |
+| **Revari** | 2–3 / 1–2 | Any, drawn from the other six tables | Any | Familiar to an English reader: *-an, -en, -in, -is, -el* | A name that clearly belongs to one other people only; three-syllable *-ari* forms | Corin Hale, Tamsin Ellis, Maren Dole |
+| **Astrel** | 1–2 / 1–2 | *s*-clusters: *st, sk, sp, sl*, or a bare vowel | *a, e, i* | *-l, -n, -s* | Three syllables; doubled consonants; open-vowel endings | Oslen Stav, Islan Nist, Tesper Ask |
+| **Voldren** | 2 / 2, or a translated surname | Voiced: *v, b, d, g* | *a, o, u* | *-ar, -or, -ur, -en*, after a heavy middle cluster (*-ld-, -rd-, -nd-, -rg-*) | Light or liquid-only names; one-syllable given names | Vordan Belgar, Golva Durn, Hald Stonebreaker |
+| **Selk** | 1–2 / 1 | Sibilant or soft: *s, sh, th, m* | *e, i, u* | Closed consonant: *-k, -l, -m, -n, -sk* | Open-vowel endings; *r*-heavy names; three syllables | Sim Thesk, Selm Ussan, Shenn Isk |
+
+**Open questions for the owner, not answered here:** whether the engineered peoples' naming customs carry any trace of their history as assigned labour (names given by a commission, reclaimed names, chosen names at emancipation), whether any people uses a structure other than given + family, and whether family names pass down one line or both. Any of those would change a row's structure column and should be decided before the generator is treated as more than a placeholder.
+
+---|---|
 | Kell | Softer or more flowing combinations of sounds. |
 | Drask | Sharper consonants and sometimes shorter, more clipped forms. |
 | Lirra | More melodic combinations and open vowels. |
