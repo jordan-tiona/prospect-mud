@@ -23,7 +23,7 @@ from world.appearance import (
 class ValidateTests(TestCase):
     def test_accepts_text_at_the_limit(self):
         for field, limit in LIMITS.items():
-            self.assertEqual(validate(field, "x" * limit), ("x" * limit, ""))
+            self.assertEqual(validate(field, "x" * limit)[1], "")
 
     def test_refuses_text_over_the_limit_rather_than_cutting_it(self):
         for field, limit in LIMITS.items():

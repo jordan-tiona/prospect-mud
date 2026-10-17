@@ -22,6 +22,7 @@ import re
 from evennia.utils.ansi import strip_ansi, strip_mxp
 
 from world.output_check import is_flagged
+from world.speech_format import normalize_speech
 
 FIELDS = ("pose", "short", "long")
 
@@ -51,6 +52,14 @@ def clean(field: str, text: str) -> str:
     return text
 
 
+def tidy(text: str) -> str:
+    """Capitalize each sentence and add a closing full stop if there's
+    none, the same as `say` does (world/speech_format.py) - owner,
+    2026-10-17. Also applied when a description is shown, so text
+    saved before this still reads right."""
+    return normalize_speech(text)[0]
+
+
 def validate(field: str, text: str) -> tuple[str, str]:
     """(cleaned text, "") if it can be stored, else ("", the reason to
     show the player). Over-long text is refused, never cut short."""
@@ -64,7 +73,9 @@ def validate(field: str, text: str) -> tuple[str, str]:
         )
     if is_flagged(text)[0] or _INSTRUCTION_RE.search(text):
         return "", f"Your {label} should describe how your character looks."
-    return text, ""
+    # After the length check, so a full stop added here never pushes
+    # text the player kept within the limit over it.
+    return (text if field == "pose" else tidy(text)), ""
 
 
 def get(character, field: str) -> str:

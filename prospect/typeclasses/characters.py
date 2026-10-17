@@ -10,7 +10,7 @@ creation commands.
 
 from evennia.objects.objects import DefaultCharacter
 
-from world.appearance import identity_phrase
+from world.appearance import identity_phrase, tidy
 from world.session_log import log_room_changed, session_id_for
 from world.stealth import is_hidden, is_staff, suppressed_for
 
@@ -98,6 +98,10 @@ class Character(ObjectParent, DefaultCharacter):
             identity = identity_phrase(self)
             if identity:
                 return indent_paragraphs(identity[0].upper() + identity[1:] + ".")
+        if has_probe_text:
+            return indent_paragraphs(tidy(self.db.probe_desc))
+        if self.db.desc:
+            return indent_paragraphs(tidy(self.db.desc))
         return super().get_display_desc(looker, **kwargs)
 
     def at_post_puppet(self, **kwargs):

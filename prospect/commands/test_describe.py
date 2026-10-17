@@ -36,14 +36,14 @@ class DescribeTests(TestCase):
         self.actor.execute_cmd("describe short tall and rangy, with a scarred jaw")
         self.actor.execute_cmd("describe long Years of dock work show in the hands.")
         self.assertEqual(self.actor.db.ambient_pose, "leaning on the counter")
-        self.assertEqual(self.actor.db.desc, "tall and rangy, with a scarred jaw")
+        self.assertEqual(self.actor.db.desc, "Tall and rangy, with a scarred jaw.")
         self.assertEqual(self.actor.db.probe_desc, "Years of dock work show in the hands.")
 
     def test_plain_english_forms(self):
         self.actor.execute_cmd("change my short description to tall and rangy")
         self.actor.execute_cmd("set my pose to leaning on the counter.")
         self.actor.execute_cmd("update my bio: Years of dock work.")
-        self.assertEqual(self.actor.db.desc, "tall and rangy")
+        self.assertEqual(self.actor.db.desc, "Tall and rangy.")
         self.assertEqual(self.actor.db.ambient_pose, "leaning on the counter")
         self.assertEqual(self.actor.db.probe_desc, "Years of dock work.")
 
@@ -61,11 +61,26 @@ class DescribeTests(TestCase):
         self.assertEqual(self.actor.db.ambient_pose, "leaning on the counter")
         self.assertIn("at most 40", self._output())
 
+    def test_descriptions_are_tidied_like_dialogue(self):
+        self.actor.execute_cmd("describe short a tall man. he limps")
+        self.assertEqual(self.actor.db.desc, "A tall man. He limps.")
+
+    def test_text_saved_before_tidying_still_shows_tidied(self):
+        self.actor.db.desc = "a tall man"
+        self.actor.db.probe_desc = "years of dock work"
+        self.assertIn("A tall man.", self.actor.get_display_desc(self.other))
+        self.assertIn("Years of dock work.", self.actor.get_display_desc(self.other, probe=True))
+
+    def test_pose_is_not_capitalized(self):
+        self.actor.execute_cmd("describe pose leaning on the counter")
+        self.assertEqual(self.actor.db.ambient_pose, "leaning on the counter")
+
     def test_short_description_allows_300_characters(self):
+        # The added full stop doesn't count against the limit.
         self.actor.execute_cmd("describe short " + "x" * 300)
-        self.assertEqual(self.actor.db.desc, "x" * 300)
+        self.assertEqual(self.actor.db.desc, "X" + "x" * 299 + ".")
         self.actor.execute_cmd("describe short " + "y" * 301)
-        self.assertEqual(self.actor.db.desc, "x" * 300)
+        self.assertEqual(self.actor.db.desc, "X" + "x" * 299 + ".")
         self.assertIn("at most 300", self._output())
 
     def test_bare_describe_lists_every_field_and_how_to_change_it(self):
@@ -90,7 +105,7 @@ class DescribeTests(TestCase):
         self.actor.db.probe_desc = "Years of dock work."
         self.actor.execute_cmd("describe")
         output = self._output()
-        self.assertEqual(output.count("tall and rangy"), 1)
+        self.assertEqual(output.count("Tall and rangy."), 1)
         self.assertEqual(output.count("Years of dock work."), 1)
         self.assertIn("(14/300)", output)
 
@@ -125,7 +140,7 @@ class DescribeTests(TestCase):
         self.other.execute_cmd("probe Tester")
         seen = "\n".join(m for m in self.other_messages if m)
         self.assertIn("Tester is here, leaning on the counter.", seen)
-        self.assertIn("tall and rangy", seen)
+        self.assertIn("Tall and rangy.", seen)
         self.assertIn("Years of dock work.", seen)
 
     def test_look_without_a_short_description_shows_species_and_sex(self):
