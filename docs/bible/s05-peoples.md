@@ -148,16 +148,5 @@ The engineered peoples' formal names (**Astrel**, **Voldren**, **Selk**) and the
 
 **Open questions for the owner, not answered here:** whether the engineered peoples' naming customs carry any trace of their history as assigned labour (names given by a commission, reclaimed names, chosen names at emancipation), whether any people uses a structure other than given + family, and whether family names pass down one line or both. Any of those would change a row's structure column and should be decided before the generator is treated as more than a placeholder.
 
----|---|
-| Kell | Softer or more flowing combinations of sounds. |
-| Drask | Sharper consonants and sometimes shorter, more clipped forms. |
-| Lirra | More melodic combinations and open vowels. |
-| Revari | Names that may sound relatively familiar to English-speaking players. |
-| Astrel | Sometimes shorter, more economical forms. |
-| Voldren | Stronger-sounding names; translated descriptive surnames, such as *Stonebreaker*, are an option. |
-| Selk | Smooth, flowing or sibilant combinations. |
-
-A resident's language, family, personal choices, ancestry and upbringing can matter more than any such tendency. Cosmopolitan Elsewhere should have substantial overlap and borrowing between traditions. There is **no settled language family, etymology, phonotactics or species-wide naming rule**. Examples are authoring aids only; neither the tendencies nor *Stonebreaker* establish a particular family or history.
-
 ---
 
