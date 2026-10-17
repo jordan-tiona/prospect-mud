@@ -62,7 +62,7 @@ Engineered in the home system for hazardous work in orbit and low gravity, such 
 
 Engineered in the home system for mining, excavation and other dangerous work underground. The old label "Cave Crawlers" still follows them, and whether it is neutral or an insult depends very much on who is saying it. Modern Voldren work at whatever they choose, miners or not.
 
-<!-- Left out as Provisional in bible 5.6: short, broad, powerful build, thick or leathery skin, recessed ears, hazard resistance. The label's society-wide meaning is unresolved (5.6, 5.8), which is why the entry says "depends on who is saying it" rather than settling it. -->
+<!-- Draft (bible 5.6 physical description, 2026-10-17; pending owner approval, then move this sentence into the entry above after the first sentence): "The shortest of the seven and among the heaviest, broad and thick-limbed, with leathery rock-coloured skin, a heavy brow over small deep-set eyes, and a lasting taste for good boots." The label's society-wide meaning is unresolved (5.6, 5.8), which is why the entry says "depends on who is saying it" rather than settling it. -->
 
 ## Selk
 

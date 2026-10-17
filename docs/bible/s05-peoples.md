@@ -115,14 +115,22 @@ Astrel today are free to pursue any profession in societies recognizing their ri
 
 The **Voldren** were engineered for mining, excavation and other dangerous work underground. **Cave Crawlers** is an occupational or colloquial designation, potentially harsher or more derogatory in some circumstances than the other two engineered peoples' labels. Precisely who uses it neutrally, disparagingly or as a reclaimed term is **unresolved**.
 
-**Provisional anatomical detail within the established body plan:**
-- Short, broad, exceptionally powerful and muscular builds.
-- Thick, resilient, possibly leathery and textured skin.
-- Heavy-duty joints and limbs adapted to confined industrial environments.
-- Small or recessed external ears and protected auditory structures that avoid snagging in tunnels.
-- Resistance to particular workplace hazards such as heat, contaminants and abrasion, not universal invulnerability.
+**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and replaces the earlier "provisional anatomical detail" list). Their looks point to none of the three ancestral peoples in particular (Section 18 safeguard):**
 
-Their stature follows functional subterranean engineering rather than an inherited fantasy-dwarf identity. *Dwarfs* was an out-of-world early placeholder, **superseded** by the name Voldren. Modern Voldren need not be miners.
+- **Build.** The shortest people (5.8): 1.3–1.4 m and 90–110 kg on average, as heavy as a Drask at two thirds the height. Broad shoulders, a thick neck, short limbs, big hands, and a low centre of gravity that makes a Voldren very hard to knock over.
+- **Skin.** Thick, leathery, textured and hairless, with harder keratin plating over the wear surfaces: forearms, shoulders, shins and the backs of the hands. Rock colours: umber, red-brown, dark olive and basalt grey. With age the skin lines and cracks like dried mud rather than wrinkling.
+- **Face.** A heavy brow ridge and a short, broad muzzle, teeth hidden at rest. Wide nostrils with dense bristles inside that filter dust.
+- **Eyes.** Small and deep-set under the brow, with large pupils for low light. Bright light makes them squint, so Voldren on Elsewhere habitually wear a brimmed cap or visor under the axial light.
+- **Ears.** Small and recessed, under a flap of skin that keeps grit out.
+- **Hands.** Four thick fingers and a thumb, with heavy hoof-like nails rather than claws. The strongest grip of the seven peoples and the least fine control.
+- **Feet.** Plantigrade, broad, thick-soled. Even so, the conditions they were made for punished bare feet and hands, so Voldren have always worked in boots and gloves. Gloves are rarer now; the preference for a good pair of boots remains.
+- **Tail.** None.
+- **Hazards.** Resistance to heat, contaminants and abrasion, never invulnerability.
+- **Dress.** Sturdy layered clothing with reinforced knees and elbows, worn by habit even by Voldren who have never been underground, with good boots and the cap or visor above.
+
+Their stature follows functional subterranean engineering rather than an inherited fantasy-dwarf identity. *Dwarfs* was an out-of-world early placeholder, **superseded** by the name Voldren. Modern Voldren need not be miners. Still **Unresolved** after this pass: any visible difference between the sexes, lifespan.
+
+**Content follow-ups once approved (Lore lane):** one physical sentence in the Voldren entry of `content/species.md` (held in a comment there meanwhile), an update to `content/lore/5.6.md` (currently the Established portion only), and a physical description for Mara Voss, whose `desc`/`probe_desc` describe only her apron and manner (LR-LORE-0003).
 
 ### 5.7 Selk — Engineered; “Sea Walkers”
 
