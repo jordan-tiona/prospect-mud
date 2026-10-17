@@ -23,7 +23,7 @@ Recording the report does not establish an investigation result, correct the man
 
 ## Minimal NPC content
 
-Veska Renn is an Aevyrin records clerk working alongside Iri at the Civic Office. She is meticulous, patient, and mildly dry-humored. She distinguishes reported claims from verified facts. No extensive biography is needed.
+Veska Renn is a Lirra records clerk working alongside Iri at the Civic Office. She is meticulous, patient, and mildly dry-humored. She distinguishes reported claims from verified facts. No extensive biography is needed.
 
 Use the existing persona metadata and HTML-comment conventions. Keep her lore scope narrow and limited to existing Established material. Unknown content should remain a `TODO(lore)` comment rather than be invented. Her personality and the scenario above are owner-supplied content; action instructions are engineering prompt work governed by the action-prompt guidelines.
 

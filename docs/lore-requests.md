@@ -145,8 +145,9 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   - **Tools, separate from the rename:** bible 5.9 (approved 2026-10-16) now specifies per-people personal-name rules (syllables, onsets, vowels, endings, avoid-lists, exclusions, borrowing) written to be turned into a name generator for ambient NPCs and chargen suggestions. The owner approved it as a working basis to be judged against the generator's output, so expect a revision round once there is output to look at.
   - **Owner docs:** `docs/prospect-initial-playtest-design-spec.md` (Section 3 list and the Given/Daven species notes), `docs/prospect-playtest-new-characters-and-rooms.md`, `docs/phase2b-records-discrepancy-proposal.md` still use the old names; historical snapshots under `docs/prospect-constellation-design-v0.*.md` are left as written.
 - Blocking: yes (chargen picker is empty until Dev's part lands alongside the content change)
-- Status: open
-- Resolution: content side done on `lore` 2026-10-16. Tools part done on `tools` 2026-10-16: ambient ids renamed to `square_elderly_kell`, `courtyard_selk_neighbor`, `concourse_astrel_courier` (files, `ambient_id`, both JSON files) and Elsewhere re-exported; the rebuild needs `prune=True` to remove the old-id NPCs. Code and spec follow-ups pending.
+- Status: approved (2026-10-17; all parts done)
+- Approved by: owner
+- Resolution: content side done on `lore` 2026-10-16. Tools part done on `tools` 2026-10-16: ambient ids renamed to `square_elderly_kell`, `courtyard_selk_neighbor`, `concourse_astrel_courier` (files, `ambient_id`, both JSON files) and Elsewhere re-exported; the rebuild needs `prune=True` to remove the old-id NPCs. Dev part done 2026-10-16 (master 6801e2e): `SPECIES_CHOICES` and tests renamed, sector rebuilt with prune, and `migrate_legacy_species()` remapped four existing characters. Owner docs renamed by Dev 2026-10-17 at the owner's request: the playtest spec, `prospect-playtest-new-characters-and-rooms.md`, and the one mention in `phase2b-records-discrepancy-proposal.md`.
 
 ## LR-DEV-0004: Mara should ask for help with her heating unit, not send people to Tarin
 - Requested by: dev (owner-approved, 2026-10-17)

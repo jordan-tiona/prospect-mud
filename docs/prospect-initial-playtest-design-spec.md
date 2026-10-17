@@ -41,7 +41,7 @@ The program obtains:
 
 1. **Character name** — permanent after confirmation.
 2. **Sex** — male or female as currently envisioned; permanent after confirmation.
-3. **People/species** — one of the seven established playable peoples (Kethari, Sylari, Aevyrin, Naevari, Otheryn, Voldren, Neshyr); permanent after confirmation.
+3. **People/species** — one of the seven established playable peoples (Kell, Drask, Lirra, Revari, Astrel, Voldren, Selk); permanent after confirmation.
 4. **Account credentials/password** — securely handled by the game's authentication system, presented in fiction as the means of reestablishing control when returning from stasis.
 
 Allow the player to review and correct permanent identity choices **before confirming**. No appearance questions in this build; later cosmetic customization is a separate future feature. No profession choice at any point during this playtest.
@@ -54,7 +54,7 @@ Once complete, the character becomes fully conscious in a **Medical Bay**, with 
 
 ### Part A: Given Marr — first contact
 
-**Given Marr** is the medical technician supervising the player's recovery. The role is practical, calm, and professional rather than a deep personal backstory. The previously proposed Neshyr species association can remain a working choice pending review.
+**Given Marr** is the medical technician supervising the player's recovery. The role is practical, calm, and professional rather than a deep personal backstory. The previously proposed Selk species association can remain a working choice pending review.
 
 Given can answer ordinary questions about the medical bay, Elsewhere, Prospect, Haven, the Constellation, and the seven peoples **within a normal resident's knowledge**. He is not an omniscient lore encyclopedia or a specialist in every field.
 
@@ -64,7 +64,7 @@ The player should be able to leave freely, ask questions, or find Daven without 
 
 ### Part B: Daven Varek — recurring mentor
 
-**Daven Varek** is responsible for helping the ongoing stream of people awakening from cryosleep settle into ordinary life. The player is not the first person he has helped, nor expected to be the last. His earlier proposed Kethari species association can remain a working choice pending review.
+**Daven Varek** is responsible for helping the ongoing stream of people awakening from cryosleep settle into ordinary life. The player is not the first person he has helped, nor expected to be the last. His earlier proposed Kell species association can remain a working choice pending review.
 
 Daven has a modest office **beyond the square, down a short street**. He is approachable and knowledgeable about the neighborhood. He offers practical guidance, introduces everyday opportunities, and remains someone the player can return to when thinking, *“I don't know what to do next.”*
 

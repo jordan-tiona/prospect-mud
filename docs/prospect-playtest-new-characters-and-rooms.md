@@ -13,7 +13,7 @@ The current approach is to use existing approved lore and keep the characters be
 ## 1. Given Marr — Medical Technician
 
 **Name:** Given Marr — selected  
-**People:** Neshyr — *proposed, retained from earlier character concept*  
+**People:** Selk — *proposed, retained from earlier character concept*  
 **Pronouns:** He/him — working characterization  
 **Occupation:** Medical technician overseeing cryosleep recovery  
 **Primary location:** Medical Bay  
@@ -41,14 +41,14 @@ He isn't especially interested in making a personal connection with every patien
 
 ### Suggested `look Given` description
 
-Given Marr is a Neshyr medical technician in plain work clothes, his attention moving easily between his patient and the nearby monitors. His manner is unhurried, as though answering another confused question is a perfectly ordinary part of the shift.
+Given Marr is a Selk medical technician in plain work clothes, his attention moving easily between his patient and the nearby monitors. His manner is unhurried, as though answering another confused question is a perfectly ordinary part of the shift.
 
 ---
 
 ## 2. Daven Varek — New-Arrival Mentor
 
 **Name:** Daven Varek — selected  
-**People:** Kethari — *proposed, retained from earlier character concept*  
+**People:** Kell — *proposed, retained from earlier character concept*  
 **Pronouns:** He/him — selected direction  
 **Occupation:** Person responsible for helping recently awakened residents settle into Elsewhere (exact formal title unresolved)  
 **Primary location:** Daven's Office  
@@ -79,7 +79,7 @@ Daven is **not** a mysterious authority figure, a quest broker, or a representat
 
 ### Suggested `look Daven` description
 
-Daven Varek is a Kethari with a relaxed, attentive manner and a well-worn set of everyday clothes. He looks like someone used to speaking with strangers, though there's nothing rehearsed about the way he listens.
+Daven Varek is a Kell with a relaxed, attentive manner and a well-worn set of everyday clothes. He looks like someone used to speaking with strangers, though there's nothing rehearsed about the way he listens.
 
 ---
 
@@ -163,7 +163,7 @@ Do not add unrelated ambient characters merely to populate these rooms. The tuto
 
 **Proposed for approval:**
 
-1. Retain **Given as Neshyr** and **Daven as Kethari**. Their names and functional roles are already selected; the species were only earlier working suggestions.
+1. Retain **Given as Selk** and **Daven as Kell**. Their names and functional roles are already selected; the species were only earlier working suggestions.
 2. Approve the three room bodies and local furnishing details as local content, subject to consistency with existing approved files.
 3. Accept **Old Quarter Street** as a working location name, or rename it before file integration.
 4. Keep Daven's official job title and any institution behind his work **unspecified**. It is enough that he is responsible for helping people recently awakened from cryosleep.
