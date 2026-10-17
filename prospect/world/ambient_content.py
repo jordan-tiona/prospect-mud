@@ -5,7 +5,7 @@ sections 5.2/5.3: https://claude.ai/artifact/94ujHRXZNTcD82m14XrjDw),
 and strips all HTML comments first.
 
 Ambient NPCs are a sentence-opening display key (e.g. "An elderly
-Kethari") plus `## Poses` (one or more rotating pose fragments for
+Kell") plus `## Poses` (one or more rotating pose fragments for
 typeclasses.npcs.NPC.set_ambient_poses) and `## Description` (the
 `look` text). Objects are a display key plus a fixed `## Short
 Description` (the room-listing line, typeclasses.objects.RoomObject's
@@ -38,7 +38,7 @@ class AmbientNPCContent:
     room: str  # legacy, optional ("" if absent); placement comes from the sector file
     status: str
     approval: str
-    key: str  # sentence-opening display key, e.g. "An elderly Kethari"
+    key: str  # sentence-opening display key, e.g. "An elderly Kell"
     poses: list  # pose fragments for "<key> is here, <pose>."
     desc: str  # full `look` text
     bible_refs: list = field(default_factory=list)

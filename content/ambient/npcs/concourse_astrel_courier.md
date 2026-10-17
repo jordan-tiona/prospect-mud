@@ -1,12 +1,12 @@
 <!--
-ambient_id: concourse_otheryn_courier
+ambient_id: concourse_astrel_courier
 room: lift_concourse
 status: Provisional
 approval: Approved
 bible_refs: 5.5, 11.2.6, 13.6
 -->
 
-# An Otheryn courier
+# An Astrel courier
 
 ## Poses
 

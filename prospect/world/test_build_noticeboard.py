@@ -22,9 +22,9 @@ class BuildNoticeboardTests(TestCase):
             "typeclasses.characters.Character", key="Tester", location=self.rooms["corner_cafe"]
         )
 
-    def test_builds_the_display_in_the_cafe(self):
+    def test_builds_the_display_in_davens_office(self):
         display = build()
-        self.assertEqual(display.location, self.rooms["corner_cafe"])
+        self.assertEqual(display.location, self.rooms["daven_office"])
         self.assertTrue(display.is_typeclass("typeclasses.objects.RevisionDisplayObject", exact=True))
 
     def test_rerun_does_not_duplicate(self):
@@ -67,3 +67,5 @@ class BuildNoticeboardTests(TestCase):
         matches = search_tag(key="civic_information_display", category=NOTICEBOARD_TAG_CATEGORY)
         self.assertEqual(len(matches), 1)
         self.assertTrue(display.is_typeclass("typeclasses.objects.RevisionDisplayObject", exact=True))
+        # The stale one sat in the café, its pre-2026-10-16 room: moved, not orphaned.
+        self.assertEqual(display.location, self.rooms["daven_office"])

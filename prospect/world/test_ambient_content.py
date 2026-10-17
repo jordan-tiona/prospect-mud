@@ -23,7 +23,7 @@ approval: Approved
 bible_refs: 5.1, 11.2.6
 -->
 
-# An elderly Kethari
+# An elderly Kell
 
 ## Poses
 
@@ -61,7 +61,7 @@ class ParseAmbientNPCTests(SimpleTestCase):
         self.assertEqual(content.ambient_id, "square_elderly_kethari")
         self.assertEqual(content.room, "old_quarter_square")
         self.assertEqual(content.approval, "Approved")
-        self.assertEqual(content.key, "An elderly Kethari")
+        self.assertEqual(content.key, "An elderly Kell")
         self.assertEqual(
             content.poses, ["reading quietly from a tablet", "watching people cross the square"]
         )
@@ -69,7 +69,7 @@ class ParseAmbientNPCTests(SimpleTestCase):
         self.assertEqual(content.bible_refs, ["5.1", "11.2.6"])
 
     def test_missing_key_heading_raises(self):
-        raw = _VALID_NPC.replace("# An elderly Kethari\n\n", "")
+        raw = _VALID_NPC.replace("# An elderly Kell\n\n", "")
         with self.assertRaises(AmbientContentParseError):
             parse_ambient_npc_text("square_elderly_kethari", raw)
 

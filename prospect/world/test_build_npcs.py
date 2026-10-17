@@ -20,8 +20,8 @@ class BuildNpcsDescTests(TestCase):
         self.npcs = build()
 
     def test_given_and_daven_get_their_authored_desc(self):
-        self.assertIn("Given Marr is a Neshyr medical technician", self.npcs["given_marr"].db.desc)
-        self.assertIn("Daven Varek is a Kethari", self.npcs["daven_varek"].db.desc)
+        self.assertIn("Given Marr is a Selk medical technician", self.npcs["given_marr"].db.desc)
+        self.assertIn("Daven Varek is a Kell", self.npcs["daven_varek"].db.desc)
 
     def test_npc_with_no_authored_desc_is_left_alone(self):
         # Every persona has a `desc` now, so strip one from the manifest:
@@ -49,4 +49,4 @@ class BuildNpcsDescTests(TestCase):
 
         build()
         self.assertEqual(len(search_tag(key="given_marr", category=NPC_TAG_CATEGORY)), 1)
-        self.assertIn("Given Marr is a Neshyr medical technician", self.npcs["given_marr"].db.desc)
+        self.assertIn("Given Marr is a Selk medical technician", self.npcs["given_marr"].db.desc)

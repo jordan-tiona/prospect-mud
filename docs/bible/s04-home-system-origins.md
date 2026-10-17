@@ -16,7 +16,7 @@ Three ancestral species existed before the development of true genetic engineeri
 
 The civilization was technologically advanced but not capable of routine interstellar transportation. The voyage to Prospect therefore required enormous generation ships designed to sustain populations over centuries.
 
-**Later-established scientific history:** Before the Nine departed, two researchers belonging to the Kethari discovered the field subsequently named for them: the Venn–Saye field. It was known experimentally in the home system, though practical control remained limited. After landfall, observation of field interactions in Prospect's native biology enabled much more sophisticated manipulation. The chronology relative to the ancient AI crisis and genetic commissions remains open; see [Section 15](#15-vennsaye-dynamics-fieldworks-and-dynamicism).
+**Later-established scientific history:** Before the Nine departed, two researchers belonging to the Kell discovered the field subsequently named for them: the Venn–Saye field. It was known experimentally in the home system, though practical control remained limited. After landfall, observation of field interactions in Prospect's native biology enabled much more sophisticated manipulation. The chronology relative to the ancient AI crisis and genetic commissions remains open; see [Section 15](#15-vennsaye-dynamics-fieldworks-and-dynamicism).
 
 ### 4.2 The ancient artificial intelligence crisis
 
@@ -42,11 +42,11 @@ Each commission was motivated by a major industrial challenge responsible for la
 
 The three resulting peoples were:
 
-**Otheryn (historically “Void Walkers”):** Engineered for orbital construction, low-gravity work, spacecraft maintenance, and hazardous extraterrestrial industry.
+**Astrel (historically “Void Walkers”):** Engineered for orbital construction, low-gravity work, spacecraft maintenance, and hazardous extraterrestrial industry.
 
 **Voldren (historically “Cave Crawlers”):** Engineered for mining, deep excavation, underground construction, and industrial environments involving confined spaces, high temperatures, and atmospheric hazards.
 
-**Neshyr (historically “Sea Walkers”):** Engineered for deep-water resource extraction, underwater construction, salvage, and other dangerous aquatic operations.
+**Selk (historically “Sea Walkers”):** Engineered for deep-water resource extraction, underwater construction, salvage, and other dangerous aquatic operations.
 
 The precise relationship between each engineered people and its commissioning ancestral species has not been finalized.
 

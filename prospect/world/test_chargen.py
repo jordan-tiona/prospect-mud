@@ -35,13 +35,13 @@ approval: {approval}
 
 Preface text.
 
-## Kethari
+## Kell
 
 Entry one.
 
 <!-- Provisional note that must not show -->
 
-## Sylari
+## Drask
 
 Entry two.
 
@@ -57,11 +57,11 @@ class SpeciesEntriesTests(TestCase):
     def test_parses_preface_and_entries_without_comments(self):
         preface, entries = parse_species_text(_SPECIES_FIXTURE.format(approval="Approved"))
         self.assertEqual(preface, "Preface text.")
-        self.assertEqual(entries, {"Kethari": "Entry one.", "Sylari": "Entry two.\n\nSecond paragraph."})
+        self.assertEqual(entries, {"Kell": "Entry one.", "Drask": "Entry two.\n\nSecond paragraph."})
 
     def test_unapproved_file_shows_nothing(self):
         self.assertEqual(parse_species_text(_SPECIES_FIXTURE.format(approval="Draft")), ("", {}))
-        self.assertEqual(parse_species_text("## Kethari\n\nNo header."), ("", {}))
+        self.assertEqual(parse_species_text("## Kell\n\nNo header."), ("", {}))
 
     def test_real_file_covers_every_people_with_no_comment_text(self):
         preface, entries = load_species_entries()
@@ -116,9 +116,39 @@ class ApplyIdentityTests(TestCase):
         character = create_object(
             "typeclasses.characters.Character", key="Tester", location=self.rooms["medical_bay"]
         )
-        apply_identity(character, sex="female", species="Kethari")
+        apply_identity(character, sex="female", species="Kell")
         self.assertEqual(character.db.sex, "female")
-        self.assertEqual(character.db.species, "Kethari")
+        self.assertEqual(character.db.species, "Kell")
+
+
+class MigrateLegacySpeciesTests(TestCase):
+    def setUp(self):
+        room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.old = create_object("typeclasses.characters.Character", key="Old", location=room)
+        self.old.db.species = "Neshyr"
+        self.current = create_object("typeclasses.characters.Character", key="Current", location=room)
+        self.current.db.species = "Voldren"
+        self.unset = create_object("typeclasses.characters.Character", key="Unset", location=room)
+
+    def test_remaps_only_old_names(self):
+        from world.chargen import migrate_legacy_species
+
+        self.assertEqual(migrate_legacy_species(), [("Old", "Neshyr", "Selk")])
+        self.assertEqual(self.old.db.species, "Selk")
+        self.assertEqual(self.current.db.species, "Voldren")
+        self.assertIsNone(self.unset.db.species)
+
+    def test_is_idempotent(self):
+        from world.chargen import migrate_legacy_species
+
+        migrate_legacy_species()
+        self.assertEqual(migrate_legacy_species(), [])
+
+    def test_every_new_name_is_a_current_choice(self):
+        from world.chargen import LEGACY_SPECIES_NAMES, SPECIES_CHOICES
+
+        self.assertTrue(set(LEGACY_SPECIES_NAMES.values()) <= set(SPECIES_CHOICES))
+        self.assertFalse(set(LEGACY_SPECIES_NAMES) & set(SPECIES_CHOICES))
 
 
 class PlaceInMedicalBayTests(TestCase):

@@ -17,13 +17,13 @@ from world.content_files import read_content_file, strip_html_comments
 SPECIES_CONTENT_FILE = "species.md"
 
 SPECIES_CHOICES = [
-    "Kethari",
-    "Sylari",
-    "Aevyrin",
-    "Naevari",
-    "Otheryn",
+    "Kell",
+    "Drask",
+    "Lirra",
+    "Revari",
+    "Astrel",
     "Voldren",
-    "Neshyr",
+    "Selk",
 ]
 
 SEX_CHOICES = ["male", "female"]
@@ -108,6 +108,43 @@ def apply_identity(character, sex: str, species: str) -> None:
     else in this project should ever change these."""
     character.db.sex = sex
     character.db.species = species
+
+
+# The owner's 2026-10-16 rename of six working species names (bible
+# 0.4.6, LR-LORE-0001). Characters created before it still store the
+# old name; nothing reads db.species back yet, so this is cleanup
+# before the playtest rather than a runtime remap.
+LEGACY_SPECIES_NAMES = {
+    "Kethari": "Kell",
+    "Sylari": "Drask",
+    "Aevyrin": "Lirra",
+    "Naevari": "Revari",
+    "Otheryn": "Astrel",
+    "Neshyr": "Selk",
+}
+
+
+def migrate_legacy_species() -> list[tuple[str, str, str]]:
+    """
+    One-off: rewrite any character's stored pre-rename species to its
+    new name - the single sanctioned exception to apply_identity's
+    "never changed again", since the player's choice itself is
+    unchanged, only its name. Returns (character key, old, new) for
+    each one changed. Idempotent. Writes to the DB, so run it with the
+    server stopped:
+
+        evennia shell -c "from world.chargen import migrate_legacy_species; print(migrate_legacy_species())"
+    """
+    from typeclasses.characters import Character
+
+    changed = []
+    for character in Character.objects.all_family():
+        old = character.db.species
+        new = LEGACY_SPECIES_NAMES.get(old)
+        if new:
+            character.db.species = new
+            changed.append((character.key, old, new))
+    return changed
 
 
 def place_in_medical_bay(character) -> None:
