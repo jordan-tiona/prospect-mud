@@ -2,7 +2,7 @@ _Part of the split design bible - see [`00-index.md`](00-index.md) for the statu
 
 ## 5. The seven peoples
 
-**Status:** All seven **working species names** have now been selected, but the project owner may revise them. On 2026-10-16 the owner renamed six of them for distinctness and readability (Kethari → **Kell**, Sylari → **Drask**, Aevyrin → **Lirra**, Naevari → **Revari**, Otheryn → **Astrel**, Neshyr → **Selk**; Voldren unchanged); the earlier names are **superseded** and should not be reused. Any resemblance between a new name and an English word (*Astrel*, *Selk*) is a reader's-side coincidence under the translation convention in Section 2, not an in-world meaning. Their ancestral/hybrid/engineered classifications and the broad established biology below are retained. Some fine anatomical details remain proposals, not completed specifications. These are sapient peoples, not biologically determined personality types or professional classes.
+**Status:** All seven **working species names** have now been selected, but the project owner may revise them. On 2026-10-16 the owner renamed six of them for distinctness and readability (Kethari → **Kell**, Sylari → **Drask**, Aevyrin → **Lirra**, Naevari → **Revari**, Otheryn → **Astrel**, Neshyr → **Selk**; Voldren unchanged); the earlier names are **superseded** and should not be reused. Any resemblance between a new name and an English word (*Astrel*, *Selk*) is a reader's-side coincidence under the translation convention in Section 2, not an in-world meaning. Their ancestral/hybrid/engineered classifications and the broad established biology below are retained. Each people's physical description was settled with the project owner and approved on 2026-10-17 (5.1–5.7, and the height ladder in 5.8); what each entry still leaves open is listed at its end. These are sapient peoples, not biologically determined personality types or professional classes.
 
 The seven principal peoples comprise three ancestral civilizations, one established hybrid-descended people, and three subsequently engineered, self-reproducing peoples. Their species names are represented as transliterations of in-world self-designations, not English labels based on physical appearance.
 
@@ -10,7 +10,7 @@ The seven principal peoples comprise three ancestral civilizations, one establis
 
 The **Kell** are furred, predominantly **canine-looking**, digitigrade humanoids, with functional hands, expressive/mobile ears and individual variation in coats and proportions. Their visual character is more canine than the previously considered mustelid alternative, although they are not literal Earth dogs or wolves.
 
-**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and the earlier "tail length, muzzle proportions and specific physiological traits still need decisions" gap is closed):**
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17):**
 
 - **Build.** Rangy: around 2 m tall and about 65 kg on average, with long legs, a narrow chest, light bones, a long neck and a short torso. The reference silhouette is a maned wolf, not a wolf; the lean build is the people's shape, not under-nourishment. On the Constellation's height ladder (5.8) the Kell stand with the four other mid-height peoples.
 - **Head and muzzle.** A medium-long, narrow muzzle, finer than a wolf's, ending in a dry, ridged keratin nose plate with slit nostrils that can close. There is no wet nose.
@@ -25,15 +25,13 @@ The **Kell** are furred, predominantly **canine-looking**, digitigrade humanoids
 
 Still **Unresolved** after this pass: iris colours, any visible difference between the sexes, teeth and diet, lifespan.
 
-**Content follow-ups once approved (Lore lane):** one physical sentence in the Kell entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.1.md` chunk, and revised `desc`/`probe_desc` lines for Daven Varek, whose current "plain jacket over a shirt" contradicts the dress item above unless the owner makes him an exception; the elderly Kell in the square and Iri Vael's Kell-like base can take light touch-ups.
-
 **Scientific heritage (established):** The two original discoverers of the Venn–Saye field were Kell. Their scientific and educational institutions developed an especially long tradition of Venn–Saye dynamics, preserved across the voyage and subsequent settlement. Many Kell communities regard this as an important cultural achievement. A modest **proposed** player species bonus to relevant starting proficiency or learning would express inherited educational and cultural traditions, **not innate biological superiority**; exact mechanics are unresolved.
 
 ### 5.2 Drask — Ancestral B
 
 The **Drask** are scaled, plantigrade humanoids with a distinctly **lizardlike face and elongated snout**, rather than a flat humanoid face with cosmetic scales. They have a fully functional humanoid body plan and hands, and are anatomically distinct from the Kell.
 
-**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and the earlier "cranial features, scale patterns and a substantial tail are likely, though their exact forms are unfinished" gap is closed):**
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17):**
 
 - **Build.** Dense and broad-chested, the heaviest of the five mid-height peoples: around 1.9 m and 95–110 kg on average. At the same height as the Kell they read as opposites, mass against reach.
 - **Metabolism.** Warm-blooded and self-regulating. Drask do not bask, need no heated environments, and share ordinary rooms and streets on the same terms as everyone else; the earlier "suggested solution" is now the answer.
@@ -46,13 +44,11 @@ The **Drask** are scaled, plantigrade humanoids with a distinctly **lizardlike f
 
 Still **Unresolved** after this pass: eye details (pupil shape, any inner eyelid), iris and scale-pattern variation between the sexes, lifespan.
 
-**Content follow-ups once approved (Lore lane):** one physical sentence in the Drask entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.2.md` chunk, and a revised `desc`/`probe_desc` for Tarin Os, whose "worn work overalls" with stains "on each thigh" conflict with the dress item; the owner's decision (2026-10-17) is that Tarin wears a durable, protective loincloth, on the lines of a blacksmith's apron, not overalls.
-
 ### 5.3 Lirra — Ancestral C
 
 The **Lirra** are avian-influenced, feathered humanoids, with distinctive balance, skeletal proportions, expressive plumage or crests and functional hands.
 
-**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and the earlier "beak, intermediate birdlike facial anatomy, residual flight-related structures and flightlessness remain unresolved" gap is closed):**
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17):**
 
 - **Build.** The lightest of the five mid-height peoples: around 1.9 m and 50–55 kg on average, light-boned. The mid-height peoples therefore run from Lirra through Kell to Drask by weight.
 - **Flightless.** The Lirra do not fly and have no wings. Long flight-feather fringes run along the forearms and, shorter, along the upper arms; they are vestigial and decorative.
@@ -69,13 +65,11 @@ The **Lirra** are avian-influenced, feathered humanoids, with distinctive balanc
 
 Still **Unresolved** after this pass: whether the sexes differ in plumage, lifespan, voice.
 
-**Content follow-ups once approved (Lore lane):** one physical sentence in the Lirra entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.3.md` chunk, and a check of Veska Renn's `desc`/`probe_desc` ("neat, plain work clothes", "feathers at her crown lie smooth") against the dress and crest items.
-
 ### 5.4 Revari — Hybrid-descended
 
 The **Revari** are a long-established, self-reproducing people with ancestry involving the Kell, Drask and Lirra. Their general body plan most closely resembles the furred, digitigrade Kell, but individuals show varying inherited traits associated with the scaled Drask and feathered Lirra. They are a recognizable people with broad inherited variation, **not arbitrary assemblages of body parts**. Their name is their own identity, not a literal translation of *hybrid*. Their historical reproductive compatibility with the three ancestral peoples still requires explanation, potentially involving ancient reproductive biotechnology; it is not solved by the name, and nothing below touches it.
 
-**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and the earlier "visual proposals" become the fixed trait menu):**
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17):**
 
 - **Base.** The Kell silhouette (5.1): rangy, digitigrade, furred, mid-height, with a full tail. Weight stays close to the Kell's, around 2 m and 65–70 kg on average.
 - **Trait menu and cap.** An individual shows at most two or three visible non-Kell traits, drawn only from this list: patches of fine scales on the hands, forearms, shins or brow; a feather fringe on the forearms, or a feather crest on the crown in place of the ruff; a heavier Drask-like tail, or a thin feathered Lirra-like one; Drask-style covered ear membranes in place of Kell ears; a shorter, broader muzzle. Everything not on the list is Kell.
@@ -87,13 +81,11 @@ The **Revari** are a long-established, self-reproducing people with ancestry inv
 
 Still **Unresolved** after this pass: the reproductive history above, and any trait that is more common in one sex.
 
-**Content follow-ups once approved (Lore lane):** one physical sentence in the Revari entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.4.md` chunk, and one or two named traits for Iri Vael, whose description currently gives her only "fur tidy without being fussed over" (tracked in LR-LORE-0003).
-
 ### 5.5 Astrel — Engineered; “Void Walkers”
 
 The **Astrel** were engineered for hazardous orbital construction, spacecraft maintenance, and other reduced-gravity or extraterrestrial industrial work. Their colloquial or historic occupational designation is **Void Walkers**.
 
-**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and replaces the earlier "provisional anatomical detail" list). Their looks point to none of the three ancestral peoples in particular, in keeping with Section 18's safeguard against assuming each engineered people derives from its commissioning people:**
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17). Their looks point to none of the three ancestral peoples in particular, in keeping with Section 18's safeguard against assuming each engineered people derives from its commissioning people:**
 
 - **Build.** The tallest people (5.8): 2.3–2.4 m and 70–80 kg on average. Long limbs, narrow shoulders and a long neck; a frame that looks stretched rather than thin.
 - **Skin.** Smooth and hairless. Deep charcoal through ash grey, sometimes mottled; the skin dulls and mottles further with age.
@@ -109,13 +101,11 @@ The **Astrel** were engineered for hazardous orbital construction, spacecraft ma
 
 Astrel today are free to pursue any profession in societies recognizing their rights; their engineering purpose must not be presented as their inevitable vocation. Still **Unresolved** after this pass: any visible difference between the sexes, lifespan.
 
-**Content follow-ups once approved (Lore lane):** one physical sentence in the Astrel entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.5.md` chunk, and a description for the Astrel courier on the Lift Concourse (LR-LORE-0003).
-
 ### 5.6 Voldren — Engineered; “Cave Crawlers”
 
 The **Voldren** were engineered for mining, excavation and other dangerous work underground. **Cave Crawlers** is an occupational or colloquial designation, potentially harsher or more derogatory in some circumstances than the other two engineered peoples' labels. Precisely who uses it neutrally, disparagingly or as a reclaimed term is **unresolved**.
 
-**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and replaces the earlier "provisional anatomical detail" list). Their looks point to none of the three ancestral peoples in particular (Section 18 safeguard):**
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17). Their looks point to none of the three ancestral peoples in particular (Section 18 safeguard):**
 
 - **Build.** The shortest people (5.8): 1.3–1.4 m and 90–110 kg on average, as heavy as a Drask at two thirds the height. Broad shoulders, a thick neck, short limbs, big hands, and a low centre of gravity that makes a Voldren very hard to knock over.
 - **Skin.** Thick, leathery, textured and hairless, with harder keratin plating over the wear surfaces: forearms, shoulders, shins and the backs of the hands. Rock colours: umber, red-brown, dark olive and basalt grey. With age the skin lines and cracks like dried mud rather than wrinkling.
@@ -130,15 +120,13 @@ The **Voldren** were engineered for mining, excavation and other dangerous work 
 
 Their stature follows functional subterranean engineering rather than an inherited fantasy-dwarf identity. *Dwarfs* was an out-of-world early placeholder, **superseded** by the name Voldren. Modern Voldren need not be miners. Still **Unresolved** after this pass: any visible difference between the sexes, lifespan.
 
-**Content follow-ups once approved (Lore lane):** one physical sentence in the Voldren entry of `content/species.md` (held in a comment there meanwhile), an update to `content/lore/5.6.md` (currently the Established portion only), and a physical description for Mara Voss, whose `desc`/`probe_desc` describe only her apron and manner (LR-LORE-0003).
-
 ### 5.7 Selk — Engineered; “Sea Walkers”
 
 The **Selk** were engineered for hazardous underwater construction, deep-water extraction, salvage and related work. Their historical or colloquial designation is **Sea Walkers**. The earlier *Aquarians* label was a working placeholder and is **superseded**, as is the 2026-10-10 working name *Neshyr*.
 
 **Settled design constraint:** Selk are **air-breathing** and do **not** need permanently submerged accommodations. They could live aboard the Nine across generations without specially flooded ship compartments. Their aquatic adaptations are not immunity to Prospect's alien ocean hazards. They are not restricted to aquatic professions.
 
-**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and replaces the earlier "provisional anatomical detail" list). Their looks point to none of the three ancestral peoples in particular (Section 18 safeguard):**
+**Physical description (Established; decided with the project owner in a Lore-lane worldbuilding session and approved 2026-10-17). Their looks point to none of the three ancestral peoples in particular (Section 18 safeguard):**
 
 - **Build.** Mid-height (5.8): 1.9–2.0 m and 85–95 kg on average, dense swimming muscle with a deep chest for lung capacity; the second heaviest of the mid-height peoples after the Drask.
 - **Skin.** Smooth, hairless and cool to the touch, needing no water to stay healthy. Countershaded, dark above and pale below: slate blue, dark green or grey-brown over cream. Scars heal white and stay visible; the skin pales with age.
@@ -154,11 +142,9 @@ The **Selk** were engineered for hazardous underwater construction, deep-water e
 
 Still **Unresolved** after this pass: any visible difference between the sexes, lifespan.
 
-**Content follow-ups once approved (Lore lane):** one physical sentence in the Selk entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.7.md` chunk, and physical descriptions for Given Marr and the courtyard Selk neighbor (LR-LORE-0003).
-
 ### 5.8 Shared species-design and naming boundaries
 
-**Height ladder — Draft (project-owner decision, 2026-10-17; pending approval):** the Voldren are the shortest people, engineered to work in confined spaces, and the Astrel the tallest, engineered for low gravity; the other five peoples are fairly close to one another in height. Relative weights are **not decided** beyond each people's own entry.
+**Height ladder (Established; project-owner decision, approved 2026-10-17):** the Voldren are the shortest people, engineered to work in confined spaces, and the Astrel the tallest, engineered for low gravity; the other five peoples are fairly close to one another in height. Relative weights are **not decided** beyond each people's own entry.
 
 All seven peoples must be capable of broadly shared habitation and ordinary community life. Species may affect appearance, anatomy, environmental tolerance or modest gameplay capabilities, but must not determine intelligence, morality, personality, politics, class, or profession. Citizenship, upbringing, culture, economic position and personal experience are separate character dimensions.
 
