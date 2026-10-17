@@ -124,6 +124,7 @@ class ScriptedLoginTests(TestCase):
                 [
                     "",  # blank -> hands off into character creation
                     code,
+                    "agree",  # the data disclosure (world/disclosure.py)
                     "NewPlayer1",
                     "female",
                     "Kell",

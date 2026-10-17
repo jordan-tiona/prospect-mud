@@ -74,7 +74,8 @@ from world.chargen import (
     validate_sex,
     validate_species,
 )
-from world.invites import consume_code
+from world.disclosure import AGREE_PROMPT, AGREE_WORDS, DISCLOSURE_TEXT, QUIT_WORDS, agreement_record
+from world.invites import consume_code, is_valid_code
 
 COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
 
@@ -177,8 +178,16 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
     def func(self):
         session = self.caller
 
+        code = None
         if settings.INVITE_ONLY_REGISTRATION:
-            yield from self._ask_invite_code(session)
+            code = yield from self._ask_invite_code(session)
+        agreed = yield from self._ask_disclosure(session)
+        if not agreed:
+            return
+        if code is not None and not consume_code(code, used_by=session.address):
+            # Used by someone else while this player was reading.
+            session.msg("|RThat code has just been used. Please ask for a new one.|n")
+            return
 
         yield from self._scene_1(session)
         yield from self._scene_2(session)
@@ -224,6 +233,7 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
         character = account.db._last_puppet
         if character is None and account.characters:
             character = account.characters.all()[0]
+        account.db.disclosure_agreed = agreed
         if character is not None:
             try:
                 apply_identity(character, sex=sex, species=species)
@@ -245,11 +255,28 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
     # -- authored "First Awakening" script - see world/invites.py) -----
 
     def _ask_invite_code(self, session):
+        """Returns the code once it checks out. It's only used up after
+        the disclosure is agreed to (func)."""
         while True:
             raw = yield "This playtest is invite-only. Please enter your invite code:"
-            if consume_code(raw, used_by=session.address):
-                return
+            if is_valid_code(raw):
+                return raw
             session.msg("|RThat code isn't valid, or has already been used.|n")
+
+    def _ask_disclosure(self, session):
+        """world/disclosure.py: returns the agreement record, or None if
+        the player declined."""
+        session.msg(DISCLOSURE_TEXT)
+        while True:
+            answer = (yield AGREE_PROMPT).strip().lower()
+            if answer in AGREE_WORDS:
+                return agreement_record()
+            if answer in QUIT_WORDS:
+                session.msg(
+                    "No problem. Nothing has been created, and your invite code is still "
+                    "unused if you change your mind."
+                )
+                return None
 
     # -- Scene 1: the edge of consciousness -----------------------------
 

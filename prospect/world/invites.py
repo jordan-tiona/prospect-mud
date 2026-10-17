@@ -55,6 +55,14 @@ def generate_codes(count: int) -> list:
     return new_codes
 
 
+def is_valid_code(raw_code: str) -> bool:
+    """True if `raw_code` exists and is unused, without using it up -
+    so a player who then declines the disclosure (world/disclosure.py)
+    keeps a code they can come back with."""
+    entry = _codes().get((raw_code or "").strip().upper())
+    return entry is not None and entry["used_by"] is None
+
+
 def consume_code(raw_code: str, used_by: str) -> bool:
     """
     Marks `raw_code` (case-insensitive, whitespace-trimmed) used by

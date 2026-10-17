@@ -27,6 +27,7 @@ from commands.chargen import CmdScriptedCreate, species_menu
 from typeclasses.objects import indent_paragraphs
 from world.chargen import SPECIES_CHOICES, load_species_entries, load_species_groups
 from world.build_rooms import build as build_rooms
+from world.disclosure import AGREE_PROMPT, DISCLOSURE_VERSION
 from world.invites import generate_codes
 
 # Account.create() checks Evennia's module-level CREATION_THROTTLE,
@@ -56,12 +57,16 @@ def _drive(gen, responses):
     """Run a chargen generator to completion: every numeric yield is
     resumed right away, every string yield gets the next item from
     `responses`. Raises StopIteration when the generator finishes,
-    same as a real `for`/`next()` exhaustion - callers catch it."""
+    same as a real `for`/`next()` exhaustion - callers catch it.
+    The data disclosure is answered "agree" without taking a response;
+    DisclosureTests drives that prompt itself."""
     responses = list(responses)
     value = gen.send(None)
     while True:
         if isinstance(value, (int, float)):
             value = gen.send(None)
+        elif value == AGREE_PROMPT:
+            value = gen.send("agree")
         else:
             value = gen.send(responses.pop(0))
 
@@ -255,6 +260,9 @@ class ScriptedCreateTests(TestCase):
                 if isinstance(value, (int, float)):
                     value = gen.send(None)
                     continue
+                if value == AGREE_PROMPT:
+                    value = gen.send("agree")
+                    continue
                 if "1. " in value and "7. " in value:
                     menus.append(value)
                 value = gen.send(responses.pop(0))
@@ -364,3 +372,64 @@ class InviteGateTests(TestCase):
         self._finish_with(invite_code=f"  {code.lower()}  ")
 
         self.session.sessionhandler.login.assert_called_once()
+
+
+@override_settings(INVITE_ONLY_REGISTRATION=True)
+class DisclosureTests(TestCase):
+    """world/disclosure.py: after the invite code, before chargen."""
+
+    def setUp(self):
+        self.rooms = build_rooms()
+        self.session = _FakeSession()
+        self.cmd = CmdScriptedCreate()
+        self.cmd.caller = self.session
+        self.code = generate_codes(1)[0]
+
+    def _to_disclosure(self):
+        gen = self.cmd.func()
+        gen.send(None)  # invite prompt
+        value = gen.send(self.code)
+        self.assertEqual(value, AGREE_PROMPT)
+        self.assertIn("OpenRouter", self.session.transcript)
+        return gen
+
+    def test_quit_ends_registration_and_keeps_the_code(self):
+        gen = self._to_disclosure()
+        with self.assertRaises(StopIteration):
+            gen.send("quit")
+        self.assertIn("still unused", self.session.transcript)
+        self.session.sessionhandler.login.assert_not_called()
+
+        again = CmdScriptedCreate()
+        again.caller = _FakeSession()
+        gen = again.func()
+        gen.send(None)
+        self.assertEqual(gen.send(self.code), AGREE_PROMPT)
+
+    def test_anything_else_asks_again(self):
+        gen = self._to_disclosure()
+        self.assertEqual(gen.send("sure"), AGREE_PROMPT)
+
+    def test_agreeing_uses_the_code_and_is_recorded_on_the_account(self):
+        gen = self._to_disclosure()
+        value = gen.send("AGREE")
+        try:
+            responses = ["Tester20", "female", "Kell", "yes", "confirm", "ScriptedPass123!", "ScriptedPass123!"]
+            while True:
+                if isinstance(value, (int, float)):
+                    value = gen.send(None)
+                else:
+                    value = gen.send(responses.pop(0))
+        except StopIteration:
+            pass
+
+        account = self.session.sessionhandler.login.call_args[0][1]
+        self.assertEqual(account.db.disclosure_agreed["version"], DISCLOSURE_VERSION)
+
+        second = CmdScriptedCreate()
+        second.caller = _FakeSession()
+        gen = second.func()
+        gen.send(None)
+        gen.send(self.code)
+        self.assertIn("isn't valid", second.caller.transcript)
+
