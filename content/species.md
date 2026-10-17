@@ -56,7 +56,7 @@ Made in the home system, long ago, for dangerous work in orbit, underground and 
 
 Engineered in the home system for hazardous work in orbit and low gravity, such as construction and spacecraft maintenance, which earned them the old label "Void Walkers". Modern Astrel take up whatever work they choose.
 
-<!-- Left out as Provisional in bible 5.5: tall or lanky build, long limbs, little or no hair, radiation resilience, possible discomfort in high gravity. If the owner wants one physical sentence here, "tall and long-limbed" is the least committal of those. -->
+<!-- Draft (bible 5.5 physical description, 2026-10-17; pending owner approval, then move this sentence into the entry above after the first sentence): "The tallest of the seven, long-limbed and hairless, with smooth grey skin, large eyes, long-jointed fingers and grasping feet made for anchoring in low gravity." -->
 
 ## Voldren
 

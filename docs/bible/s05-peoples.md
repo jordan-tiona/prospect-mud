@@ -93,13 +93,23 @@ Still **Unresolved** after this pass: the reproductive history above, and any tr
 
 The **Astrel** were engineered for hazardous orbital construction, spacecraft maintenance, and other reduced-gravity or extraterrestrial industrial work. Their colloquial or historic occupational designation is **Void Walkers**.
 
-**Provisional anatomical detail within the established body plan:**
-- Tall, slender or lanky humanoid proportions, with long limbs and dexterous hands.
-- Smooth skin with little or no hair.
-- Adaptations for prolonged low-gravity activity and enhanced radiation resilience.
-- Possible discomfort or functional disadvantage in high gravity, still to be quantified.
+**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and replaces the earlier "provisional anatomical detail" list). Their looks point to none of the three ancestral peoples in particular, in keeping with Section 18's safeguard against assuming each engineered people derives from its commissioning people:**
 
-Radiation tolerance does **not** grant survival in vacuum; protective suits and life support remain necessary. Astrel today are free to pursue any profession in societies recognizing their rights; their engineering purpose must not be presented as their inevitable vocation.
+- **Build.** The tallest people (5.8): 2.3–2.4 m and 70–80 kg on average. Long limbs, narrow shoulders and a long neck; a frame that looks stretched rather than thin.
+- **Skin.** Smooth and hairless. Deep charcoal through ash grey, sometimes mottled; the skin dulls and mottles further with age.
+- **Face.** A short, blunt, hairless muzzle with a nose, lips and an expressive mouth; neither Kell, Drask nor Lirra in cast.
+- **Eyes.** Large, suited to dim work in shadowed structures, with visible whites and a transparent inner lid that closes against glare.
+- **Ears.** Small and flat to the head, nothing that would catch inside a helmet.
+- **Hands.** Four long fingers with an extra joint, and one thumb.
+- **Feet.** Prehensile, with a grasping big toe, so an Astrel can anchor by foot in low gravity. Shoes fit badly; bare or open-toed feet are the everyday norm.
+- **Tail.** None.
+- **Gravity.** At full gravity they tire faster over a long shift and favour sitting or leaning, so Astrel are often found perched on rails and ledges. A tendency for description, not a game mechanic.
+- **Radiation.** Enhanced radiation resilience, which does **not** grant survival in vacuum; suits and life support remain necessary.
+- **Dress.** Close-fitting layered garments with attachment loops and many pockets, a habit carried over from generations of suit liners and now worn by choice.
+
+Astrel today are free to pursue any profession in societies recognizing their rights; their engineering purpose must not be presented as their inevitable vocation. Still **Unresolved** after this pass: any visible difference between the sexes, lifespan.
+
+**Content follow-ups once approved (Lore lane):** one physical sentence in the Astrel entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.5.md` chunk, and a description for the Astrel courier on the Lift Concourse (LR-LORE-0003).
 
 ### 5.6 Voldren — Engineered; “Cave Crawlers”
 
