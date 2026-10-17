@@ -25,7 +25,7 @@ from world.output_check import is_flagged
 
 FIELDS = ("pose", "short", "long")
 
-LIMITS = {"pose": 40, "short": 100, "long": 1000}
+LIMITS = {"pose": 40, "short": 300, "long": 1000}
 
 LABELS = {"pose": "pose", "short": "short description", "long": "long description"}
 

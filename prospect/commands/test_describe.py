@@ -61,6 +61,13 @@ class DescribeTests(TestCase):
         self.assertEqual(self.actor.db.ambient_pose, "leaning on the counter")
         self.assertIn("at most 40", self._output())
 
+    def test_short_description_allows_300_characters(self):
+        self.actor.execute_cmd("describe short " + "x" * 300)
+        self.assertEqual(self.actor.db.desc, "x" * 300)
+        self.actor.execute_cmd("describe short " + "y" * 301)
+        self.assertEqual(self.actor.db.desc, "x" * 300)
+        self.assertIn("at most 300", self._output())
+
     def test_bare_describe_lists_every_field_and_how_to_change_it(self):
         self.actor.execute_cmd("describe")
         output = self._output()

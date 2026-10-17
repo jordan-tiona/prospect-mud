@@ -3,7 +3,7 @@
 Three fields, stored and checked by world/appearance.py:
 
 - pose (40 characters): "<name> is here, <pose>." in the room
-- short description (100): what `look` shows
+- short description (300): what `look` shows
 - long description (1,000): what `probe` shows
 
 Takes natural phrasings as well as the terse form, the way `look at`
@@ -78,7 +78,7 @@ class CmdDescribe(Command):
 
     Your pose follows your name in the room ("Jordan is here,
     <pose>."), up to 40 characters. Your short description is what
-    others see when they LOOK at you, up to 100. Your long description
+    others see when they LOOK at you, up to 300. Your long description
     is what they see when they PROBE you, up to 1,000.
 
     You can also say it in plain English, such as "change my short
