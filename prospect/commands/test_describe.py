@@ -80,17 +80,26 @@ class DescribeTests(TestCase):
         self.actor.db.ambient_pose = "leaning on the counter"
         self.actor.execute_cmd("describe")
         output = self._output()
-        self.assertIn("In the room: Tester is here, leaning on the counter.", output)
-        self.assertIn("When they LOOK at you: A Kell woman.", output)
-        self.assertIn("When they PROBE you: (the same as LOOK)", output)
+        self.assertIn("(22/40), in the room:\n    Tester is here, leaning on the counter.", output)
+        self.assertIn("(not set, up to 300), when someone LOOKs at you:\n    A Kell woman.", output)
+        self.assertIn("PROBE shows your short description instead", output)
         self.assertIn("can see you're a Kell woman", output)
+
+    def test_bare_describe_shows_each_description_once(self):
+        self.actor.db.desc = "tall and rangy"
+        self.actor.db.probe_desc = "Years of dock work."
+        self.actor.execute_cmd("describe")
+        output = self._output()
+        self.assertEqual(output.count("tall and rangy"), 1)
+        self.assertEqual(output.count("Years of dock work."), 1)
+        self.assertIn("(14/300)", output)
 
     def test_what_others_see_without_species_or_sex(self):
         self.actor.db.probe_desc = "Years of dock work."
         self.actor.execute_cmd("describe")
         output = self._output()
-        self.assertIn("In the room: Tester is here.", output)
-        self.assertIn("When they PROBE you: Years of dock work.", output)
+        self.assertIn("in the room:\n    Tester is here.", output)
+        self.assertIn("when someone PROBEs you:\n    Years of dock work.", output)
         self.assertIn("no species or sex set", output)
 
     def test_field_with_no_text_shows_it(self):

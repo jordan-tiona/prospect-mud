@@ -137,30 +137,9 @@ class CmdDescribe(Command):
             caller.msg(f"Your {label} is now: {cleaned}")
 
     def _overview(self) -> str:
-        caller = self.caller
-        lines = ["Your descriptions:"]
-        for field, how in (
-            ("pose", f"after your name in the room, \"{caller.key} is here, ...\""),
-            ("short", "when someone types LOOK at you"),
-            ("long", "when someone types PROBE at you"),
-        ):
-            current = appearance.get(caller, field) or "(not set)"
-            limit = appearance.LIMITS[field]
-            lines.append(
-                f"  |w{field.upper()}|n, shown {how}, up to {limit:,} characters:\n    {current}"
-            )
-        lines.append(
-            "To change one, type DESCRIBE and then POSE, SHORT or LONG and the new text, "
-            "for example: describe pose leaning on the counter. To remove one, type "
-            "DESCRIBE CLEAR and its name."
-        )
-        lines.append("")
-        lines.extend(self._what_others_see())
-        return "\n".join(lines)
-
-    def _what_others_see(self) -> list[str]:
-        """The room line, look text and probe text as another player
-        gets them, plus what NPCs are told about you."""
+        """Each field once, as another player actually sees it - with
+        what shows instead when it isn't set - plus its length against
+        the limit and how to change it."""
         from typeclasses.rooms import _presence_line
 
         caller = self.caller
@@ -168,23 +147,37 @@ class CmdDescribe(Command):
         def plain(text):
             return " ".join(strip_ansi(text or "").split())
 
+        def heading(field, where):
+            current = appearance.get(caller, field)
+            limit = appearance.LIMITS[field]
+            count = f"{len(current):,}/{limit:,}" if current else f"not set, up to {limit:,}"
+            return f"  |w{field.upper()}|n ({count}), {where}:"
+
         look = plain(caller.get_display_desc(caller))
         probe = plain(caller.get_display_desc(caller, probe=True))
         lines = [
-            "What others see:",
-            f"  In the room: {plain(_presence_line(caller, caller.key, 'c'))}",
-            f"  When they LOOK at you: {look}",
-            f"  When they PROBE you: {probe if probe != look else '(the same as LOOK)'}",
+            "How others see you:",
+            heading("pose", "in the room"),
+            f"    {plain(_presence_line(caller, caller.key, 'c'))}",
+            heading("short", "when someone LOOKs at you"),
+            f"    {look}",
+            heading("long", "when someone PROBEs you"),
+            f"    {probe}" if appearance.get(caller, "long") else "    (PROBE shows your short description instead.)",
         ]
         identity = appearance.identity_phrase(caller)
         if identity:
             lines.append(
-                f"  People you talk to can see you're {identity}, along with your pose and "
+                f"People you talk to can see you're {identity}, along with your pose and "
                 "short description."
             )
         else:
             lines.append(
-                "  You have no species or sex set, so people you talk to only see your pose "
+                "You have no species or sex set, so people you talk to only see your pose "
                 "and short description."
             )
-        return lines
+        lines.append(
+            "To change one, type DESCRIBE and then POSE, SHORT or LONG and the new text, "
+            "for example: describe pose leaning on the counter. To remove one, type "
+            "DESCRIBE CLEAR and its name."
+        )
+        return "\n".join(lines)
