@@ -18,6 +18,8 @@ from world.chargen import (
     SPECIES_CHOICES,
     apply_identity,
     load_species_entries,
+    load_species_groups,
+    parse_species_groups,
     parse_species_text,
     place_in_medical_bay,
     validate_sex,
@@ -70,6 +72,68 @@ class SpeciesEntriesTests(TestCase):
         for text in [preface, *entries.values()]:
             self.assertNotIn("<!--", text)
             self.assertNotIn("-->", text)
+
+    def test_group_headings_are_not_entries(self):
+        _preface, entries = parse_species_text(_GROUPED_FIXTURE.format(approval="Approved"))
+        self.assertEqual(sorted(entries), sorted(SPECIES_CHOICES))
+
+
+# LR-LORE-0002's shape: non-species `## ` headings group the species
+# headings that follow them. Built from SPECIES_CHOICES so the fixture
+# can't drift from the code's order.
+_GROUPED_FIXTURE = (
+    "<!--\napproval: {approval}\n-->\n\n# Title\n\nPreface.\n\n"
+    "## First group\n\nFirst note. <!-- hidden -->\n\n"
+    + "".join(f"## {name}\n\nAbout {name}.\n\n" for name in SPECIES_CHOICES[:3])
+    + "## Second group\n\nSecond note.\n\n"
+    + "".join(f"## {name}\n\nAbout {name}.\n\n" for name in SPECIES_CHOICES[3:])
+)
+
+
+class SpeciesGroupsTests(TestCase):
+    def test_parses_groups_in_order_with_notes(self):
+        groups = parse_species_groups(_GROUPED_FIXTURE.format(approval="Approved"))
+        self.assertEqual(
+            groups,
+            [
+                ("First group", "First note.", SPECIES_CHOICES[:3]),
+                ("Second group", "Second note.", SPECIES_CHOICES[3:]),
+            ],
+        )
+
+    def test_unapproved_file_has_no_groups(self):
+        self.assertEqual(parse_species_groups(_GROUPED_FIXTURE.format(approval="Draft")), [])
+
+    def test_species_before_any_group_falls_back_to_flat(self):
+        # The original ungrouped fixture: Kell and Drask with no group heading.
+        self.assertEqual(parse_species_groups(_SPECIES_FIXTURE.format(approval="Approved")), [])
+
+    def test_order_out_of_step_with_species_choices_falls_back_to_flat(self):
+        first, second = SPECIES_CHOICES[0], SPECIES_CHOICES[1]
+        swapped = (
+            _GROUPED_FIXTURE.format(approval="Approved")
+            .replace(f"## {first}\n", "## @@\n")
+            .replace(f"## {second}\n", f"## {first}\n")
+            .replace("## @@\n", f"## {second}\n")
+        )
+        self.assertEqual(parse_species_groups(swapped), [])
+
+    def test_missing_people_falls_back_to_flat(self):
+        last = SPECIES_CHOICES[-1]
+        raw = _GROUPED_FIXTURE.format(approval="Approved").replace(f"## {last}\n\nAbout {last}.\n\n", "")
+        self.assertEqual(parse_species_groups(raw), [])
+
+    def test_empty_group_falls_back_to_flat(self):
+        raw = _GROUPED_FIXTURE.format(approval="Approved") + "## Empty group\n\nNobody here.\n"
+        self.assertEqual(parse_species_groups(raw), [])
+
+    def test_real_file_groups_cover_every_people(self):
+        groups = load_species_groups()
+        self.assertEqual(len(groups), 3)
+        self.assertEqual([name for _t, _n, names in groups for name in names], SPECIES_CHOICES)
+        for title, note, _names in groups:
+            self.assertTrue(note, title)
+            self.assertNotIn("<!--", note)
 
 
 class ValidateSpeciesTests(TestCase):

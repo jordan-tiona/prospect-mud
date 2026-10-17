@@ -23,9 +23,9 @@ from unittest.mock import Mock, patch
 
 from django.test import TestCase, override_settings
 
-from commands.chargen import CmdScriptedCreate
+from commands.chargen import CmdScriptedCreate, species_menu
 from typeclasses.objects import indent_paragraphs
-from world.chargen import load_species_entries
+from world.chargen import SPECIES_CHOICES, load_species_entries, load_species_groups
 from world.build_rooms import build as build_rooms
 from world.invites import generate_codes
 
@@ -242,6 +242,63 @@ class ScriptedCreateTests(TestCase):
         account = self.session.sessionhandler.login.call_args[0][1]
         self.assertEqual(_character_from(account).db.species, "Astrel")
         self.assertIn("|YAstrel|n\n", self.session.msgs)
+
+    def _menus_shown(self, responses):
+        """Like _run, but returns every species menu the command yielded
+        (prompts don't go through session.msg, so they're not in msgs)."""
+        menus = []
+        gen = self.cmd.func()
+        responses = list(responses)
+        try:
+            value = gen.send(None)
+            while True:
+                if isinstance(value, (int, float)):
+                    value = gen.send(None)
+                    continue
+                if "1. " in value and "7. " in value:
+                    menus.append(value)
+                value = gen.send(responses.pop(0))
+        except StopIteration:
+            pass
+        return menus
+
+    def test_group_notes_show_on_the_first_menu_only(self):
+        groups = load_species_groups()
+        menus = self._menus_shown(
+            ["Tester13", "male", "Drask", "no", "Revari", "yes", "confirm", "SomePass123!", "SomePass123!"]
+        )
+        self.assertEqual(len(menus), 2)
+        self.assertEqual(menus[0], species_menu(groups, with_notes=True))
+        self.assertEqual(menus[1], species_menu(groups, with_notes=False))
+        for title, note, _names in groups:
+            self.assertIn(note, menus[0])
+            self.assertNotIn(note, menus[1])
+            self.assertIn(f"|Y{title}|n", menus[1])
+
+    def test_ungrouped_content_gives_the_flat_list(self):
+        with patch("commands.chargen.load_species_groups", return_value=[]):
+            menus = self._menus_shown(["Tester14", "male", "1", "yes", "confirm", "SomePass123!", "SomePass123!"])
+        self.assertEqual(menus[0], "\n".join(f"  {i}. {name}" for i, name in enumerate(SPECIES_CHOICES, start=1)))
+
+
+class SpeciesMenuTests(TestCase):
+    GROUPS = [("Group A", "Note A.", SPECIES_CHOICES[:3]), ("Group B", "Note B.", SPECIES_CHOICES[3:])]
+
+    def test_numbers_follow_species_choices_across_groups(self):
+        menu = species_menu(self.GROUPS, with_notes=False)
+        for i, name in enumerate(SPECIES_CHOICES, start=1):
+            self.assertIn(f"    {i}. {name}", menu)
+
+    def test_layout_with_and_without_notes(self):
+        first, rest = SPECIES_CHOICES[:3], SPECIES_CHOICES[3:]
+        self.assertEqual(
+            species_menu(self.GROUPS, with_notes=True),
+            "  |YGroup A|n\n  |WNote A.|n\n"
+            + "\n".join(f"    {i}. {n}" for i, n in enumerate(first, start=1))
+            + "\n\n  |YGroup B|n\n  |WNote B.|n\n"
+            + "\n".join(f"    {i}. {n}" for i, n in enumerate(rest, start=4)),
+        )
+        self.assertNotIn("Note A.", species_menu(self.GROUPS, with_notes=False))
 
 
 @override_settings(INVITE_ONLY_REGISTRATION=True)

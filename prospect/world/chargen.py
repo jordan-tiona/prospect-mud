@@ -57,27 +57,65 @@ _SECTION_RE = re.compile(r"^## +(.+?)\s*$", re.MULTILINE)
 _TITLE_RE = re.compile(r"^# +.*$", re.MULTILINE)
 
 
+def _species_sections(raw: str) -> tuple[str, list[tuple[str, str]]] | None:
+    """(preface, [(heading, body), ...]) in file order, or None unless the
+    file is `approval: Approved`. All HTML comments are stripped
+    (CLAUDE.md's content-file rule) - species.md's comments hold
+    Provisional anatomy notes that must never be displayed."""
+    header = _FIRST_COMMENT_RE.search(raw or "")
+    approval = _APPROVAL_RE.search(header.group(1)) if header else None
+    if not approval or approval.group(1) != "Approved":
+        return None
+
+    text = _TITLE_RE.sub("", strip_html_comments(raw), count=1)
+    parts = _SECTION_RE.split(text)
+    sections = [
+        (heading, re.sub(r"\n{3,}", "\n\n", body).strip())
+        for heading, body in zip(parts[1::2], parts[2::2])
+    ]
+    return parts[0].strip(), sections
+
+
 def parse_species_text(raw: str) -> tuple[str, dict[str, str]]:
     """Parse content/species.md into (preface, {species: entry}).
 
     Only an `approval: Approved` file is shown to players; anything else
-    parses to ("", {}). All HTML comments are stripped (CLAUDE.md's
-    content-file rule) - species.md's comments hold Provisional anatomy
-    notes that must never be displayed. Entries are keyed by their
-    `## ` heading, kept only when it's one of SPECIES_CHOICES."""
-    header = _FIRST_COMMENT_RE.search(raw or "")
-    approval = _APPROVAL_RE.search(header.group(1)) if header else None
-    if not approval or approval.group(1) != "Approved":
+    parses to ("", {}). Entries are keyed by their `## ` heading, kept
+    only when it's one of SPECIES_CHOICES - group headings (see
+    parse_species_groups) aren't entries."""
+    parsed = _species_sections(raw)
+    if parsed is None:
         return "", {}
-
-    text = _TITLE_RE.sub("", strip_html_comments(raw), count=1)
-    parts = _SECTION_RE.split(text)
-    preface = parts[0].strip()
-    entries = {}
-    for heading, body in zip(parts[1::2], parts[2::2]):
-        if heading in SPECIES_CHOICES and body.strip():
-            entries[heading] = re.sub(r"\n{3,}", "\n\n", body).strip()
+    preface, sections = parsed
+    entries = {heading: body for heading, body in sections if heading in SPECIES_CHOICES and body}
     return preface, entries
+
+
+def parse_species_groups(raw: str) -> list[tuple[str, str, list[str]]]:
+    """LR-LORE-0002: the picker's grouping, as [(title, note, [species])].
+
+    Any `## ` heading that isn't a people's name is a group header, its
+    body the group's one-line note, and the species headings after it
+    (until the next group) its members. Order and numbering stay
+    SPECIES_CHOICES' job (validate_species picks by index), so the
+    grouping is used only when its members, read in file order, are
+    exactly SPECIES_CHOICES in that same order with no empty group;
+    anything else returns [] and the picker shows the flat list."""
+    parsed = _species_sections(raw)
+    if parsed is None:
+        return []
+    groups = []
+    for heading, body in parsed[1]:
+        if heading in SPECIES_CHOICES:
+            if not groups:
+                return []
+            groups[-1][2].append(heading)
+        else:
+            groups.append((heading, body, []))
+    members = [name for _title, _note, names in groups for name in names]
+    if members != SPECIES_CHOICES or any(not names for _title, _note, names in groups):
+        return []
+    return groups
 
 
 def load_species_entries() -> tuple[str, dict[str, str]]:
@@ -89,6 +127,16 @@ def load_species_entries() -> tuple[str, dict[str, str]]:
     except OSError:
         return "", {}
     return parse_species_text(raw)
+
+
+def load_species_groups() -> list[tuple[str, str, list[str]]]:
+    """parse_species_groups on content/species.md, read fresh like
+    load_species_entries. A missing file gives [] (the flat list)."""
+    try:
+        raw = read_content_file(SPECIES_CONTENT_FILE)
+    except OSError:
+        return []
+    return parse_species_groups(raw)
 
 
 def validate_sex(raw: str) -> str | None:

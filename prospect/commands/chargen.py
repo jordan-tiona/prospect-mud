@@ -69,6 +69,7 @@ from world.chargen import (
     SPECIES_CHOICES,
     apply_identity,
     load_species_entries,
+    load_species_groups,
     place_in_medical_bay,
     validate_sex,
     validate_species,
@@ -77,7 +78,28 @@ from world.invites import consume_code
 
 COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
 
-_SPECIES_MENU = "\n".join(f"  {i}. {name}" for i, name in enumerate(SPECIES_CHOICES, start=1))
+
+def _species_line(name):
+    return f"{SPECIES_CHOICES.index(name) + 1}. {name}"
+
+
+def species_menu(groups, with_notes):
+    """The species picker. Without groups (content/species.md missing,
+    unapproved, or out of step with SPECIES_CHOICES) it's the flat
+    numbered list. With them (LR-LORE-0002) each group gets a heading
+    in the room-title color, its note in the description color when
+    with_notes, and its members indented below - numbered by
+    SPECIES_CHOICES either way, so picking by number never changes."""
+    if not groups:
+        return "\n".join(f"  {_species_line(name)}" for name in SPECIES_CHOICES)
+    blocks = []
+    for title, note, names in groups:
+        lines = [f"  |Y{title}|n"]
+        if with_notes and note:
+            lines.append(f"  |W{note}|n")
+        lines.extend(f"    {_species_line(name)}" for name in names)
+        blocks.append("\n".join(lines))
+    return "\n\n".join(blocks)
 
 
 def _narration(text):
@@ -351,8 +373,11 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
     def _ask_species(self, session):
         """Pick a people: choosing one shows its content/species.md entry
         and asks to confirm; 'no' goes back to the list. The shared
-        preface is shown once per creation, not again on a correction."""
+        preface is shown once per creation, not again on a correction,
+        and so are the group notes: the first menu carries them, every
+        later one is headings and names only (owner's choice, 2026-10-17)."""
         preface, entries = load_species_entries()
+        groups = load_species_groups()
         session.msg(
             _voice(
                 "Next is your species. You may find the terminology unfamiliar, but there is "
@@ -363,7 +388,9 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
             session.msg(f"|W{indent_paragraphs(preface)}|n\n")
             self._species_preface_shown = True
         while True:
-            raw = yield _SPECIES_MENU
+            with_notes = not getattr(self, "_species_notes_shown", False)
+            self._species_notes_shown = True
+            raw = yield species_menu(groups, with_notes)
             species = validate_species(raw)
             if species is None:
                 session.msg(
