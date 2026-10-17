@@ -100,9 +100,26 @@ def _echoes(low):
 
 
 def twins(a, b):
-    """True if two name parts are the same or differ by a single letter."""
+    """True if two name parts are within edit distance 1: the same, or one letter changed, added or removed."""
     a, b = a.lower(), b.lower()
-    return len(a) == len(b) and sum(x != y for x, y in zip(a, b)) <= 1
+    if len(a) == len(b):
+        return sum(x != y for x, y in zip(a, b)) <= 1
+    if abs(len(a) - len(b)) != 1:
+        return False
+    short, long = sorted((a, b), key=len)
+    i = next((i for i, (x, y) in enumerate(zip(short, long)) if x != y), len(short))
+    return short[i:] == long[i + 1:]
+
+
+def near_excluded(part, excluded):
+    """True if `part` adds or drops one letter of `excluded`, or changes only its first letter.
+
+    Narrower than twins(): a one-letter change in the middle or at the end
+    (Drosk for Drask, Selm for Selk) reads as a different name, but a rhyme
+    (Rirra for Lirra) or a near-miss (Dras for Drask) does not.
+    """
+    a, b = part.lower(), excluded.lower()
+    return twins(a, b) and (len(a) != len(b) or a[0] != b[0])
 
 
 def _shared_issues(low, ctx):
@@ -120,6 +137,10 @@ def _shared_issues(low, ctx):
         issues.append('echoed syllable (tuning)')
     if low in ctx.excluded:
         issues.append('excluded name (a people, place, existing character or blocklist entry)')
+    elif rules.REJECT_TWINS:
+        near = sorted(e for e in ctx.excluded if near_excluded(low, e))
+        if near:
+            issues.append(f'within one letter of excluded "{near[0].capitalize()}" (tuning)')
     if low in ctx.words:
         issues.append('English dictionary word')
     return issues
@@ -179,6 +200,8 @@ def rule_issues(part, people, slot):
             issues.append(f'contains "{f}"')
     if r['no_doubles'] and re.search(f'([^{VOWELS}])\\1', low):
         issues.append('doubled consonant')
+    if r.get('heavy') and not any(m in r['heavy'] for m in medials):
+        issues.append('no heavy middle cluster (' + ', '.join(f'-{h}-' for h in r['heavy']) + ')')
     if people == 'revari':
         if syllables == 3 and low.endswith('ari'):
             issues.append('three-syllable -ari form')
@@ -236,7 +259,8 @@ class Name:
 def _candidate(rng, people, slot):
     r = rules.PEOPLES[people]
     lo, hi = r['syllables'][slot]
-    syllables = rng.randint(lo, hi)
+    counts = range(lo, hi + 1)
+    syllables = rng.choices(counts, weights=[rules.SYLLABLE_WEIGHTS[c] for c in counts])[0]
     onset = _pick(rng, r['onsets'])
     rime = rng.choice(r['rimes']) if r['rimes'] else None
     count = syllables - 1 if rime else syllables
@@ -262,42 +286,51 @@ def _candidate(rng, people, slot):
     return text.capitalize()
 
 
-def make_part(rng, people, slot, ctx):
+def _clashes(part, used):
+    return any(part.lower() == u.lower() or (rules.REJECT_TWINS and twins(part, u)) for u in used)
+
+
+def make_part(rng, people, slot, ctx, used=()):
+    """One valid part that doesn't repeat or twin anything in `used`."""
     for _ in range(MAX_TRIES):
         part = _candidate(rng, people, slot)
-        if not part_issues(part, people, slot, ctx):
+        if not part_issues(part, people, slot, ctx) and not _clashes(part, used):
             return part
-    raise RuntimeError(f'no valid {people} {slot} name in {MAX_TRIES} tries; check rules.py')
+    raise RuntimeError(f'no valid {people} {slot} name in {MAX_TRIES} tries')
 
 
-def make_name(rng, people, ctx, borrow=rules.DEFAULT_BORROW, translated=rules.DEFAULT_TRANSLATED):
+def make_name(rng, people, ctx, borrow=rules.DEFAULT_BORROW, translated=rules.DEFAULT_TRANSLATED, used=()):
+    """One name. Borrowing is decided once, before any retry, so rejections can't skew the borrow rate."""
+    sources = [people, people]
+    if rng.random() < borrow:
+        sources[rng.randrange(2)] = rng.choice([p for p in rules.PEOPLES if p != people])
+    surnames = [s for s in ctx.translated.get(sources[1], ()) if not _clashes(s, used)]
+    is_translated = bool(surnames) and rng.random() < translated
     for _ in range(MAX_TRIES):
-        sources = [people, people]
-        if rng.random() < borrow:
-            sources[rng.randrange(2)] = rng.choice([p for p in rules.PEOPLES if p != people])
-        given = make_part(rng, sources[0], 'given', ctx)
-        surnames = ctx.translated.get(sources[1])
-        is_translated = bool(surnames) and rng.random() < translated
-        family = rng.choice(surnames) if is_translated else make_part(rng, sources[1], 'family', ctx)
+        given = make_part(rng, sources[0], 'given', ctx, used)
+        family = rng.choice(surnames) if is_translated else make_part(rng, sources[1], 'family', ctx, used)
         if rules.REJECT_TWINS and twins(given, family):
             continue
         if sources == [people, people] and name_issues(given, family, people, ctx):
             continue
         return Name(given, family, people, tuple(sources), is_translated)
-    raise RuntimeError(f'no valid {people} name in {MAX_TRIES} tries; check rules.py')
+    raise RuntimeError(f'no valid {people} name in {MAX_TRIES} tries')
 
 
 def generate(people, count, ctx, rng=None, **kwargs):
-    """`count` distinct names for one people."""
+    """Up to `count` names for one people, no part repeating (or twinning) a part already in the batch.
+
+    Returns fewer than `count` if the rules run out of distinct parts.
+    """
     rng = rng or random.Random()
-    names, seen = [], set()
-    for _ in range(count * 50):
-        if len(names) == count:
+    names, used = [], []
+    while len(names) < count:
+        try:
+            name = make_name(rng, people, ctx, used=used, **kwargs)
+        except RuntimeError:
             break
-        name = make_name(rng, people, ctx, **kwargs)
-        if str(name) not in seen:
-            seen.add(str(name))
-            names.append(name)
+        used += [name.given, name.family]
+        names.append(name)
     return names
 
 
@@ -342,9 +375,12 @@ def main(argv=None):
         if i:
             print()
         print(rules.PEOPLES[people]['name'])
-        for name in generate(people, args.count, ctx, rng, borrow=args.borrow, translated=args.translated):
+        names = generate(people, args.count, ctx, rng, borrow=args.borrow, translated=args.translated)
+        for name in names:
             note = name.note()
             print(f'  {str(name):<24}{f"({note})" if note else ""}'.rstrip())
+        if len(names) < args.count:
+            print(f'  (only {len(names)} distinct names found)')
     return 0
 
 
