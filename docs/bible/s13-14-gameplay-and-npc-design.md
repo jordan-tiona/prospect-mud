@@ -18,7 +18,7 @@ Species should influence anatomy, appearance, environmental tolerances, and perh
 
 **Established long-term onboarding direction:** For the finished game, a player should encounter and learn something about available professions **before being asked to choose one**, with profession selection placed toward the end of the fuller introductory experience rather than during initial identity creation. No profession selection is included in the small external playtest (Section 13.8). This establishes timing, not a profession roster, permanent-class policy or advancement system.
 
-**Unresolved:** Character creation implementation beyond the separately specified first playtest, numeric traits, progression and class roster, starting resources, citizenship rules, and how environmental differences affect play. The effects of the proposed Kethari field-related racial bonus, which schools become playable, and the advancement and balancing of Fieldworks versus Dynamicism are also undecided. Biological adaptations must have practical consequences without making particular character choices unplayable.
+**Unresolved:** Character creation implementation beyond the separately specified first playtest, numeric traits, progression and class roster, starting resources, citizenship rules, and how environmental differences affect play. The effects of the proposed Kell field-related racial bonus, which schools become playable, and the advancement and balancing of Fieldworks versus Dynamicism are also undecided. Biological adaptations must have practical consequences without making particular character choices unplayable.
 
 ### 13.3 Gameplay opportunity map
 
@@ -88,7 +88,7 @@ Ferries and surface travel are **out of scope for the prototype**, which stays w
 
 The subsequent external test expands beyond the initial six-room NPC experiment to approximately **nine rooms and four or five players**. Its purpose is to find out whether Prospect is enjoyable as a *game*: creating a character, exploring an inhabited neighborhood, conversing naturally, interacting with items and objects, and experiencing a little combat. LLM NPCs support recognizable RPG activities without turning every quest into a conversational riddle. Technical scenarios from earlier research phases remain replaceable test fixtures.
 
-**Working player-facing sequence:** A deterministic, non-LLM cryosleep awakening introduces the player to **Elsewhere** and **Prospect**; it establishes a character's name, sex and species with a review before confirmation, then proceeds through secure account authentication. The player emerges in a **Medical Bay**, where **Given Marr**, a **Neshyr** medical technician, can orient them toward **Daven Varek**, a **Kethari** newcomer mentor whose office lies beyond Old Quarter Square. These species assignments and roles were selected for this playtest; full local character descriptions and approvals remain managed through their own content records. Daven remains a source of guidance, **not the universal quest giver**. Why any individual entered cryosleep, Daven's exact official title and the institutional structure behind his role remain unresolved.
+**Working player-facing sequence:** A deterministic, non-LLM cryosleep awakening introduces the player to **Elsewhere** and **Prospect**; it establishes a character's name, sex and species with a review before confirmation, then proceeds through secure account authentication. The player emerges in a **Medical Bay**, where **Given Marr**, a **Selk** medical technician, can orient them toward **Daven Varek**, a **Kell** newcomer mentor whose office lies beyond Old Quarter Square. These species assignments and roles were selected for this playtest; full local character descriptions and approvals remain managed through their own content records. Daven remains a source of guidance, **not the universal quest giver**. Why any individual entered cryosleep, Daven's exact official title and the institutional structure behind his role remain unresolved.
 
 The neighborhood offers three modest, independently discoverable activities: Mara's failed café temperature-control module (a validated handoff through Tarin), Iri's communal planting-bed work (finding tools and affecting a physical object), and Tarin's skitter-control job (simple equipment, shared enemies and validated kills). Their detailed state rules, local creatures and item descriptions remain in playtest documents; a quest fixture does not automatically establish permanent world canon. Basic commands should accept useful traditional MUD forms, abbreviations and natural phrasing, with authoritative actions validated by the engine. Offline characters enter an in-world **stasis** convention rather than repeatedly returning to cryogenic sleep.
 
@@ -178,7 +178,7 @@ These are proposed acceptance questions, not executed tests or a finalized evalu
 - **Conversation:** Comfortable with ordinary life, gossip and personal stories. Knows her business and the local area; is not a technical or scientific expert. Does not constantly offer unsolicited lore, invent gossip as fact, or ask a question after every sentence.
 - **Response to “Cave Crawler” (approved personal boundary):** Mara dislikes being called a *Cave Crawler* and prefers *Voldren*. When someone first uses it, she generally assumes ignorance rather than deliberate malice and corrects them calmly, sometimes with dry humor: “Voldren, please. I run a café, not a mine.” This is an illustrative line, not a required verbatim response. If the person apologizes, she accepts it and moves on without a grudge. If they keep using the term deliberately after being corrected, she becomes less friendly, responds more tersely, and may eventually end casual conversation. Her reaction describes **Mara alone**; it does not settle how other Voldren or Elsewhere residents feel about the expression.
 
-#### Tarin Os — Sylari infrastructure technician
+#### Tarin Os — Drask infrastructure technician
 
 - **Primary setting:** Maintenance Workshop, Old Quarter.
 - **Personality:** Reserved, patient, methodical, pragmatic and sometimes skeptical.
@@ -186,7 +186,7 @@ These are proposed acceptance questions, not executed tests or a finalized evalu
 - **Outlook:** He generally respects public institutions and the need for collective infrastructure management, but can be frustrated when nontechnical administrators underestimate practical engineering constraints.
 - **Conversation:** Plainspoken and precise; more forthcoming when discussing his work or a real technical question. Respects sincere curiosity, asks for clarification when needed, and admits knowledge limits. He is not an omniscient physicist or an expert in every form of engineering.
 
-#### Iri Vael — Naevari student and community volunteer
+#### Iri Vael — Revari student and community volunteer
 
 - **Primary setting:** Civic Office (project owner, 2026-10-16: one room only; the earlier "Residential Courtyard or adjacent public space" option is withdrawn).
 - **Personality:** Curious, enthusiastic, thoughtful and sometimes impulsive.

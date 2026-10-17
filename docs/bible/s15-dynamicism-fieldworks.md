@@ -2,15 +2,15 @@ _Part of the split design bible - see [`00-index.md`](00-index.md) for the statu
 
 ## 15. Venn–Saye dynamics, Fieldworks, and Dynamicism
 
-**Status:** The field's name, original home-system discovery by two Kethari researchers, limited early applications, decisive Prospect biological breakthroughs, and the distinction between Fieldworks and Dynamicism are established. Universal catalysts, one survivable genetic school, and the requirement that Dynamicists use a catalyst are established design constraints. The discoverers' personal given names, particular schools, exact physical mechanism, limits, energy budget, and numeric gameplay effects are unresolved or provisional as noted.
+**Status:** The field's name, original home-system discovery by two Kell researchers, limited early applications, decisive Prospect biological breakthroughs, and the distinction between Fieldworks and Dynamicism are established. Universal catalysts, one survivable genetic school, and the requirement that Dynamicists use a catalyst are established design constraints. The discoverers' personal given names, particular schools, exact physical mechanism, limits, energy budget, and numeric gameplay effects are unresolved or provisional as noted.
 
 ### 15.1 The Venn–Saye field and its discovery
 
 The **Venn–Saye field** is an exotic physical phenomenon capable of interactions that, when sufficiently controlled, produce effects resembling conventional fantasy magic. This is fictional, internally consistent speculative science, not a claim about currently known physics. Its behavior is intended to be scientifically investigable within the setting.
 
-Two scientists from the **Kethari** first identified and studied the field in the original home system, **before the Nine departed**. The names **Sera Venn** and **Talin Saye** were suggested for the researchers, but their full names and biographies are **not yet canon**. Which researcher made the initial theoretical or experimental contribution has also not been decided. Their surnames collectively name the field.
+Two scientists from the **Kell** first identified and studied the field in the original home system, **before the Nine departed**. The names **Sera Venn** and **Talin Saye** were suggested for the researchers, but their full names and biographies are **not yet canon**. Which researcher made the initial theoretical or experimental contribution has also not been decided. Their surnames collectively name the field.
 
-The discovery initially had limited practical applications. Kethari institutions developed a particularly influential tradition of studying it in universities and scientific institutions. As later generations maintained that expertise, the subject became a point of cultural pride among some Kethari communities. This history, rather than any assumed biological advantage, is the basis for a **proposed** modest Kethari bonus to field-related proficiency or learning. Other peoples can become equally accomplished through study and practice; no numerical bonus or particular skill affected has been approved.
+The discovery initially had limited practical applications. Kell institutions developed a particularly influential tradition of studying it in universities and scientific institutions. As later generations maintained that expertise, the subject became a point of cultural pride among some Kell communities. This history, rather than any assumed biological advantage, is the basis for a **proposed** modest Kell bonus to field-related proficiency or learning. Other peoples can become equally accomplished through study and practice; no numerical bonus or particular skill affected has been approved.
 
 After landfall, research into **Prospect's indigenous organisms** revealed naturally occurring biological mechanisms that interact with the field much more effectively than the expedition's existing equipment. Those observations enabled much more powerful control of Venn–Saye dynamics and, eventually, the technology and specialized genetic adaptations described below. The organisms, exact processes, discoverers on Prospect, and historical dates are **unresolved**. The field was not discovered on Prospect, and its existence does not imply that Prospect's entire biosphere uses it.
 
@@ -69,7 +69,7 @@ Field-based effects should have legible rules and meaningful constraints, but th
 - Select the actual schools, their specializations, techniques, and physiological consequences.
 - Define the catalyst's physical operation, allowed form factors, engineering limitations, progression and failure conditions.
 - Design concrete Fieldworks tools, skills, and their interaction with ordinary non-field technologies.
-- Decide the exact culturally grounded Kethari racial bonus, and whether it affects starting proficiency, learning, or other field-related attributes.
+- Decide the exact culturally grounded Kell racial bonus, and whether it affects starting proficiency, learning, or other field-related attributes.
 - Develop resource and energy constraints, combat balance, training requirements, costs, and institutional attitudes.
 
 ---

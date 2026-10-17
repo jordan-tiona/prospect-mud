@@ -12,7 +12,7 @@ The **seven working names and broad body plans are selected**; the exact physiol
 2. **When needed for NPC characterization:** Refine localized cultural details and institutional vocabulary, without creating a complete constitution or simulated economy.
 3. **Later worldbuilding:** Resolve the seven peoples' detailed biology, ancestral home-system geography, the hybrid-descended people's reproductive history, and commissioners' assignments.
 4. **Later historical content:** Name and develop each generation ship and settlement; detail Haven's unification, legal history and government.
-5. **Later game systems:** Build Elsewhere's full economy, civic offices, room map and transport; settle the Venn–Saye schools, tools, energy limits, Kethari cultural bonus and mechanics.
+5. **Later game systems:** Build Elsewhere's full economy, civic offices, room map and transport; settle the Venn–Saye schools, tools, energy limits, Kell cultural bonus and mechanics.
 
 These are scoped priorities, not an implementation roadmap with dates or deadlines.
 
@@ -30,7 +30,6 @@ These are scoped priorities, not an implementation roadmap with dates or deadlin
 - What are Prospect's principal biomes, native organisms, and geographical landmarks?
 - What are the precise official names, electoral systems, legal procedures and jurisdiction of Elsewhere's civic institutions?
 - What are the final species physiologies and any subtle biological bonuses?
-- Are the seven working species names memorable enough for players (owner concern raised 2026-10-16: seven coined names with no human baseline, several sharing sounds - three end in *-ari*, two begin *Ae-*/*-ae-*, two end *-yrin*/*-ren*)? Options under consideration: revise the colliding names (they are working names), present the chargen picker grouped 3 ancestral / 1 hybrid-descended / 3 engineered with a visual tag per name, or reduce the playable set for the playtest. No decision yet; the names stay as adopted.
 - What precise biological processes on Prospect made practical Venn–Saye dynamics possible, and when were those advances made?
 - What are the exact identities and biographies of Venn and Saye?
 
@@ -51,7 +50,7 @@ Do not silently establish any of the following without a deliberate worldbuildin
 - That generic Fieldworks tools require genetic modification or are called catalysts.
 - That Dynamicists can specialize in multiple schools or perform advanced manipulation without a catalyst.
 - That particular proposed schools or devices have already been finalized.
-- That Kethari have inherent biological superiority in dynamics, or that their proposed cultural bonus has a settled numeric value.
+- That Kell have inherent biological superiority in dynamics, or that their proposed cultural bonus has a settled numeric value.
 - That Venn–Saye dynamics was first discovered on Prospect; only its much more powerful applications developed there.
 - That *Void Walkers*, *Cave Crawlers* and *Sea Walkers* are the engineered peoples' formal names or always neutral expressions.
 - That Elsewhere's working geographic names are legal/administrative district boundaries.
@@ -73,7 +72,7 @@ Do not silently establish any of the following without a deliberate worldbuildin
 | Work being prepared | Decisions needed first |
 |---|---|
 | Elsewhere's first conversational prototype | Minimal five-to-six-room connectivity, three lightweight NPC prompts, the common-knowledge sheet, one validated action per NPC, Mara's approved reaction to "Cave Crawler," in-universe context and reviewed logging; full economy, law and district mapping are not prerequisites. |
-| Character creation and environmental mechanics (later) | Detailed species biological limits, ancestry/citizenship separation, and any Kethari field-proficiency bonus; working names and overall body plans already selected. |
+| Character creation and environmental mechanics (later) | Detailed species biological limits, ancestry/citizenship separation, and any Kell field-proficiency bonus; working names and overall body plans already selected. |
 | Dynamicist classes, Fieldworks skills and catalyst equipment | Approved schools, genetic specialization rules, catalyst functions, limitations, resource system and skill progression. |
 | Contemporary legal or political storylines | Applicable local law, emancipation history where relevant, and actual contemporary organizations. |
 | Generation-ship or Nine district content | Individual names, political histories, cultural continuities, and approved physical details. |
@@ -113,6 +112,7 @@ Suggested decision-record fields are **date**, **topic**, **previous status**, *
 | 0.4.3 | 2026-10-15 | **Claude editorial update, for project-owner review:** Added one clarifying paragraph to §13.8 distinguishing the three numbered playtest quests from two other already-implemented standing commitment scenarios (Mara's misdelivered parcel, the Mara/Iri noticeboard-revision check) that run alongside them but aren't counted among the three. No other section changed; no setting canon or scope decision added. |
 | 0.4.4 | 2026-10-16 | **Claude Code reorganization (docs/game-plan.md Week 0 item 5):** Split this single file into topic files under `docs/bible/` (see `00-index.md`'s layout table), verified line-for-line identical to v0.4.3's body via diff. Updated §18 item 8's section references to name the files 13.5/13.7/14.4 and 16.4–16.9 now live in. No setting canon, status label, or wording changed anywhere else. The v0.4.1–v0.4.3 single-file versions remain in `docs/` as historical snapshots. |
 | 0.4.5 | 2026-10-16 | **Project-owner decisions via the Lore lane:** §14.6 - the Old Quarter cast (Mara, Tarin, Iri, Veska, Daven, Given) now know one another by name, role and workplace; previously "not yet established". Iri Vael's primary setting is the Civic Office only. No other canon changed. |
+| 0.4.6 | 2026-10-16 | **Project-owner decision via the Lore lane:** §§2 and 5 - six of the seven working species names replaced for readability and phonetic distinctness (Kethari → Kell, Sylari → Drask, Aevyrin → Lirra, Naevari → Revari, Otheryn → Astrel, Neshyr → Selk; Voldren unchanged); the *ae* and “other in” pronunciation notes retired with the old names. Applied throughout the bible (revision-history rows kept as written) and to `content/`. No other canon changed. |
 
 ---
 

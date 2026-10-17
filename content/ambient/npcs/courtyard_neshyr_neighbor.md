@@ -6,7 +6,7 @@ approval: Approved
 bible_refs: 5.7, 11.2.6, 13.6
 -->
 
-# A Neshyr neighbor
+# A Selk neighbor
 
 ## Poses
 
@@ -16,7 +16,7 @@ bible_refs: 5.7, 11.2.6, 13.6
 
 ## Description
 
-A Neshyr resident tends the plants beside the courtyard path, pausing now and then to clear away a leaf or inspect a stem. Their everyday clothes are smudged at the knees from working near the soil. They seem comfortable making an unhurried job of it.
+A Selk resident tends the plants beside the courtyard path, pausing now and then to clear away a leaf or inspect a stem. Their everyday clothes are smudged at the knees from working near the soil. They seem comfortable making an unhurried job of it.
 
 ## Probe Description
 
