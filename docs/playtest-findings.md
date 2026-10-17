@@ -44,7 +44,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 08:03
 - Evidence: Pose "frowning at the clicking sound of something skittering along the workshop wall". "Why are you frowning?" → infrastructure is frustrating. "What is that skittering noise?" → "I don't hear anything right now." Only "Do you need any help?" got the offer.
 - Notes: His skitter section's triggers are skitters/pests/vermin or a direct offer of help. The noise and the frown aren't triggers, and nothing tells him he hears the noise. Daven's section treats "noticing you glancing at the display" as a trigger; Tarin needs the same. Persona prose, so Lore.
-- Status: triaged → Lore
+- Status: fixed in 648a78c (Lore; awaiting live verify)
 
 ## PF-0004: remember_fact stores fabricated player facts
 - Category: bug
@@ -71,7 +71,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 07:55 / 07:56
 - Evidence: "the Revari, who come from mixed ancestry"; "It's a mixed heritage". `content/species.md`: a people in their own right, not a mixture.
 - Notes: Iri's persona or knowledge excerpt needs the framing.
-- Status: triaged → Lore
+- Status: fixed in 648a78c (Lore; awaiting live verify)
 
 ## PF-0007: Veska adjusts glasses she isn't described as wearing
 - Category: NPC/canon issue
@@ -109,7 +109,7 @@ Playtest of 2026-10-17, 14:42–14:53 UTC, one player (the owner), after the fix
 - First seen / last seen: 2026-10-17 14:45
 - Evidence: "So what do you do around here?" → she answered, then offered the parcel (propose_commitment applied). The player hadn't asked about it, and the parcel sits on her counter as the passive cue.
 - Notes: Her persona says the parcel "comes up when someone makes conversation with you - including a general "how are you" or "anything I can help with" question", so she followed it. Tarin's bar is the opposite ("A generic "you alright?" ... is never enough"). Persona prose, so Lore: raise her bar to the parcel itself or an offer of help.
-- Status: triaged → Lore
+- Status: fixed in 648a78c (Lore; awaiting live verify)
 
 ## PF-0011: Mara records the player's help before they agree
 - Category: NPC/canon issue
