@@ -595,7 +595,7 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
             if reply.tool_calls and (called & FORCE_REACTION_ACTIONS):
                 tool_results = [
                     {
-                        "applied": (result := validate_and_apply(npc, actor, call["name"], call["arguments"])).applied,
+                        "applied": (result := validate_and_apply(npc, actor, call["name"], call["arguments"], scenario.player_message)).applied,
                         "reason": result.reason,
                         "narration": result.narration,
                     }

@@ -5,7 +5,7 @@ npc_id: given_marr
 room: Medical Bay
 species: Selk
 pronouns: he/him
-prompt_version: 6
+prompt_version: 7
 status: Provisional
 approval: Approved
 knowledge_scope (bible sections, Established content only):

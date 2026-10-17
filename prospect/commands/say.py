@@ -422,7 +422,7 @@ def _handle_llm_reply(
     tool_call_records = []
     tool_results = []
     for call in reply.tool_calls:
-        result = validate_and_apply(target, caller, call["name"], call["arguments"])
+        result = validate_and_apply(target, caller, call["name"], call["arguments"], player_message)
         tool_call_records.append(
             {
                 "name": call["name"],
@@ -435,7 +435,17 @@ def _handle_llm_reply(
             {"applied": result.applied, "reason": result.reason, "narration": result.narration}
         )
 
-    first_pass_shown = bool(needs_reaction and segments and all(r["applied"] for r in tool_results))
+    # Only the forced-reaction calls decide this: a dropped remember_fact
+    # says nothing about whether the text claims a false outcome.
+    first_pass_shown = bool(
+        needs_reaction
+        and segments
+        and all(
+            result["applied"]
+            for call, result in zip(reply.tool_calls, tool_results)
+            if call["name"] in FORCE_REACTION_ACTIONS
+        )
+    )
     if first_pass_shown:
         _render_reply_segments(target, caller, segments, pronouns, lead_blank=True)
 

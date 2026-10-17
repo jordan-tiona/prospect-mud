@@ -30,6 +30,7 @@ from world.commitments import propose_commitment as _propose_commitment
 from world.commitments import record_acknowledgment as _record_acknowledgment
 from world.commitments import record_acknowledgment_with_precondition as _record_acknowledgment_with_precondition
 from world.garden import is_bed_tended as _is_bed_tended
+from world.npc_memory import check_player_words
 from world.npc_memory import remember_fact as _remember_fact
 from world.npc_profile import parse_persona
 from world.reputation import adjust_reputation as _adjust_reputation
@@ -58,12 +59,14 @@ class ActionResult:
     reason: str = ""
 
 
-def validate_and_apply(npc, actor, action_name: str, arguments: dict) -> ActionResult:
+def validate_and_apply(npc, actor, action_name: str, arguments: dict, player_message: str | None = None) -> ActionResult:
     """
     The engine validator. Checks that `action_name` is one of this
     NPC's declared permitted actions before running its specific
     validator, so an NPC can't be talked into an action its persona
-    never granted it.
+    never granted it. `player_message` is the player's text this turn,
+    for the validators in _PLAYER_MESSAGE_VALIDATORS that check a call
+    against it.
     """
     arguments = arguments or {}
 
@@ -83,6 +86,8 @@ def validate_and_apply(npc, actor, action_name: str, arguments: dict) -> ActionR
             reason=f"No validator implemented for action '{action_name}'.",
         )
 
+    if action_name in _PLAYER_MESSAGE_VALIDATORS:
+        return validator(npc, actor, arguments, player_message)
     return validator(npc, actor, arguments)
 
 
@@ -493,8 +498,11 @@ def _validate_log_dead_skitters_with_iri(npc, actor, arguments: dict) -> ActionR
     )
 
 
-def _validate_remember_fact(npc, actor, arguments: dict) -> ActionResult:
+def _validate_remember_fact(npc, actor, arguments: dict, player_message: str | None) -> ActionResult:
     fact = arguments.get("fact", "")
+    quote_problem = check_player_words(arguments.get("player_words", ""), player_message)
+    if quote_problem:
+        return ActionResult(False, "", reason=quote_problem)
     result = _remember_fact(actor, npc.db.npc_id, fact)
     if not result.ok:
         return ActionResult(False, "", reason=result.reason)
@@ -718,6 +726,9 @@ def _validate_give_directions(npc, actor, arguments: dict) -> ActionResult:
     route_text = ", then ".join(f'take "{step}"' for step in path)
     return ActionResult(True, f"{npc.key} explains the way: {route_text}.")
 
+
+# Validators that also take the player's message this turn.
+_PLAYER_MESSAGE_VALIDATORS = {"remember_fact"}
 
 _ACTION_VALIDATORS = {
     "serve_drink": _validate_serve_drink,
@@ -1138,7 +1149,10 @@ ACTION_SCHEMAS = {
                 "yourself. This is also not for things about the world or other people, or "
                 "anything you'd need to verify - just what this specific player told you about "
                 "themselves. Don't call it for small talk with nothing specific in it, and "
-                "don't call it more than once or twice in a single conversation."
+                "don't call it more than once or twice in a single conversation. A question "
+                "is never a fact: if they ask something (\"what are you?\", \"what am I?\"), "
+                "there's nothing to remember. You must quote their own words that state it; "
+                "the engine drops the call if those words aren't in their latest message."
             ),
             "parameters": {
                 "type": "object",
@@ -1150,9 +1164,17 @@ ACTION_SCHEMAS = {
                             "'grew up near the Docks' or 'used to work in maintenance before "
                             "this.' Not a direct quote, not a full sentence of dialogue."
                         ),
-                    }
+                    },
+                    "player_words": {
+                        "type": "string",
+                        "description": (
+                            "The player's own words from their latest message that state this "
+                            "fact about themselves, copied exactly - e.g. 'I grew up near the "
+                            "Docks'."
+                        ),
+                    },
                 },
-                "required": ["fact"],
+                "required": ["fact", "player_words"],
             },
         },
     },

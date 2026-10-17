@@ -12,6 +12,7 @@ Deliberately minimal for the phase 2 prototype: no decay, no
 importance ranking, just a small capped FIFO list per NPC per player.
 """
 
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -39,6 +40,46 @@ def _memory(actor) -> dict:
 
 def _save_memory(actor, memory: dict) -> None:
     actor.attributes.add(MEMORY_KEY, memory)
+
+
+_FIRST_PERSON_RE = re.compile(r"\b(i|i'm|im|i've|i'd|i'll|me|my|mine|myself)\b")
+_CLAUSE_END_RE = re.compile(r"[.,;:!?]")
+
+
+def _normalize(text: str) -> str:
+    text = (text or "").lower().replace("\u2019", "'").replace("\u2018", "'")
+    text = text.replace("\u201c", '"').replace("\u201d", '"')
+    return " ".join(text.split())
+
+
+def check_player_words(player_words: str, player_message: str | None) -> str:
+    """
+    The structural half of remember_fact (docs/playtest-findings.md
+    PF-0004): the model must quote the player's own words stating the
+    fact, and this checks that the quote really is from the player's
+    latest message, about themselves, and not a question. Two wording
+    passes never stopped the model storing things the player didn't
+    say (guideline #15; Tarin storing his own species, then "Player is
+    Drask", after "What race am I?"). Returns "" if the quote passes,
+    else the reason to drop the call.
+    """
+    if player_message is None:
+        return "no player message to check the quote against"
+    quote = _normalize(player_words).strip(" \"'.,;:!")
+    if not quote:
+        return "missing player_words"
+    message = _normalize(player_message)
+    start = message.find(quote)
+    if start < 0:
+        return "player_words are not in the player's latest message"
+    if "?" in quote:
+        return "player_words are a question, not a statement"
+    end = _CLAUSE_END_RE.search(message, start + len(quote))
+    if end and end.group() == "?":
+        return "player_words are a question, not a statement"
+    if not _FIRST_PERSON_RE.search(quote):
+        return "player_words don't say anything about the player themselves"
+    return ""
 
 
 def remember_fact(actor, npc_id: str, fact: str) -> MemoryResult:

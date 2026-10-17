@@ -624,37 +624,54 @@ class RememberFactWiringTests(TestCase):
         )
 
     def test_remembered_fact_is_injected_next_turn(self):
-        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "grew up near the Docks"})
+        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "grew up near the Docks", "player_words": "I grew up near the Docks"}, "I grew up near the Docks.")
         self.assertTrue(result.applied)
         from world.npc_memory import memory_context_for
 
         self.assertIn("grew up near the Docks", memory_context_for("mara_voss", self.actor))
 
     def test_narration_is_empty_by_default(self):
-        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "likes cold drinks"})
+        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "likes cold drinks", "player_words": "I like cold drinks"}, "I like cold drinks.")
         self.assertEqual(result.narration, "")
 
     def test_narration_shows_the_fact_when_debug_enabled(self):
         self.actor.attributes.add("memory_debug_enabled", True)
-        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "likes cold drinks"})
+        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "likes cold drinks", "player_words": "I like cold drinks"}, "I like cold drinks.")
         self.assertIn("likes cold drinks", result.narration)
         self.assertIn("Mara Voss", result.narration)
 
     def test_debug_narration_omitted_for_a_dropped_call(self):
         self.actor.attributes.add("memory_debug_enabled", True)
-        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": ""})
+        result = validate_and_apply(self.mara, self.actor, "remember_fact", {"fact": "", "player_words": "I like cold drinks"}, "I like cold drinks.")
         self.assertFalse(result.applied)
         self.assertEqual(result.narration, "")
 
     def test_flagged_fact_dropped_through_full_pipeline(self):
         result = validate_and_apply(
-            self.mara, self.actor, "remember_fact", {"fact": "As an AI, I don't have personal experiences."}
+            self.mara, self.actor, "remember_fact", {"fact": "As an AI, I don't have personal experiences.", "player_words": "I like cold drinks"}, "I like cold drinks."
         )
         self.assertFalse(result.applied)
 
+    def test_fact_the_player_never_stated_is_dropped(self):
+        # PF-0004, playtest 2026-10-17: "What race are you?" got Tarin
+        # storing his own species as the player's.
+        for words, message in [
+            ("Drask", "What race are you?"),
+            ("What race am I", "What race am I? I can't remember."),
+            ("I grew up near the Docks", "hello there"),
+            ("I grew up near the Docks", None),
+        ]:
+            result = validate_and_apply(
+                self.mara, self.actor, "remember_fact", {"fact": "is Drask", "player_words": words}, message
+            )
+            self.assertFalse(result.applied, (words, message))
+        from world.npc_memory import memory_context_for
+
+        self.assertIsNone(memory_context_for("mara_voss", self.actor))
+
     def test_remember_fact_schema_requires_an_argument(self):
         schema = ACTION_SCHEMAS["remember_fact"]["function"]
-        self.assertTrue(schema["parameters"]["required"])
+        self.assertEqual(schema["parameters"]["required"], ["fact", "player_words"])
 
 
 class VerifyRevisionReportWiringTests(TestCase):

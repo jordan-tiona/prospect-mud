@@ -5,7 +5,7 @@ npc_id: tarin_os
 room: Maintenance Workshop
 species: Drask
 pronouns: he/him
-prompt_version: 38
+prompt_version: 39
 status: Provisional
 approval: Approved
 knowledge_scope (bible sections, Established content only):

@@ -7,7 +7,7 @@ Run with:
     evennia test world
 """
 
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from evennia import create_object
 
 from world.npc_memory import (
@@ -15,6 +15,7 @@ from world.npc_memory import (
     MAX_FACTS_PER_NPC,
     known_npc_ids_with_memory_for,
     memory_context_for,
+    check_player_words,
     remember_fact,
     reset_memory,
 )
@@ -112,3 +113,32 @@ class ResetMemoryTests(TestCase):
 
     def test_known_npc_ids_empty_when_nothing_stored(self):
         self.assertEqual(known_npc_ids_with_memory_for(self.actor), set())
+
+
+class CheckPlayerWordsTests(SimpleTestCase):
+    """PF-0004: remember_fact's quote must be the player's own
+    statement about themselves, from their latest message."""
+
+    def test_accepts_a_statement_from_the_message(self):
+        self.assertEqual(check_player_words("I grew up near the Docks", "I grew up near the Docks, actually."), "")
+
+    def test_ignores_case_spacing_and_curly_apostrophes(self):
+        self.assertEqual(check_player_words("i’m  new here", "I'm new here."), "")
+
+    def test_accepts_a_statement_before_a_question(self):
+        self.assertEqual(check_player_words("I'm from the Docks", "I'm from the Docks, what about you?"), "")
+
+    def test_rejects_words_not_in_the_message(self):
+        self.assertTrue(check_player_words("I'm Drask", "What race am I? I can't remember."))
+
+    def test_rejects_a_question(self):
+        self.assertTrue(check_player_words("What race am I", "What race am I? I can't remember."))
+        self.assertTrue(check_player_words("am I Drask?", "am I Drask?"))
+
+    def test_rejects_words_not_about_the_player(self):
+        self.assertTrue(check_player_words("Drask", "Drask, right."))
+
+    def test_rejects_a_missing_quote_or_message(self):
+        self.assertTrue(check_player_words("", "I grew up near the Docks."))
+        self.assertTrue(check_player_words("I grew up near the Docks", None))
+

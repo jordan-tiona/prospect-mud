@@ -5,7 +5,7 @@ npc_id: veska_renn
 room: Civic Office
 species: Lirra
 pronouns: she/her
-prompt_version: 13
+prompt_version: 14
 status: Provisional
 approval: Approved
 knowledge_scope (bible sections, Established content only):

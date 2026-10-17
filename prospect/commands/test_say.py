@@ -784,7 +784,7 @@ class SayCommandTests(_SayTestBase):
     @patch("commands.say.chat")
     def test_remembered_fact_is_injected_on_a_later_turn(self, mock_chat):
         mock_chat.return_value = _reply(
-            "Noted.", tool_calls=[{"name": "remember_fact", "arguments": {"fact": "grew up near the Docks"}}]
+            "Noted.", tool_calls=[{"name": "remember_fact", "arguments": {"fact": "grew up near the Docks", "player_words": "I grew up near the Docks"}}]
         )
         self._say("I grew up near the Docks, actually.")
         mock_chat.reset_mock()
@@ -806,7 +806,7 @@ class SayCommandTests(_SayTestBase):
     @patch("commands.say.chat")
     def test_memory_debug_off_shows_nothing(self, mock_chat):
         mock_chat.return_value = _reply(
-            "Noted.", tool_calls=[{"name": "remember_fact", "arguments": {"fact": "grew up near the Docks"}}]
+            "Noted.", tool_calls=[{"name": "remember_fact", "arguments": {"fact": "grew up near the Docks", "player_words": "I grew up near the Docks"}}]
         )
         self._say("I grew up near the Docks, actually.")
 
@@ -816,7 +816,7 @@ class SayCommandTests(_SayTestBase):
     def test_memory_debug_on_shows_the_fact(self, mock_chat):
         self.actor.attributes.add("memory_debug_enabled", True)
         mock_chat.return_value = _reply(
-            "Noted.", tool_calls=[{"name": "remember_fact", "arguments": {"fact": "grew up near the Docks"}}]
+            "Noted.", tool_calls=[{"name": "remember_fact", "arguments": {"fact": "grew up near the Docks", "player_words": "I grew up near the Docks"}}]
         )
         self._say("I grew up near the Docks, actually.")
 
