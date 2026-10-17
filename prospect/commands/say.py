@@ -819,17 +819,17 @@ class CmdSay(DefaultCmdSay):
         # is present, as in the Civic Office since phase 2B).
         if target is not None:
             if is_question:
-                msg_self = '{self} ask {all_receivers}, "|n{speech}|n"'
-                msg_location = '{object} asks {all_receivers}, "{speech}"'
+                msg_self = '{self} ask {all_receivers}, |c"{speech}"|n'
+                msg_location = '{object} asks {all_receivers}, |c"{speech}"|n'
             else:
-                msg_self = '{self} say to {all_receivers}, "|n{speech}|n"'
-                msg_location = '{object} says to {all_receivers}, "{speech}"'
+                msg_self = '{self} say to {all_receivers}, |c"{speech}"|n'
+                msg_location = '{object} says to {all_receivers}, |c"{speech}"|n'
         elif is_question:
-            msg_self = '{self} ask, "|n{speech}|n"'
-            msg_location = '{object} asks, "{speech}"'
+            msg_self = '{self} ask, |c"{speech}"|n'
+            msg_location = '{object} asks, |c"{speech}"|n'
         else:
-            msg_self = '{self} say, "|n{speech}|n"'
-            msg_location = '{object} says, "{speech}"'
+            msg_self = '{self} say, |c"{speech}"|n'
+            msg_location = '{object} says, |c"{speech}"|n'
         caller.at_say(
             speech, msg_self=msg_self, msg_location=msg_location,
             receivers=[target] if target is not None else None,

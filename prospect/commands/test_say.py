@@ -224,6 +224,15 @@ class SayCommandTests(_SayTestBase):
         self.assertTrue(any("You say to Mara" in m for m in self.messages))
 
     @patch("commands.say.chat")
+    def test_own_speech_is_bright_cyan_like_npc_speech(self, mock_chat):
+        # Owner, 2026-10-17: the player's own lines get the same colour
+        # as NPC replies so they stand out when scrolling back.
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("hello there")
+
+        self.assertTrue(any('|c"Hello there."|n' in m for m in self.messages))
+
+    @patch("commands.say.chat")
     def test_npc_reply_is_addressed_to_the_player(self, mock_chat):
         mock_chat.return_value = _reply("Afternoon.")
         self._say("hello there")
