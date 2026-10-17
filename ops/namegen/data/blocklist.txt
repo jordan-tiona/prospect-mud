@@ -1,0 +1,6 @@
+# Names the generator must never suggest, beyond the English word list and
+# rules.EXCLUDED_NAMES: well-known names from fiction or the real world that a
+# player would recognise. One per line, any case; lines starting with # are
+# ignored. Add to this whenever the output turns one up.
+gondor
+mordor
