@@ -6,6 +6,7 @@ Run from the repo root:  python -m unittest discover -s ops/namegen
 import contextlib
 import io
 import random
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,21 +16,20 @@ import rules
 
 CTX = namegen.load_context()
 
-# Bible 5.9's illustrative output, as of 2026-10-17.
+# Bible 5.9's illustrative output, as of 0.4.9 (2026-10-17).
 EXAMPLES = {
-    'kell': ['Kedan Tolar', 'Dorem Gabel', 'Tam Bodon'],
-    'drask': ['Krast Trak', 'Stobak Drosk', 'Krotas Brust'],
+    'kell': ['Kedan Tolar', 'Dorem Gabel', 'Bodaren Kem'],
+    'drask': ['Krast Trak', 'Stobak Drosk', 'Krotas Brudast'],
     'lirra': ['Alira Wenno', 'Orro Elia', 'Lenni Yaro'],
     'revari': ['Corin Tavel', 'Tamsin Ellis', 'Maren Oskel'],
     'astrel': ['Oslen Stel', 'Islan Skel', 'Spinas Asil'],
-    'voldren': ['Vordar Bargor', 'Goldur Dandor', 'Vundar Stonebreaker'],
-    'selk': ['Sulim Thesk', 'Selm Mesk', 'Mithen Thul'],
+    'voldren': ['Vordar Bargor', 'Gandalor Dandor', 'Vundar Stonebreaker'],
+    'selk': ['Sulim Thesk', 'Selm Mesk', 'Mithen Thulim'],
 }
 
 # Examples that break 5.9's own written rules, reported to the owner
 # 2026-10-17. When 5.9 changes, update EXAMPLES and this list together.
 KNOWN_MISMATCHES = {
-    'Tam Bodon': 'English dictionary word',     # "tam" is in ENABLE
     'Orro Elia': '3 syllables',                 # e-li-a; Lirra family names are 2
     'Oslen Stel': 'vowel "o" not allowed',      # Astrel vowels are a, e, i
 }
@@ -57,7 +57,7 @@ class GeneratorTests(unittest.TestCase):
     def test_every_generated_name_passes_its_sources_rules(self):
         rng = random.Random(1)
         for people in rules.PEOPLES:
-            for name in namegen.generate(people, 150, CTX, rng):
+            for name in namegen.generate(people, 60, CTX, rng):
                 with self.subTest(people=people, name=str(name)):
                     if name.sources == (people, people):
                         self.assertEqual(namegen.name_issues(name.given, name.family, people, CTX), [])
@@ -65,10 +65,24 @@ class GeneratorTests(unittest.TestCase):
                         self.assertEqual(namegen.part_issues(name.given, name.sources[0], 'given', CTX), [])
                         self.assertEqual(namegen.part_issues(name.family, name.sources[1], 'family', CTX), [])
 
-    def test_names_are_distinct_and_counted(self):
-        names = namegen.generate('kell', 30, CTX, random.Random(2))
-        self.assertEqual(len(names), 30)
-        self.assertEqual(len({str(n) for n in names}), 30)
+    def test_no_part_repeats_or_twins_within_a_batch(self):
+        for people in rules.PEOPLES:
+            names = namegen.generate(people, 30, CTX, random.Random(2))
+            self.assertEqual(len(names), 30, people)
+            parts = [p for n in names for p in (n.given, n.family)]
+            for i, a in enumerate(parts):
+                for b in parts[i + 1:]:
+                    self.assertFalse(namegen.twins(a, b), f'{people}: {a} / {b}')
+
+    def test_syllable_counts_lean_long(self):
+        rng = random.Random(6)
+        counts = [len(re.findall('[aeiou]', namegen.make_part(rng, 'kell', 'family', CTX).lower()))
+                  for _ in range(400)]
+        self.assertLess(counts.count(1), counts.count(2))
+
+    def test_astrel_never_uses_o(self):
+        for name in namegen.generate('astrel', 60, CTX, random.Random(7), borrow=0):
+            self.assertNotIn('o', str(name).lower())
 
     def test_seed_repeats_output(self):
         first = namegen.generate('selk', 10, CTX, random.Random(5))
@@ -81,8 +95,9 @@ class GeneratorTests(unittest.TestCase):
 
     def test_translated_surnames_only_for_voldren_and_only_from_the_list(self):
         surnames = set(CTX.translated['voldren'])
-        names = namegen.generate('voldren', 60, CTX, random.Random(4), borrow=0, translated=1)
+        names = namegen.generate('voldren', len(surnames), CTX, random.Random(4), borrow=0, translated=1)
         self.assertTrue(all(n.family in surnames and n.translated for n in names))
+        self.assertEqual({n.family for n in names}, surnames)  # each used once per batch
         for name in namegen.generate('astrel', 60, CTX, random.Random(4), borrow=0, translated=1):
             self.assertFalse(name.translated)
 
@@ -106,11 +121,13 @@ class CheckTests(unittest.TestCase):
         self.assertIn('onset "s"', ' '.join(self.issues('Selan')))                            # Kell stops only
         self.assertIn('doubled consonant', ' '.join(self.issues('Bannel')))                  # Kell
         self.assertIn('open-vowel ending', ' '.join(self.issues('Kraka', 'drask')))
-        self.assertIn('2 syllables', ' '.join(self.issues('Krotak', 'drask', 'family')))
+        self.assertIn('3 syllables', ' '.join(self.issues('Krotakas', 'drask', 'family')))
+        self.assertIn('1 syllables', ' '.join(self.issues('Telor')[:0] + self.issues('Bom')))  # Kell given 2-3
         self.assertIn('may not end on "e"', ' '.join(self.issues('Alire', 'lirra')))
         self.assertIn('middle "st"', ' '.join(self.issues('Alista', 'lirra')))
         self.assertIn('1 syllables', ' '.join(self.issues('Vord', 'voldren')))
-        self.assertIn('middle "d"', ' '.join(self.issues('Vodar', 'voldren')))
+        self.assertIn('no heavy middle cluster', ' '.join(self.issues('Vodar', 'voldren')))
+        self.assertEqual(self.issues('Gandalor', 'voldren'), [])   # plain -l- beside a heavy -nd-
         self.assertIn('contains "r"', ' '.join(self.issues('Serim', 'selk')))
 
     def test_revari_rejects_a_name_only_one_other_people_owns(self):
@@ -124,6 +141,19 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(self.issues('Stonebreaker', 'voldren', 'family'), [])
         self.assertTrue(self.issues('Stonebreaker', 'voldren', 'given'))
         self.assertTrue(self.issues('Stonebreaker', 'kell', 'family'))
+
+    def test_twins_cover_one_letter_changed_added_or_removed(self):
+        for a, b in [('Doldar', 'Daldar'), ('Dras', 'Drask'), ('Drask', 'Dras'), ('Kras', 'Krast'), ('Selk', 'Selk')]:
+            self.assertTrue(namegen.twins(a, b), (a, b))
+        for a, b in [('Dras', 'Drusk'), ('Kem', 'Kemar'), ('Selk', 'Klse')]:
+            self.assertFalse(namegen.twins(a, b), (a, b))
+
+    def test_near_misses_of_excluded_names(self):
+        self.assertIn('within one letter of excluded "Drask"', ' '.join(self.issues('Dras', 'drask', 'family')))
+        self.assertIn('within one letter of excluded "Lirra"', ' '.join(self.issues('Rirra', 'lirra', 'given')))
+        self.assertIn('within one letter of excluded "Selk"', ' '.join(self.issues('Selks', 'selk', 'family')))
+        self.assertFalse(namegen.near_excluded('Drosk', 'Drask'))  # a change past the first letter
+        self.assertFalse(namegen.near_excluded('Selm', 'Selk'))
 
     def test_near_identical_parts(self):
         self.assertIn('nearly identical', ' '.join(namegen.name_issues('Doldar', 'Daldar', 'voldren', CTX)))

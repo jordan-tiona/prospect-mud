@@ -7,10 +7,6 @@ to adjust when the owner judges the output.
 
 Each people has:
   syllables   {'given': (min, max), 'family': (min, max)}
-Any inventory may be a list (picked uniformly) or a dict of item -> weight
-(picked in proportion). Weights only steer the generator; the checker treats
-every listed item as allowed.
-
   onsets      consonant onsets; '' means a bare-vowel start is allowed
   bare_vowels vowels a name may start with when the onset is ''
   vowels      vowels allowed anywhere other than inside an ending rime
@@ -21,6 +17,11 @@ every listed item as allowed.
   rimes       endings that bring their own vowel ('-an', '-ar'); replaces codas
   forbid      letters or digraphs that may not appear anywhere
   no_doubles  reject any doubled consonant
+  heavy       (optional) every part must contain at least one of these middles
+
+Any inventory may be a list (picked uniformly) or a dict of item -> weight
+(picked in proportion). Weights only steer the generator; the checker treats
+every listed item as allowed.
 """
 
 STOPS = ['k', 't', 'd', 'b', 'g']
@@ -28,7 +29,7 @@ STOPS = ['k', 't', 'd', 'b', 'g']
 PEOPLES = {
     'kell': {
         'name': 'Kell',
-        'syllables': {'given': (1, 2), 'family': (1, 2)},
+        'syllables': {'given': (2, 3), 'family': (1, 2)},
         'onsets': STOPS,
         'bare_vowels': [],
         'vowels': ['a', 'e', 'o'],
@@ -43,7 +44,7 @@ PEOPLES = {
     },
     'drask': {
         'name': 'Drask',
-        'syllables': {'given': (1, 2), 'family': (1, 1)},
+        'syllables': {'given': (1, 2), 'family': (1, 2)},
         'onsets': ['dr', 'tr', 'kr', 'br', 'sk', 'st'],
         'bare_vowels': [],
         'vowels': ['a', 'o', 'u'],
@@ -63,7 +64,9 @@ PEOPLES = {
         'bare_vowels': ['a', 'e', 'i', 'o'],
         'vowels': ['a', 'e', 'i', 'o'],
         # tuning: soft single middles plus the row's doubled ll, rr, nn
-        'medials': ['l', 'r', 'n', 'm', 'v', 'w', 'll', 'rr', 'nn'],
+        # tuning: doubled middles about one middle in four, counting the bare
+        # vowel pairs below (owner, 2026-10-17)
+        'medials': {'l': 3, 'r': 3, 'n': 3, 'm': 3, 'v': 3, 'w': 2, 'll': 3, 'rr': 3, 'nn': 3},
         # tuning: "open, often two in a row"; only pairs an English reader splits
         # into two syllables (Elia). ea/ou/oa read as one sound; ae/ei are banned.
         'hiatus': ['ia', 'io', 'eo'],
@@ -90,8 +93,9 @@ PEOPLES = {
     'astrel': {
         'name': 'Astrel',
         'syllables': {'given': (1, 2), 'family': (1, 2)},
-        # tuning: half the examples start on a bare vowel (Islan, Oslen, Asil)
-        'onsets': {'st': 1, 'sk': 1, 'sp': 1, 'sl': 1, '': 3},
+        # tuning: about half start on a bare vowel, spread evenly over a/e/i
+        # (owner, 2026-10-17). Not o: it makes them read as Drask.
+        'onsets': {'st': 1, 'sk': 1, 'sp': 1, 'sl': 1, '': 4},
         'bare_vowels': ['a', 'e', 'i'],
         'vowels': ['a', 'e', 'i'],
         # tuning: the row's s-clusters in the middle too (Oslen, Islan)
@@ -106,11 +110,14 @@ PEOPLES = {
     },
     'voldren': {
         'name': 'Voldren',
-        'syllables': {'given': (2, 2), 'family': (2, 2)},
+        'syllables': {'given': (2, 3), 'family': (2, 2)},
         'onsets': ['v', 'b', 'd', 'g'],
         'bare_vowels': [],
         'vowels': ['a', 'o', 'u'],
-        'medials': ['ld', 'rd', 'nd', 'rg'],  # "after a heavy middle cluster"
+        # "a plain -l-, -r-, -n-, -d- may join the other syllables, but every
+        # name part keeps at least one heavy cluster"; tuning: weights
+        'medials': {'ld': 3, 'rd': 3, 'nd': 3, 'rg': 3, 'l': 1, 'r': 1, 'n': 1, 'd': 1},
+        'heavy': ['ld', 'rd', 'nd', 'rg'],
         'hiatus': [],
         'codas': [],
         'open_ends': [],
@@ -120,7 +127,7 @@ PEOPLES = {
     },
     'selk': {
         'name': 'Selk',
-        'syllables': {'given': (1, 2), 'family': (1, 1)},
+        'syllables': {'given': (1, 2), 'family': (1, 2)},
         'onsets': ['s', 'sh', 'th', 'm'],
         'bare_vowels': [],
         'vowels': ['e', 'i', 'u'],
@@ -159,9 +166,17 @@ PEOPLES['revari']['medials'] = _revari_weights({m for p in _others for m in p['m
 # Shared readability rule: these never appear.
 BANNED_SUBSTRINGS = ['ae', 'ei', "'"]
 
+# 5.9's shared Length rule: "within a row's range, lean toward the longer
+# end". tuning: weights for one, two and three syllables within each range.
+SYLLABLE_WEIGHTS = {1: 1, 2: 3, 3: 2}
+
 # tuning: not in 5.9. Reject echoes (Bobar, Gogor, Thithilm: the same
-# consonants either side of one vowel; Gorgor: a repeated chunk) and a given
-# and family name that differ by at most one letter (Doldar Daldar).
+# consonants either side of one vowel; Gorgor: a repeated chunk); "twins",
+# parts within one letter of each other (one letter changed, added or
+# removed): a given and family name that are twins (Doldar Daldar), a part
+# that twins one already emitted in the same batch (owner, 2026-10-17), and
+# a part that adds or drops a letter of an excluded name, or changes only its
+# first letter (Dras, Rirra; but not Drosk or Selm, owner 2026-10-17).
 REJECT_ECHOES = True
 REJECT_TWINS = True
 MIN_LETTERS = 3  # tuning: Il, Ek read as fragments, not names
