@@ -8,7 +8,24 @@ The seven principal peoples comprise three ancestral civilizations, one establis
 
 ### 5.1 Kell — Ancestral A
 
-The **Kell** are furred, predominantly **canine-looking**, digitigrade humanoids, with functional hands, expressive/mobile ears and individual variation in coats and proportions. Tail length, muzzle proportions and specific physiological traits still need decisions. Their visual character is more canine than the previously considered mustelid alternative, although they are not literal Earth dogs or wolves.
+The **Kell** are furred, predominantly **canine-looking**, digitigrade humanoids, with functional hands, expressive/mobile ears and individual variation in coats and proportions. Their visual character is more canine than the previously considered mustelid alternative, although they are not literal Earth dogs or wolves.
+
+**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and the earlier "tail length, muzzle proportions and specific physiological traits still need decisions" gap is closed):**
+
+- **Build.** Rangy: around 2 m tall and about 65 kg on average, with long legs, a narrow chest, light bones, a long neck and a short torso. The reference silhouette is a maned wolf, not a wolf; the lean build is the people's shape, not under-nourishment. On the Constellation's height ladder (5.8) the Kell stand with the four other mid-height peoples.
+- **Head and muzzle.** A medium-long, narrow muzzle, finer than a wolf's, ending in a dry, ridged keratin nose plate with slit nostrils that can close. There is no wet nose.
+- **Eyes.** Visible whites and round pupils, with a reflective layer behind the retina: in a dim room a Kell's eyes catch light at an angle and flash. Iris colours are **not decided**.
+- **Ears.** Large, erect and rigid, closer to a fennec's or a bat's than a dog's: thin, leathery skin with little or no fur, translucent at the edge, darkening with heat or exertion. They are mobile and expressive, and large enough that other peoples habitually read them.
+- **Dorsal ruff.** Longer guard hairs run from the crown down the spine: 25–30 cm at the crown and nape, tapering to about 10 cm at the small of the back, ending above the tail base. Lying flat, the ruff drapes down the back; raised, it stands as a crest from skull to shoulders, visible across a room. It lifts with strong emotion or alarm.
+- **Tail.** Full length, carried low and relaxed, lifting as a mood tell, with a milder crest of 6–8 cm guard hairs along its top continuing the dorsal line.
+- **Hands.** Four fingers and a thumb. Blunt, non-retracting claws kept filed short, dark against the fur. Leathery pads on the fingertips and the heel of the palm, the same texture as the ears; fur thins to bare skin on the palm side.
+- **Feet.** Digitigrade and padded, and always bare. Light cloth wraps are casual wear; thicker, padded wraps are worn for work. Kell do not wear shoes.
+- **Coat.** Colours outside the Earth-canid range: slate, blue-grey, russet and cream, in dappling or brindle rather than wolf masks and saddles. Fur greys around the muzzle and ears with age. The palette may be extended; these are the first approved colours, not the only ones.
+- **Dress.** Most Kell wear no top. When they do, it is a backless, sleeveless garment somewhere between a dress and an apron: a front panel held by strips of cloth over the shoulders and tied at the hips or lower back, leaving the spine and the ruff uncovered. This is the one cultural item in the list; it concerns Kell dress only, and the other peoples' styles of dress remain undecided (11.2).
+
+Still **Unresolved** after this pass: iris colours, any visible difference between the sexes, teeth and diet, lifespan.
+
+**Content follow-ups once approved (Lore lane):** one physical sentence in the Kell entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.1.md` chunk, and revised `desc`/`probe_desc` lines for Daven Varek, whose current "plain jacket over a shirt" contradicts the dress item above unless the owner makes him an exception; the elderly Kell in the square and Iri Vael's Kell-like base can take light touch-ups.
 
 **Scientific heritage (established):** The two original discoverers of the Venn–Saye field were Kell. Their scientific and educational institutions developed an especially long tradition of Venn–Saye dynamics, preserved across the voyage and subsequent settlement. Many Kell communities regard this as an important cultural achievement. A modest **proposed** player species bonus to relevant starting proficiency or learning would express inherited educational and cultural traditions, **not innate biological superiority**; exact mechanics are unresolved.
 
@@ -66,6 +83,8 @@ The **Selk** were engineered for hazardous underwater construction, deep-water e
 **Settled design constraint:** Selk are **air-breathing** and do **not** need permanently submerged accommodations. They could live aboard the Nine across generations without specially flooded ship compartments. Their aquatic adaptations are not immunity to Prospect's alien ocean hazards. They are not restricted to aquatic professions.
 
 ### 5.8 Shared species-design and naming boundaries
+
+**Height ladder — Draft (project-owner decision, 2026-10-17; pending approval):** the Voldren are the shortest people, engineered to work in confined spaces, and the Astrel the tallest, engineered for low gravity; the other five peoples are fairly close to one another in height. Relative weights are **not decided** beyond each people's own entry.
 
 All seven peoples must be capable of broadly shared habitation and ordinary community life. Species may affect appearance, anatomy, environmental tolerance or modest gameplay capabilities, but must not determine intelligence, morality, personality, politics, class, or profession. Citizenship, upbringing, culture, economic position and personal experience are separate character dimensions.
 

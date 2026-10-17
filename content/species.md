@@ -24,7 +24,7 @@ The three original civilizations of the home system.
 
 Furred, canine-looking people who walk on the balls of their feet, with mobile, expressive ears and a wide range of coats and builds. One of the three ancestral peoples of the home system. Two Kell scientists were the first to discover the Venn–Saye field, and many Kell communities still hold that scientific tradition as a point of cultural pride.
 
-<!-- Left out as undecided in bible 5.1: tail length, muzzle proportions. The proposed starting-proficiency bonus is a mechanics question for the owner and Dev, not something this entry promises. -->
+<!-- Draft (bible 5.1 physical description, 2026-10-17; pending owner approval, then move this sentence into the entry above after the first sentence): "Most stand around two metres and are built long and lean, with a narrow muzzle, large leathery ears, a mane of long guard hairs down the spine and a full tail." The proposed starting-proficiency bonus is a mechanics question for the owner and Dev, not something this entry promises. -->
 
 ## Drask
 
