@@ -24,7 +24,13 @@ from django.test import TestCase, override_settings
 from evennia import create_object
 from twisted.internet import defer
 
-from commands.say import MAX_HISTORY_EXCHANGES, _build_followup_messages, _trim_history
+from commands.say import (
+    FIRST_PASS_HIDDEN_NOTE,
+    FIRST_PASS_SHOWN_NOTE,
+    MAX_HISTORY_EXCHANGES,
+    _build_followup_messages,
+    _trim_history,
+)
 from world.actions import get_quest_state
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
@@ -80,9 +86,21 @@ class BuildFollowupMessagesTests(TestCase):
 
         followup = _build_followup_messages([], "", calls, results)
 
-        tool_msg = followup[-1]
+        tool_msg = followup[-2]
         self.assertIn("did not happen", tool_msg["content"])
         self.assertIn("invalid drink_type", tool_msg["content"])
+
+    def test_closing_note_says_whether_the_player_saw_the_first_pass(self):
+        # PF-0001: without this the model assumes its first-pass text
+        # was seen and writes only a continuation of it.
+        calls = [{"id": "call_1", "name": "serve_drink", "arguments": {"drink_type": "hot"}}]
+        results = [{"applied": True, "reason": "", "narration": "serves a hot drink"}]
+
+        shown = _build_followup_messages([], "Here.", calls, results, first_pass_shown=True)[-1]
+        hidden = _build_followup_messages([], "Here.", calls, results)[-1]
+
+        self.assertEqual(shown, {"role": "system", "content": FIRST_PASS_SHOWN_NOTE})
+        self.assertEqual(hidden, {"role": "system", "content": FIRST_PASS_HIDDEN_NOTE})
 
 
 class TrimHistoryTests(TestCase):
@@ -857,7 +875,8 @@ class SayCommandTests(_SayTestBase):
         # validate_and_apply even ran - defeating the whole point of
         # FORCE_REACTION_ACTIONS, whose own comment already says the
         # reaction's text is meant to be "the final thing the player
-        # reads". This must never reach the player, win or lose.
+        # reads". It must never reach the player when a call is
+        # rejected (when every call applies it's shown - next test).
         self.actor.location = self.workshop
         mock_chat.side_effect = [
             _reply(
@@ -868,8 +887,34 @@ class SayCommandTests(_SayTestBase):
         ]
         self._say("how's work?")
 
+        # Tarin isn't the parcel's proposer, so the call is rejected.
+        self.assertFalse(self.mock_log_turn.call_args.kwargs["tool_calls"][0]["applied"])
         self.assertFalse(any("parcel I'm not supposed to mention yet" in m for m in self.messages))
         self.assertTrue(any("forget I said anything" in m for m in self.messages))
+        followup = mock_chat.call_args_list[1].args[0]
+        self.assertEqual(followup[-1]["content"], FIRST_PASS_HIDDEN_NOTE)
+
+    @patch("commands.say.chat")
+    def test_applied_reaction_turn_shows_the_first_pass_then_the_reaction(self, mock_chat):
+        # PF-0001 (playtest 2026-10-17): with every call applied the
+        # first-pass text is true, and the reaction is written as its
+        # continuation - hiding it replaced Daven's suggestions with a
+        # bare route and Veska's answer with a bare offer.
+        mock_chat.side_effect = [
+            _reply(
+                "You could start at the square, or the Civic Office.",
+                tool_calls=[{"name": "give_directions", "arguments": {"destination": "Old Quarter Square"}}],
+            ),
+            _reply("Head south, and you're there."),
+        ]
+        self._say("I don't know what to do.")
+
+        self.assertTrue(self.mock_log_turn.call_args.kwargs["tool_calls"][0]["applied"])
+        first = next(i for i, m in enumerate(self.messages) if "start at the square" in m)
+        second = next(i for i, m in enumerate(self.messages) if "Head south" in m)
+        self.assertLess(first, second)
+        followup = mock_chat.call_args_list[1].args[0]
+        self.assertEqual(followup[-1]["content"], FIRST_PASS_SHOWN_NOTE)
 
     @patch("commands.say.chat")
     def test_report_parcel_delivery_forces_reaction_on_rejection(self, mock_chat):
@@ -1116,9 +1161,9 @@ class SkitterLogTests(_SayTestBase):
     """
     The post-quest skitter loop through the real say pipeline: Iri gets
     the logged total as per-turn context, and log_dead_skitters_with_iri
-    is a FORCE_REACTION action, so the player only ever sees the
-    reaction text - never the first-pass text written before the engine
-    decided (docs/engineering-pitfalls.md #8).
+    is a FORCE_REACTION action, so a rejected log never shows the
+    player the first-pass text written before the engine decided
+    (docs/engineering-pitfalls.md #8).
     """
 
     def setUp(self):

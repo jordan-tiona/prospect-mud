@@ -240,14 +240,33 @@ def _assistant_turn_messages(raw_text, calls, tool_results):
     return [assistant_message] + tool_messages
 
 
-def _build_followup_messages(messages, raw_text, calls, tool_results):
+# The follow-up call's closing note, telling the model whether the
+# player has already seen its first-pass text. Without it the model
+# assumes they have and writes only a continuation (just the route,
+# just the offer) - which, when that text was hidden, replaced a good
+# answer with a bare add-on (docs/playtest-findings.md PF-0001).
+FIRST_PASS_SHOWN_NOTE = (
+    "(The player has already seen your reply above. Carry on from it: say only what the "
+    "outcome adds, without repeating anything you've already said.)"
+)
+FIRST_PASS_HIDDEN_NOTE = (
+    "(The player has not seen your reply above; it was written before the outcome was known. "
+    "Write your complete reply to their last message now, true to what actually happened.)"
+)
+
+
+def _build_followup_messages(messages, raw_text, calls, tool_results, first_pass_shown=False):
     """
     Appends the assistant's tool-call turn and the engine's outcome for
     each call, OpenAI-style, so a follow-up chat() call can ask the
     model to react in words to what it just did (see
-    _handle_llm_reply's docstring for why this is needed at all).
+    _handle_llm_reply's docstring for why this is needed at all), then
+    a note saying whether that first-pass text reached the player.
     """
-    return messages + _assistant_turn_messages(raw_text, calls, tool_results)
+    note = FIRST_PASS_SHOWN_NOTE if first_pass_shown else FIRST_PASS_HIDDEN_NOTE
+    return messages + _assistant_turn_messages(raw_text, calls, tool_results) + [
+        {"role": "system", "content": note}
+    ]
 
 
 def _msg_with_lead_blank(caller, text):
@@ -372,7 +391,12 @@ def _handle_llm_reply(
     # exists precisely because a rejected call is where the model's
     # same-turn text is most likely to already claim an outcome the
     # engine didn't grant (see that set's own comment) - so for those
-    # actions, this first-pass text must never reach the player at all.
+    # actions, this first-pass text must never reach the player before
+    # validation, and never at all if any call is rejected. If every
+    # call is applied, the text is true and is shown after validation
+    # (first_pass_shown below): the reaction is written as a
+    # continuation of it, and hiding it lost real answers
+    # (docs/playtest-findings.md PF-0001).
     # Showing it here and then showing the reaction's corrected text
     # afterward (as this used to do) let the model's wrong/premature
     # guess leak out as a visible "said it, then took it back" moment -
@@ -410,8 +434,14 @@ def _handle_llm_reply(
         tool_results.append(
             {"applied": result.applied, "reason": result.reason, "narration": result.narration}
         )
-        if result.applied and result.narration and call["name"] not in SUPPRESS_IMMEDIATE_NARRATION:
-            # `result.narration` can be legitimately empty (e.g.
+
+    first_pass_shown = bool(needs_reaction and segments and all(r["applied"] for r in tool_results))
+    if first_pass_shown:
+        _render_reply_segments(target, caller, segments, pronouns, lead_blank=True)
+
+    for call, result in zip(reply.tool_calls, tool_results):
+        if result["applied"] and result["narration"] and call["name"] not in SUPPRESS_IMMEDIATE_NARRATION:
+            # `result["narration"]` can be legitimately empty (e.g.
             # remember_fact with memory_debug_enabled off) - every
             # other action always has real narration text, so this
             # guard is a no-op for them and just lets an empty one
@@ -424,7 +454,7 @@ def _handle_llm_reply(
             # Voss agrees to help" easy to miss right under her own
             # dialogue). Also separates multiple narrations from each
             # other, for a turn with more than one applied tool call.
-            _msg_with_lead_blank(caller, result.narration)
+            _msg_with_lead_blank(caller, result["narration"])
 
     if needs_reaction:
         # Ask the model to react now that it's seen the outcome,
@@ -432,7 +462,9 @@ def _handle_llm_reply(
         # silence (or, for FORCE_REACTION_ACTIONS, leaving its own
         # tool-call-turn text as the only thing the player ever
         # hears). Still counts as "pending" until this resolves too.
-        followup_messages = _build_followup_messages(messages, raw_text, reply.tool_calls, tool_results)
+        followup_messages = _build_followup_messages(
+            messages, raw_text, reply.tool_calls, tool_results, first_pass_shown=first_pass_shown
+        )
         deferred = deferToThread(chat, followup_messages, max_tokens=max_tokens)
         deferred.addCallback(
             _handle_action_reaction, target, caller, history, player_message, log_context, pending,
