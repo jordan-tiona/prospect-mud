@@ -258,6 +258,34 @@ def log_feedback(
     )
 
 
+def log_channel_message(
+    *,
+    session_id: Optional[str],
+    actor_key: str,
+    staff: bool,
+    channel: str,
+    message: str,
+    path: Optional[Path] = None,
+) -> None:
+    """
+    A message on the playtest channel (typeclasses.channels.
+    PlaytestChannel) - usually a tester asking staff something, or the
+    answer. Tells are deliberately not logged (owner, 2026-10-17).
+    """
+    _write(
+        {
+            "event": "channel_message",
+            "timestamp": _now_iso(),
+            "session_id": session_id,
+            "actor_key": actor_key,
+            "staff": staff,
+            "channel": channel,
+            "message": message,
+        },
+        path,
+    )
+
+
 def log_idle(
     *,
     session_id: str,

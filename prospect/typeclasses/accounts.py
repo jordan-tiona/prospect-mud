@@ -27,6 +27,7 @@ import uuid
 from evennia.accounts.accounts import DefaultAccount, DefaultGuest
 
 from world.session_log import account_session_id, log_session_end, log_session_start, set_session_id
+from world.playtest_channel import ensure_subscribed
 from world.stealth import is_staff
 
 
@@ -148,6 +149,7 @@ class Account(DefaultAccount):
         session_id = uuid.uuid4().hex
         set_session_id(self, session_id)
         log_session_start(session_id=session_id, account_key=self.key, staff=is_staff(self))
+        ensure_subscribed(self)
 
     def at_disconnect(self, reason=None, **kwargs):
         super().at_disconnect(reason=reason, **kwargs)

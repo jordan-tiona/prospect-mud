@@ -31,6 +31,7 @@ from commands.describe import CmdDescribe
 from commands.feedback import CmdFeedback
 from commands.get import CmdGet
 from commands.look import CmdLook
+from commands.playtest import CmdPlaytest
 from commands.probe import CmdProbe
 from commands.say import CmdSay
 from commands.scripted_login import CmdScriptedLogin
@@ -97,6 +98,7 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
+        self.add(CmdPlaytest())
 
 
 class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):

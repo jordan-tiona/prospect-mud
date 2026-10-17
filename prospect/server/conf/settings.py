@@ -165,6 +165,20 @@ GLOBAL_SCRIPTS = {
 # sessions.jsonl, for playtest debugging (2026-10-15).
 COMMAND_DEFAULT_CLASS = "commands.command.MuxCommand"
 
+# One OOC channel for the playtest, replacing Evennia's stock "Public"
+# so testers have a single place to talk to staff (world/
+# playtest_channel.py, owner 2026-10-17). No aliases: commands/
+# playtest.py's `playtest`/`pt` is the command, and PlaytestChannel
+# doesn't add Evennia's channel nicks.
+DEFAULT_CHANNELS = [
+    {
+        "key": "Playtest",
+        "desc": "Playtest chat, testers and staff",
+        "typeclass": "typeclasses.channels.PlaytestChannel",
+        "locks": "control:perm(Admin);listen:all();send:all()",
+    }
+]
+
 
 ######################################################################
 # Settings given in secret_settings.py override those in this file.

@@ -13,6 +13,10 @@ to be modified.
 """
 
 from evennia.comms.comms import DefaultChannel
+from evennia.utils.utils import inherits_from
+
+from world.session_log import account_session_id, log_channel_message
+from world.stealth import is_staff
 
 
 class Channel(DefaultChannel):
@@ -116,3 +120,28 @@ class Channel(DefaultChannel):
     """
 
     pass
+
+
+class PlaytestChannel(Channel):
+    """
+    The playtest channel (world/playtest_channel.py). No channel nicks:
+    commands/playtest.py's `playtest`/`pt` is the way in. Each message
+    also lands in the session log, so a playtest-review pass sees what
+    testers asked staff and what they were told.
+    """
+
+    def post_join_channel(self, joiner, **kwargs):
+        pass
+
+    def at_post_msg(self, message, **kwargs):
+        super().at_post_msg(message, **kwargs)
+        for sender in kwargs.get("senders") or []:
+            is_account = inherits_from(sender, "evennia.accounts.accounts.DefaultAccount")
+            account = sender if is_account else sender.account
+            log_channel_message(
+                session_id=account_session_id(account) if account else None,
+                actor_key=sender.key,
+                staff=is_staff(sender),
+                channel=self.key,
+                message=message,
+            )

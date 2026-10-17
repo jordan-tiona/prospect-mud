@@ -66,7 +66,7 @@ class Character(ObjectParent, DefaultCharacter):
 
     def get_display_name(self, looker=None, **kwargs):
         name = super().get_display_name(looker, **kwargs)
-        if looker is not None and looker is not self and is_hidden(self) and is_staff(looker):
+        if looker is not None and looker is not self and looker.location and is_hidden(self) and is_staff(looker):
             name += " |x(hidden)|n"
         return name
 
