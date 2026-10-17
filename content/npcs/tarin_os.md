@@ -8,7 +8,6 @@ pronouns: he/him
 prompt_version: 38
 status: Provisional
 approval: Approved
-desc_probe_desc: Draft (LR-LORE-0003, 2026-10-17); pending owner approval
 knowledge_scope (bible sections, Established content only):
   11.2.1, 11.2.2, 11.2.3, 15.2, 16.1
 actions: exchange_module, propose_commitment, accept_commitment, decline_commitment, accept_handoff, report_skitter_kills_to_tarin, remember_fact
