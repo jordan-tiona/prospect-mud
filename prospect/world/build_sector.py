@@ -15,6 +15,9 @@ so a dry run reports exactly what a real run would do.
 Run with the server stopped (from the checkout the live game runs in):
     evennia shell -c "from world.build_sector import build; build('elsewhere', dry_run=True)"
     evennia shell -c "from world.build_sector import build; build('elsewhere')"
+Make the dry run with the server stopped too: a running server gives
+online characters a location that a stopped one doesn't, so a dry run
+made under it can report something the real run won't do.
 """
 
 import copy
@@ -182,9 +185,18 @@ class _TagIndex:
         return list(self._by_category[category].get(object_id, []))
 
 
+def _is_character(obj):
+    return obj.has_account or obj.is_typeclass(CHARACTER_TYPECLASS, exact=False)
+
+
 def _held(obj):
-    """True if something other than a room holds obj (a character's inventory)."""
-    return obj.location is not None and obj.location.location is not None
+    """True if something other than a room holds obj (a character's inventory).
+    A character counts as a holder wherever it is: with the server stopped,
+    which a real build requires, Evennia has set every offline character's
+    location to None, so "its holder is somewhere" alone would treat their
+    inventory as loose and move it back."""
+    holder = obj.location
+    return holder is not None and (holder.location is not None or _is_character(holder))
 
 
 def _managed(obj):
@@ -447,7 +459,7 @@ def _prune(orphans, sector_id, report):
     pruning = {obj.id for obj in orphans}
     rooms, others = [], []
     for obj in orphans:
-        if obj.has_account or obj.is_typeclass(CHARACTER_TYPECLASS, exact=False):
+        if _is_character(obj):
             report.blocked.append((_label(obj), "a character - never pruned"))
             pruning.discard(obj.id)
         elif _held(obj):

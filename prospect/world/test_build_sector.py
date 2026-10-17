@@ -217,6 +217,20 @@ class BuildSectorTests(TestCase):
         self.assertEqual(len(report.held), 1)
         self.assertNotIn("gardening_kit t_kit", report.updated)
 
+    def test_entity_held_by_an_offline_character_is_left_with_them(self):
+        # With the server stopped, an offline character's location is None
+        # (seen live 2026-10-17: the gardening kit was taken from a player).
+        self.build()
+        character = create_object("evennia.objects.objects.DefaultCharacter", key="Someone",
+                                  location=self.room("t_room_b"))
+        kit = one("t_kit", "garden_prop")
+        kit.move_to(character, quiet=True)
+        character.location = None
+        report = self.build()
+        self.assertEqual(kit.location, character)
+        self.assertEqual(len(report.held), 1)
+        self.assertNotIn("gardening_kit t_kit", report.updated)
+
     def test_removed_entity_is_an_orphan_until_pruned(self):
         self.build()
         del self.manifest["entities"]["t_thing"]
