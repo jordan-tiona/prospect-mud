@@ -252,6 +252,15 @@ class ActionValidatorTests(TestCase):
         context = quest_context_for(["exchange_module"], self.actor)
         self.assertIn("has_faulty_module", context)
 
+    def test_quest_context_tells_tarin_not_to_raise_the_module_first(self):
+        # PF-0005: given the bare state, Tarin named the module before
+        # the player mentioned it. Mara handed it over, so she may.
+        _validate_accept_help(self.mara, self.actor, {})
+        _validate_give_faulty_module(self.mara, self.actor, {})
+        self.assertIn("until the player brings it up", quest_context_for(["exchange_module"], self.actor))
+        mara_context = quest_context_for(["accept_help", "give_faulty_module", "accept_replacement"], self.actor)
+        self.assertNotIn("until the player brings it up", mara_context)
+
     def test_quest_action_schemas_require_an_argument(self):
         # Confirmed empirically against the live model: an identical
         # zero-argument tool schema is reliably never called (the

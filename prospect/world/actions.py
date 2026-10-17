@@ -220,7 +220,17 @@ def quest_context_for(npc_actions: list, actor) -> str | None:
         visible_states |= QUEST_STATE_VISIBILITY.get(action, set())
 
     if state in visible_states:
-        return f"Engine state for the heating-unit module errand with this player: {state!r}."
+        context = f"Engine state for the heating-unit module errand with this player: {state!r}."
+        if state == "has_faulty_module" and "give_faulty_module" not in relevant_actions:
+            # Tarin's view: he needs the state to know the exchange is
+            # valid, but stated bare he greeted the player with "the
+            # faulty heating-unit module" before it came up
+            # (docs/playtest-findings.md PF-0005).
+            context += (
+                " You can't see it and haven't been told about it: don't mention the module "
+                "or the heating unit until the player brings it up or hands it over."
+            )
+        return context
     return (
         "Engine state for the heating-unit module errand with this player: "
         "not yet at a stage that involves you."
