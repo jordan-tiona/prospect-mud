@@ -4,6 +4,8 @@ __pycache__/
 .obsidian/
 
 prospect/server/evennia.db3
+prospect/server/evennia.db3.*
+prospect/server/*.bak
 prospect/server/logs/
 prospect/server/.restart
 prospect/server/*.pid
