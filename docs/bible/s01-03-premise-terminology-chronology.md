@@ -33,7 +33,7 @@ The setting emphasizes historical continuity, competing political philosophies, 
 
 ## 2. Names and terminology
 
-**Status:** The named habitats, city, planet and fields retain their earlier statuses. The seven species names below are **adopted working names**, deliberately subject to revision. Species names are distinct from historical or colloquial occupational labels.
+**Status:** The named habitats, city, planet and fields retain their earlier statuses. The seven species names below are **adopted working names**, deliberately subject to revision. On 2026-10-16 the project owner replaced six of the original working names (*Kethari, Sylari, Aevyrin, Naevari, Otheryn, Neshyr*) with names chosen to be short, readable on sight and phonetically distinct from one another; only *Voldren* is unchanged, and the superseded names should not be reused. Species names are distinct from historical or colloquial occupational labels.
 
 | Name | Meaning | Status |
 |---|---|---|
@@ -46,26 +46,26 @@ The setting emphasizes historical continuity, competing political philosophies, 
 | The Sealing | Escalating automated quarantine response during the Bloom | Proposed historical term |
 | Freehold | Industrial habitat associated with labor emancipation | Proposed habitat |
 | Meridian | Commercial and financial habitat | Proposed habitat |
-| **Kethari** | Ancestral A; primarily canine, furred, digitigrade | Selected working species name |
-| **Sylari** | Ancestral B; scaled, lizard-faced, plantigrade | Selected working species name |
-| **Aevyrin** | Ancestral C; avian/feathered | Selected working species name |
-| **Naevari** | Long-established hybrid-descended people | Selected working species name |
-| **Otheryn** | Engineered for orbital and low-gravity work | Selected working species name |
+| **Kell** | Ancestral A; primarily canine, furred, digitigrade | Adopted working species name (renamed 2026-10-16 from *Kethari*) |
+| **Drask** | Ancestral B; scaled, lizard-faced, plantigrade | Adopted working species name (renamed 2026-10-16 from *Sylari*) |
+| **Lirra** | Ancestral C; avian/feathered | Adopted working species name (renamed 2026-10-16 from *Aevyrin*) |
+| **Revari** | Long-established hybrid-descended people | Adopted working species name (renamed 2026-10-16 from *Naevari*) |
+| **Astrel** | Engineered for orbital and low-gravity work | Adopted working species name (renamed 2026-10-16 from *Otheryn*) |
 | **Voldren** | Engineered for subterranean work | Selected working species name |
-| **Neshyr** | Engineered for aquatic work; air-breathing | Selected working species name |
-| **Void Walkers** | Historical or colloquial designation for the Otheryn | Adopted working label; social connotations unsettled |
+| **Selk** | Engineered for aquatic work; air-breathing | Adopted working species name (renamed 2026-10-16 from *Neshyr*) |
+| **Void Walkers** | Historical or colloquial designation for the Astrel | Adopted working label; social connotations unsettled |
 | **Cave Crawlers** | Historical or colloquial designation for the Voldren | Adopted working label; may carry disparaging connotations |
-| **Sea Walkers** | Historical or colloquial designation for the Neshyr | Adopted working label; social connotations unsettled |
-| Venn–Saye field | Exotic physical phenomenon discovered in the original home system by two Kethari researchers | Established |
+| **Sea Walkers** | Historical or colloquial designation for the Selk | Adopted working label; social connotations unsettled |
+| Venn–Saye field | Exotic physical phenomenon discovered in the original home system by two Kell researchers | Established |
 | Venn–Saye dynamics | Scientific discipline studying field interactions | Established |
 | Fieldworks | General skill of using purpose-built field technologies without genetic alteration | Established |
 | Dynamicism | Catalyst-mediated advanced field manipulation by genetically specialized people | Established |
 | Dynamicist / Dyno | Formal and colloquial terms for an advanced practitioner | Established |
 | Catalyst | School-neutral instrument used specifically by a Dynamicist | Established |
-| Sera Venn / Talin Saye | Suggested given names of the two Kethari discoverers | Provisional |
+| Sera Venn / Talin Saye | Suggested given names of the two Kell discoverers | Provisional |
 | Kinetics, thermodynamics, electrodynamics, biomodulation, photonics | Suggested Dynamicism schools | Provisional |
 
-**Pronunciations:** *Aevyrin* and *Naevari* use **ae** pronounced like the **a** in English *after* (short *a*, not *ay*). *Otheryn* sounds like the English phrase **“other in.”** The pronunciation of other coined names is not yet standardized.
+**Pronunciations:** The seven species names adopted on 2026-10-16 were chosen to read on sight, so none carries a pronunciation note; the earlier *ae* and “other in” guidance applied to the superseded names only. The pronunciation of other coined names is not yet standardized.
 
 **Translation convention (established working direction):** The game's English dialogue and text are generally understood as translations of an in-universe common language. Meaningful geographic, civic, institutional and descriptive names (for example, *Prospect*, *Haven*, *Elsewhere*, *Old Quarter*, *the Bloom*, *Void Walkers*) are ordinarily translated into English. Personal names and the seven peoples' self-designations are instead represented by approximate transliteration, preserving their names' sounds, even when their original-language meanings are unknown. The common language's actual name, ancestry, dialects and history are **unresolved**; *Standard* has only been proposed as a placeholder. The three engineered peoples' historical labels are **not** their formal ethnonyms and should not be treated as uniformly respectful or uniformly offensive without further decisions.
 
@@ -85,7 +85,7 @@ Only certain chronological relationships are established. Dates marked approxima
 | Centuries before departure | Advanced AI crisis creates enduring distrust of autonomous machine intelligence |
 | Following the AI crisis | Genetic Revolution and near-contemporary Three Commissions create the engineered peoples |
 | Before departure | Engineered peoples become economically indispensable and legally classified as property; emancipation movements emerge |
-| Before departure (relative date unresolved) | Two Kethari researchers discover the Venn–Saye field; its applications are initially limited |
+| Before departure (relative date unresolved) | Two Kell researchers discover the Venn–Saye field; its applications are initially limited |
 | Departure | The nine generation ships leave the home system |
 | Centuries-long voyage | Shipboard cultures and institutions diverge; emancipation advances on some vessels |
 | Year 0 of colonization | The Nine arrive at Prospect and establish separate ship-derived settlements |

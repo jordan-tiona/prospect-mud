@@ -6,7 +6,7 @@ approval: Approved
 bible_refs: 5.5, 11.2.6, 13.6
 -->
 
-# An Otheryn courier
+# An Astrel courier
 
 ## Poses
 

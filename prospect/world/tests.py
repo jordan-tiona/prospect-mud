@@ -23,7 +23,7 @@ VALID_PERSONA_TEXT = """# Test NPC
 <!--
 npc_id: test_npc
 room: Test Room
-species: Kethari
+species: Kell
 pronouns: they/them
 prompt_version: 3
 knowledge_scope (bible sections, Established content only):

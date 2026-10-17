@@ -93,7 +93,7 @@ class ScriptedCreateTests(TestCase):
                 [
                     "Tester1",
                     "female",
-                    "Kethari",
+                    "Kell",
                     "yes",
                     "confirm",
                     "ScriptedPass123!",
@@ -108,7 +108,7 @@ class ScriptedCreateTests(TestCase):
         character = _character_from(account)
         self.assertEqual(character.key, "Tester1")
         self.assertEqual(character.db.sex, "female")
-        self.assertEqual(character.db.species, "Kethari")
+        self.assertEqual(character.db.species, "Kell")
         self.assertEqual(character.location, self.rooms["medical_bay"])
 
     def test_password_never_appears_in_any_displayed_line(self):
@@ -119,7 +119,7 @@ class ScriptedCreateTests(TestCase):
                 [
                     "Tester2",
                     "male",
-                    "Sylari",
+                    "Drask",
                     "yes",
                     "confirm",
                     "SuperSecret99!",
@@ -139,7 +139,7 @@ class ScriptedCreateTests(TestCase):
                 [
                     "Tester3",
                     "male",
-                    "Sylari",
+                    "Drask",
                     "yes",
                     "correct",  # decline the identity summary
                     "species",  # only species was wrong
@@ -170,7 +170,7 @@ class ScriptedCreateTests(TestCase):
                     "Tester4",
                     "female",
                     "Not A Species",  # invalid - reprompted
-                    "Naevari",
+                    "Revari",
                     "yes",
                     "confirm",
                     "AnotherPass123!",
@@ -183,7 +183,7 @@ class ScriptedCreateTests(TestCase):
         account = self.session.sessionhandler.login.call_args[0][1]
         character = _character_from(account)
         self.assertEqual(character.db.sex, "female")
-        self.assertEqual(character.db.species, "Naevari")
+        self.assertEqual(character.db.species, "Revari")
 
     # -- species entries (content/species.md) --------------------------------
 
@@ -194,32 +194,32 @@ class ScriptedCreateTests(TestCase):
             pass
 
     def test_declining_an_entry_returns_to_the_list(self):
-        self._run(["Tester7", "male", "Sylari", "no", "3", "yes", "confirm", "SomePass123!", "SomePass123!"])
+        self._run(["Tester7", "male", "Drask", "no", "3", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
         account = self.session.sessionhandler.login.call_args[0][1]
-        self.assertEqual(_character_from(account).db.species, "Aevyrin")
+        self.assertEqual(_character_from(account).db.species, "Lirra")
         # Both entries were shown: the declined one, then the chosen one.
-        self.assertIn("|YSylari|n", self.session.transcript)
-        self.assertIn("|YAevyrin|n", self.session.transcript)
+        self.assertIn("|YDrask|n", self.session.transcript)
+        self.assertIn("|YLirra|n", self.session.transcript)
 
     def test_entry_is_laid_out_like_a_room(self):
         _preface, entries = load_species_entries()
-        self._run(["Tester8", "male", "Kethari", "yes", "confirm", "SomePass123!", "SomePass123!"])
+        self._run(["Tester8", "male", "Kell", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
-        expected = f"|YKethari|n\n\n|W{indent_paragraphs(entries['Kethari'])}|n\n"
+        expected = f"|YKell|n\n\n|W{indent_paragraphs(entries['Kell'])}|n\n"
         self.assertIn(expected, self.session.msgs)
 
     def test_unclear_answer_to_select_reprompts(self):
-        self._run(["Tester9", "male", "Kethari", "maybe", "yes", "confirm", "SomePass123!", "SomePass123!"])
+        self._run(["Tester9", "male", "Kell", "maybe", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
         self.assertIn("Please answer 'yes' or 'no'", self.session.transcript)
         account = self.session.sessionhandler.login.call_args[0][1]
-        self.assertEqual(_character_from(account).db.species, "Kethari")
+        self.assertEqual(_character_from(account).db.species, "Kell")
 
     def test_preface_is_shown_once_even_after_a_species_correction(self):
         preface, _entries = load_species_entries()
         self._run([
-            "Tester10", "male", "Sylari", "yes",
+            "Tester10", "male", "Drask", "yes",
             "correct", "species", "Voldren", "yes",
             "confirm", "SomePass123!", "SomePass123!",
         ])
@@ -229,7 +229,7 @@ class ScriptedCreateTests(TestCase):
 
     def test_no_comment_text_reaches_the_player(self):
         # species.md's HTML comments hold Provisional anatomy notes.
-        self._run(["Tester11", "male", "Neshyr", "yes", "confirm", "SomePass123!", "SomePass123!"])
+        self._run(["Tester11", "male", "Selk", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
         self.assertNotIn("<!--", self.session.transcript)
         self.assertNotIn("Provisional", self.session.transcript)
@@ -237,11 +237,11 @@ class ScriptedCreateTests(TestCase):
 
     def test_creation_still_works_without_species_entries(self):
         with patch("commands.chargen.load_species_entries", return_value=("", {})):
-            self._run(["Tester12", "male", "Otheryn", "yes", "confirm", "SomePass123!", "SomePass123!"])
+            self._run(["Tester12", "male", "Astrel", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
         account = self.session.sessionhandler.login.call_args[0][1]
-        self.assertEqual(_character_from(account).db.species, "Otheryn")
-        self.assertIn("|YOtheryn|n\n", self.session.msgs)
+        self.assertEqual(_character_from(account).db.species, "Astrel")
+        self.assertIn("|YAstrel|n\n", self.session.msgs)
 
 
 @override_settings(INVITE_ONLY_REGISTRATION=True)
@@ -261,7 +261,7 @@ class InviteGateTests(TestCase):
                     invite_code,
                     name,
                     "female",
-                    "Kethari",
+                    "Kell",
                     "yes",
                     "confirm",
                     "ScriptedPass123!",
