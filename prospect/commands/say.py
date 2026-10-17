@@ -40,6 +40,7 @@ from evennia.utils import logger
 from twisted.internet.threads import deferToThread
 
 from world.actions import get_tool_schemas, quest_context_for, validate_and_apply
+from world.appearance import appearance_context_for
 from world.commitments import commitment_context_for
 from world.conversation_log import log_turn
 from world.emotes import format_emote, parse_reply
@@ -733,6 +734,9 @@ def engage_npc(target, caller, message):
     reputation_context = reputation_context_for(profile.npc_id, caller)
     if reputation_context:
         messages.append({"role": "system", "content": reputation_context})
+    appearance_context = appearance_context_for(caller)
+    if appearance_context:
+        messages.append({"role": "system", "content": appearance_context})
     skitter_record_context = skitter_record_context_for(profile.actions, caller)
     if skitter_record_context:
         messages.append({"role": "system", "content": skitter_record_context})

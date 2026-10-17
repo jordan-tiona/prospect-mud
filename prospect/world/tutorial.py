@@ -88,7 +88,8 @@ _ROOM_TANNOYS = {
         "you want to say. To move, type a direction, such as NORTH or "
         "SOUTHWEST. To look at something you can see, type LOOK and then its "
         "name. To study it more closely, type PROBE and then its name. To "
-        "hear this again, type TANNOY.",
+        "change how others see you, type DESCRIBE. To hear this again, type "
+        "TANNOY.",
     ),
 }
 

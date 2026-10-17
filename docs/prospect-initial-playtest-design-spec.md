@@ -44,7 +44,7 @@ The program obtains:
 3. **People/species** — one of the seven established playable peoples (Kell, Drask, Lirra, Revari, Astrel, Voldren, Selk); permanent after confirmation.
 4. **Account credentials/password** — securely handled by the game's authentication system, presented in fiction as the means of reestablishing control when returning from stasis.
 
-Allow the player to review and correct permanent identity choices **before confirming**. No appearance questions in this build; later cosmetic customization is a separate future feature. No profession choice at any point during this playtest.
+Allow the player to review and correct permanent identity choices **before confirming**. No appearance questions in this build; later cosmetic customization is a separate future feature. *(Owner, 2026-10-17: players can set their own pose, short description and long description in this build with the `describe` command, outside character creation. Creation still asks no appearance questions.)* No profession choice at any point during this playtest.
 
 Passwords must never enter LLM prompts, conversation logs, or general command telemetry. Claude should resolve whether Evennia account creation happens before, during, or behind this narrative flow; the player-facing experience should feel continuous.
 

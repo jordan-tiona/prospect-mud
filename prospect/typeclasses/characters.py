@@ -10,9 +10,10 @@ creation commands.
 
 from evennia.objects.objects import DefaultCharacter
 
+from world.appearance import identity_phrase
 from world.session_log import log_room_changed, session_id_for
 
-from .objects import ObjectParent
+from .objects import ObjectParent, indent_paragraphs
 
 
 class Character(ObjectParent, DefaultCharacter):
@@ -65,6 +66,17 @@ class Character(ObjectParent, DefaultCharacter):
             )
 
     at_after_move = at_post_move
+
+    def get_display_desc(self, looker, **kwargs):
+        # A player who hasn't written a short description (commands/
+        # describe.py) shows what character creation made them, e.g.
+        # "A Kell woman.", rather than Evennia's "This is a character."
+        has_probe_text = kwargs.get("probe") and self.db.probe_desc
+        if not self.db.desc and not has_probe_text:
+            identity = identity_phrase(self)
+            if identity:
+                return indent_paragraphs(identity[0].upper() + identity[1:] + ".")
+        return super().get_display_desc(looker, **kwargs)
 
     def at_post_puppet(self, **kwargs):
         super().at_post_puppet(**kwargs)

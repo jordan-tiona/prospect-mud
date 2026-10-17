@@ -796,6 +796,20 @@ class SayCommandTests(_SayTestBase):
         self.assertTrue(any("grew up near the Docks" in m.get("content", "") for m in messages))
 
     @patch("commands.say.chat")
+    def test_player_appearance_reaches_the_prompt(self, mock_chat):
+        # PF-0004 follow-up: NPCs see the player's species and their own
+        # short description, labelled as written by the player.
+        self.actor.db.species = "Kell"
+        self.actor.db.sex = "female"
+        self.actor.db.desc = "tall and rangy"
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("hello there")
+
+        contents = [m.get("content") or "" for m in mock_chat.call_args.args[0]]
+        self.assertTrue(any("What you can see of the player: a Kell woman." in c for c in contents))
+        self.assertTrue(any('"tall and rangy"' in c and "The player wrote" in c for c in contents))
+
+    @patch("commands.say.chat")
     def test_no_memory_context_when_nothing_remembered(self, mock_chat):
         mock_chat.return_value = _reply("Afternoon.")
         self._say("hello there")

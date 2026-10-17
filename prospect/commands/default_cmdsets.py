@@ -27,6 +27,7 @@ from commands.admin import (
 from commands.attack import CmdAttack
 from commands.chargen import CmdScriptedCreate
 from commands.command import CmdNoMatch
+from commands.describe import CmdDescribe
 from commands.feedback import CmdFeedback
 from commands.get import CmdGet
 from commands.look import CmdLook
@@ -67,6 +68,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUse())
         self.add(CmdAttack())
         self.add(CmdTannoy())
+        # Replaces stock setdesc, which had no limit or check.
+        self.remove(default_cmds.CmdSetDesc)
+        self.add(CmdDescribe())
         self.add(CmdNoMatch())
         self.add(CmdFeedback())
 
