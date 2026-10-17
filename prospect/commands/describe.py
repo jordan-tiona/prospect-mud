@@ -21,6 +21,8 @@ or check.
 
 import re
 
+from evennia.utils.ansi import strip_ansi
+
 from world import appearance
 
 from .command import Command
@@ -136,7 +138,7 @@ class CmdDescribe(Command):
 
     def _overview(self) -> str:
         caller = self.caller
-        lines = ["How others see you:"]
+        lines = ["Your descriptions:"]
         for field, how in (
             ("pose", f"after your name in the room, \"{caller.key} is here, ...\""),
             ("short", "when someone types LOOK at you"),
@@ -152,4 +154,37 @@ class CmdDescribe(Command):
             "for example: describe pose leaning on the counter. To remove one, type "
             "DESCRIBE CLEAR and its name."
         )
+        lines.append("")
+        lines.extend(self._what_others_see())
         return "\n".join(lines)
+
+    def _what_others_see(self) -> list[str]:
+        """The room line, look text and probe text as another player
+        gets them, plus what NPCs are told about you."""
+        from typeclasses.rooms import _presence_line
+
+        caller = self.caller
+
+        def plain(text):
+            return " ".join(strip_ansi(text or "").split())
+
+        look = plain(caller.get_display_desc(caller))
+        probe = plain(caller.get_display_desc(caller, probe=True))
+        lines = [
+            "What others see:",
+            f"  In the room: {plain(_presence_line(caller, caller.key, 'c'))}",
+            f"  When they LOOK at you: {look}",
+            f"  When they PROBE you: {probe if probe != look else '(the same as LOOK)'}",
+        ]
+        identity = appearance.identity_phrase(caller)
+        if identity:
+            lines.append(
+                f"  People you talk to can see you're {identity}, along with your pose and "
+                "short description."
+            )
+        else:
+            lines.append(
+                "  You have no species or sex set, so people you talk to only see your pose "
+                "and short description."
+            )
+        return lines

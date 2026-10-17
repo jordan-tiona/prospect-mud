@@ -67,6 +67,25 @@ class DescribeTests(TestCase):
         for word in ("POSE", "SHORT", "LONG", "LOOK", "PROBE"):
             self.assertIn(word, output)
 
+    def test_bare_describe_shows_what_others_see(self):
+        self.actor.db.species = "Kell"
+        self.actor.db.sex = "female"
+        self.actor.db.ambient_pose = "leaning on the counter"
+        self.actor.execute_cmd("describe")
+        output = self._output()
+        self.assertIn("In the room: Tester is here, leaning on the counter.", output)
+        self.assertIn("When they LOOK at you: A Kell woman.", output)
+        self.assertIn("When they PROBE you: (the same as LOOK)", output)
+        self.assertIn("can see you're a Kell woman", output)
+
+    def test_what_others_see_without_species_or_sex(self):
+        self.actor.db.probe_desc = "Years of dock work."
+        self.actor.execute_cmd("describe")
+        output = self._output()
+        self.assertIn("In the room: Tester is here.", output)
+        self.assertIn("When they PROBE you: Years of dock work.", output)
+        self.assertIn("no species or sex set", output)
+
     def test_field_with_no_text_shows_it(self):
         self.actor.db.desc = "tall and rangy"
         self.actor.execute_cmd("describe short")
