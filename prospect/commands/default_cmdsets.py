@@ -15,6 +15,7 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 """
 
 from evennia import default_cmds
+from evennia.commands.default import account, general, system
 
 from commands.admin import (
     CmdForget,
@@ -33,6 +34,7 @@ from commands.get import CmdGet
 from commands.look import CmdLook
 from commands.playtest import CmdPlaytest
 from commands.probe import CmdProbe
+from commands.restricted import CmdChannel, CmdOOC, CmdQuell
 from commands.say import CmdSay
 from commands.scripted_login import CmdScriptedLogin
 from commands.stealth import CmdPose, CmdStealth
@@ -80,6 +82,10 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdTell())
         # Stock pose, but revealing a hidden speaker first.
         self.add(CmdPose())
+        # Nothing to do with the game for a player (commands/restricted.py).
+        self.remove(general.CmdAccess)
+        self.remove(system.CmdAbout)
+        self.remove(system.CmdTime)
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):
@@ -104,6 +110,14 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         # Replaced by commands/tell.py's `tell`, which stays private
         # and online-only.
         self.remove(default_cmds.CmdPage)
+        # Deleting your character and making another skipped chargen;
+        # MAX_NR_CHARACTERS already stops a second one.
+        self.remove(account.CmdCharCreate)
+        self.remove(account.CmdCharDelete)
+        # Staff-only versions (commands/restricted.py).
+        self.add(CmdChannel())
+        self.add(CmdOOC())
+        self.add(CmdQuell())
 
 
 class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):
