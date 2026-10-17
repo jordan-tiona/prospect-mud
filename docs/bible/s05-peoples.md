@@ -46,11 +46,30 @@ The **Drask** are scaled, plantigrade humanoids with a distinctly **lizardlike f
 
 Still **Unresolved** after this pass: eye details (pupil shape, any inner eyelid), iris and scale-pattern variation between the sexes, lifespan.
 
-**Content follow-ups once approved (Lore lane):** one physical sentence in the Drask entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.2.md` chunk, and a revised `desc`/`probe_desc` for Tarin Os, whose "worn work overalls" with stains "on each thigh" conflict with the dress item unless the owner wants him in protective overalls as workshop wear.
+**Content follow-ups once approved (Lore lane):** one physical sentence in the Drask entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.2.md` chunk, and a revised `desc`/`probe_desc` for Tarin Os, whose "worn work overalls" with stains "on each thigh" conflict with the dress item; the owner's decision (2026-10-17) is that Tarin wears a durable, protective loincloth, on the lines of a blacksmith's apron, not overalls.
 
 ### 5.3 Lirra — Ancestral C
 
-The **Lirra** are avian-influenced, feathered or featherlike humanoids, with distinctive balance, skeletal proportions, expressive plumage or crests and functional hands. Whether they have a pronounced beak, intermediate birdlike facial anatomy, and any residual flight-related structures remains **unresolved**. Flightlessness remains a plausible direction, not established fact.
+The **Lirra** are avian-influenced, feathered humanoids, with distinctive balance, skeletal proportions, expressive plumage or crests and functional hands.
+
+**Physical description — Draft (project-owner decisions in a Lore-lane worldbuilding session, 2026-10-17; pending the owner's approval, after which each item becomes Established and the earlier "beak, intermediate birdlike facial anatomy, residual flight-related structures and flightlessness remain unresolved" gap is closed):**
+
+- **Build.** The lightest of the five mid-height peoples: around 1.9 m and 50–55 kg on average, light-boned. The mid-height peoples therefore run from Lirra through Kell to Drask by weight.
+- **Flightless.** The Lirra do not fly and have no wings. Long flight-feather fringes run along the forearms and, shorter, along the upper arms; they are vestigial and decorative.
+- **Face.** A short, blunt, beak-like muzzle with a hard edge where lips would be, teeth behind it. The face is feathered and keeps enough movement for expression; it is not a full beak.
+- **Eyes.** *(Lore-lane recommendation, confirm or veto.)* Raptor-like: the eye fills the socket so little or no white shows, with a pale, intense iris under a bony brow shelf. Set more to the sides than a Kell's, so a Lirra turns the head to look straight at someone.
+- **Ears.** *(Lore-lane recommendation, confirm or veto.)* No external ears; the ear opening sits behind the eye under a small fan of short feathers.
+- **Crest.** Long feathers from the brow back over the head, raised and flattened with mood, the Lirra's tell as the ruff and ears are the Kell's. Unlike the Kell ruff it is confined to the head.
+- **Feathers.** True feathers on the head, neck, arms and back, short down on the body; they moult, which shows age and health.
+- **Tail.** A long, thin true tail, feathered flat along its length with a short plume at the tip, not a fan or rudder.
+- **Legs and feet.** Digitigrade, with scaled lower legs that are properly muscular rather than thin bird legs, somewhat slimmer than a Kell's but not strikingly so. Three forward toes and a rear toe. Bare, as the Kell's are.
+- **Hands.** Scaled and bare like the lower legs, four long fingers and a thumb; the finest grip of the seven peoples.
+- **Colours.** A small palette per individual, two colours at most, with the crest usually the brighter one. Within that rule players and NPCs have wide freedom.
+- **Dress.** Loose, draped garments, wrapped and pinned, that cover the body fully (unlike the Kell's open backs) while leaving the arms free so the fringes are not crushed.
+
+Still **Unresolved** after this pass: whether the sexes differ in plumage, lifespan, voice.
+
+**Content follow-ups once approved (Lore lane):** one physical sentence in the Lirra entry of `content/species.md` (held in a comment there meanwhile), a new `content/lore/5.3.md` chunk, and a check of Veska Renn's `desc`/`probe_desc` ("neat, plain work clothes", "feathers at her crown lie smooth") against the dress and crest items.
 
 ### 5.4 Revari — Hybrid-descended
 

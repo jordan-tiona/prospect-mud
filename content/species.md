@@ -36,7 +36,7 @@ Scaled people with a distinctly lizardlike face and elongated snout, on an other
 
 Feathered, avian-influenced people, lighter in frame than the other ancestral peoples, with expressive plumage or crests. One of the three ancestral peoples of the home system.
 
-<!-- Left out as unresolved in bible 5.3: beak or birdlike facial anatomy, any flight-related structures, flightlessness. "Lighter in frame" paraphrases 5.3's "distinctive balance, skeletal proportions"; cut it if that reads as more than the bible says. -->
+<!-- Draft (bible 5.3 physical description, 2026-10-17; pending owner approval, then move this sentence into the entry above after the first sentence): "Flightless and light-boned, with a short blunt beak-like muzzle, a crest of long feathers over the head, feathered fringes along the arms and a long thin feathered tail." "Lighter in frame" in the entry is then backed by 5.3's build item. -->
 
 ## Descended from all three
 
