@@ -16,9 +16,10 @@ override per announcement. Speaking (`say`, `pose`) is the deliberate
 exception: it reveals the speaker first, with a reminder, and then goes
 through as normal.
 
-Staff, hidden or not, are also left out of the player count behind
-implicit NPC addressing (world/npc_addressing.py), so a mod in the room
-never stops a tester's plain `say` reaching the NPC.
+Hidden staff are also left out of the player count behind implicit NPC
+addressing (world/npc_addressing.py), so a mod a tester can't see never
+stops their plain `say` reaching the NPC. Visible staff count like any
+player (owner, 2026-10-17).
 """
 
 from evennia.utils.utils import inherits_from, is_iter

@@ -1,8 +1,8 @@
 """
 Tests for staff stealth (world/stealth.py, commands/stealth.py): what a
 player sees of a hidden admin, what a hidden admin's broadcasts reach,
-speaking revealing them, and staff not counting toward implicit NPC
-addressing.
+speaking revealing them, and hidden staff not counting toward implicit
+NPC addressing.
 
 Run with:
     evennia test commands.test_stealth
@@ -135,8 +135,16 @@ class StaffAddressingTests(TestCase):
         self.admin.db_account = account
         self.admin.save()
 
-    def test_staff_in_room_dont_block_a_players_implicit_say(self):
+    def test_hidden_staff_dont_block_a_players_implicit_say(self):
+        hide(self.admin)
         npc, _ = resolve_addressee("hello there", self.cafe, speaker=self.player)
+        self.assertEqual(npc, self.mara)
+
+    def test_visible_staff_count_like_any_player(self):
+        # The tester can see them and may be talking to them (owner, 2026-10-17).
+        npc, _ = resolve_addressee("hello there", self.cafe, speaker=self.player)
+        self.assertIsNone(npc)
+        npc, _ = resolve_addressee("to Mara, hello there", self.cafe, speaker=self.player)
         self.assertEqual(npc, self.mara)
 
     def test_staff_speaker_with_a_player_present_must_name_the_npc(self):

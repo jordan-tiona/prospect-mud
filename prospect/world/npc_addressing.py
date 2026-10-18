@@ -22,7 +22,7 @@ import re
 
 from evennia.utils.utils import inherits_from
 
-from world.stealth import is_staff
+from world.stealth import is_hidden
 
 
 def _candidate_names(npc):
@@ -44,17 +44,18 @@ _present_talkative_npcs = present_talkative_npcs
 
 
 def _present_players(room, speaker=None):
-    """Players who count toward the lone-player rule. Staff other than
-    the speaker don't (world/stealth.py): a mod standing in the room,
-    hidden or not, mustn't stop a tester's plain `say` reaching the
-    NPC. A staff speaker still counts themselves, so an admin alone
-    with an NPC is addressed implicitly like anyone else."""
+    """Players who count toward the lone-player rule. Hidden staff other
+    than the speaker don't (world/stealth.py): a tester who can't see
+    them is alone with the NPC as far as they know. Visible staff count
+    like anyone (owner, 2026-10-17): the tester can see them and may be
+    talking to them, so a plain `say` mustn't go to the NPC. A speaker
+    always counts themselves."""
     if room is None:
         return []
     return [
         obj
         for obj in room.contents
-        if inherits_from(obj, "typeclasses.characters.Character") and (obj is speaker or not is_staff(obj))
+        if inherits_from(obj, "typeclasses.characters.Character") and (obj is speaker or not is_hidden(obj))
     ]
 
 
