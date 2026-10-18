@@ -76,15 +76,22 @@ SAME_REPLY_EXCLUSIONS = {"accept_help": "ask_for_help"}
 # guideline #24 (b) describes. The engine still validates the call.
 REACTION_RETRIES = {"accept_help": "ask_for_help"}
 
+# The other way round: an applied action whose next step belongs in the
+# same reply, when the reply didn't make it. Live 2026-10-18 (v52): on
+# the yes she called accept_help alone, and the reaction said "Here's
+# the faulty module" with no way to hand it over.
+REACTION_FOLLOW_ONS = {"accept_help": "give_faulty_module"}
+
 
 def reaction_action_names(calls, results, applied_earlier=()) -> list:
     """The actions the follow-up reaction may call, given this reply's
     `calls` and their results (commands/say.py's tool_results dicts)."""
     names = []
     for call, result in zip(calls, results):
-        retry = REACTION_RETRIES.get(call["name"])
-        if retry and not result["applied"] and retry not in applied_earlier and retry not in names:
-            names.append(retry)
+        table = REACTION_FOLLOW_ONS if result["applied"] else REACTION_RETRIES
+        name = table.get(call["name"])
+        if name and name not in applied_earlier and name not in names:
+            names.append(name)
     return names
 
 
@@ -108,7 +115,9 @@ def validate_and_apply(
             narration="",
             reason=(
                 "you've only just asked them - they haven't answered yet. Wait for their reply "
-                "before treating it as agreed, and don't hand anything over"
+                "before treating it as agreed, and don't hand anything over. If they already sounded "
+                "willing, say you're glad and check once more, plainly, that they'll take it - "
+                "without talking about asking or asking properly"
             ),
         )
 

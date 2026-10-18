@@ -1083,6 +1083,23 @@ class SayCommandTests(_SayTestBase):
         self.assertTrue(any("Tarin's at the workshop." in m for m in self.messages))
 
     @patch("commands.say.chat")
+    def test_an_accept_without_the_hand_over_lets_the_reaction_hand_it_over(self, mock_chat):
+        # Live 2026-10-18 (v52): "Umm... Okay." got accept_help alone, and
+        # the reaction said "Here's the faulty module" with nothing handed over.
+        self.actor.attributes.add("quest_module_exchange", "offered")
+        mock_chat.side_effect = [
+            _reply("", tool_calls=[{"name": "accept_help", "arguments": {"confirmed": True}}]),
+            _reply("", tool_calls=[{"name": "give_faulty_module", "arguments": {"confirmed": True}}]),
+            _reply("Here's the faulty module. Tarin's the one to see."),
+        ]
+        self._say("Umm... Okay.")
+
+        reaction_tools = mock_chat.call_args_list[1].kwargs["tools"]
+        self.assertEqual([t["function"]["name"] for t in reaction_tools], ["give_faulty_module"])
+        self.assertEqual(get_quest_state(self.actor), "has_faulty_module")
+        self.assertTrue(any("Here's the faulty module." in m for m in self.messages))
+
+    @patch("commands.say.chat")
     def test_the_reaction_gets_no_tools_when_nothing_needs_retrying(self, mock_chat):
         mock_chat.side_effect = [
             _reply(
