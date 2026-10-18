@@ -45,10 +45,20 @@ Sent on puppet.
 
 ## Map coordinates (Tools follow-up)
 
-`Room.Info` sends `coords` only when a room has `db.map_coords`, and today none do. The editor's `editor.x`/`editor.y` values are canvas pixels on an uneven spacing, and export strips them. Turning them into grid coordinates needs a sector-format change, so it's Tools' work:
+`Room.Info` sends `coords` only when a room has `db.map_coords`, and today none do. The editor's `editor.x`/`editor.y` values are canvas pixels on an uneven spacing, and export strips them.
 
-1. Add an exported per-room `map` field (`{"x", "y", "z"}`, integers) to `sector.json` and the manifest, editable in the editor.
-2. Have `world/build_sector.py` write it to the room as `db.map_coords`.
-3. Make `ops/editor/check.py` report two rooms in a sector with the same coordinates. A warning is enough, because mapper clients cope with stretched exits but not with stacked rooms.
+**Grid policy (owner, 2026-10-18): a one-step grid by default, worked out from the exits, with deliberate exceptions.** Coordinates aren't typed in. They come from the exits, so they can't drift away from them:
 
-**Elsewhere doesn't fit a plain one-step grid today.** With the square at (0,0,0), the Civic Office is west at (-1,0). Old Quarter Street is southwest at (-1,-1), and Daven's Office is north of the street, which puts it at (-1,0) too. The editor already draws Daven's Office further west (x -960, against the Civic Office's -560). Map coordinates can stretch an exit across several grid steps, so a layout such as Daven's Office at (-2,0) works. Choosing the layout is the owner's call in the editor.
+- Each sector has one **anchor** room at (0,0,0). From there, each compass exit is one grid step in its direction (`northeast` is +1 x, +1 y), and `up`/`down` are ±1 z.
+- **Two rooms on one cell is an error.** Export refuses it, the same way it refuses `duplicate_room_pair`. Stacked rooms are the one thing mapper clients can't draw.
+- **A room can be pinned** to an explicit coordinate. Use a pin when the one-step rule doesn't fit: a big space next to a small one, an exit with no direction (`in`, `out`, a named hatch or lift), or a loop that doesn't close. Coordinates are then worked out from the pinned room onward.
+- **An exit that doesn't match its direction is a warning:** one that crosses more than one step, points the wrong way, or joins a room that can't be reached from the anchor. Fix the exits, or confirm the exception by pinning the room. Warnings don't block export, so a sector being built can still be exported.
+- Treat any change to these rules as a deliberate design decision, the same way the one-connection-per-room-pair rule in `docs/mud-editor-sector-format.md` is.
+
+Tools' work (the editor, export and the build script):
+
+1. Work out each room's coordinates from the anchor, exits and pins, in `ops/editor/check.py`/`export.py`, and export them in the manifest as `map: {"x", "y", "z"}`. `sector.json` stores only the anchor and any pins. Showing the worked-out grid in the editor would help with placement but isn't required.
+2. Have `world/build_sector.py` write `map` to each room as `db.map_coords`.
+3. Add the checks above: overlap is an error, a mismatched exit or a room that can't be reached is a warning.
+
+**Elsewhere has one overlap today.** With the square as the anchor, the Civic Office is west at (-1,0). Old Quarter Street is southwest at (-1,-1), and Daven's Office is north of the street, which puts it on (-1,0) too. The clean fix, in the spirit of the one-step rule, is to make the street to Daven's Office exit `northwest`/`southeast`. That puts Daven's Office at (-2,0), which is also where the editor already draws it. No authored text gives that direction, and the signpost finds Daven's Office by tag, so the change touches only `sector.json`. The other option is to keep `north` and pin Daven's Office. Either way, it's the owner's call in the editor.
