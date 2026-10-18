@@ -1,13 +1,14 @@
-# Prospect and the Constellation
+# Prospect
 
 **Living Project Design Bible**
 
 | Field | Value |
 |---|---|
-| Document version | 0.4.13 |
+| Document version | 0.4.14 |
 | Last organized | 2026-10-17 |
 | Development stage | Early development |
 | Project | Text-based multiplayer science-fiction MUD |
+| Game title | *Prospect*. The initial playtest release is *Prospect: Elsewhere*; later releases take a subtitle from wherever they put the player. Owner decision 2026-10-17 (LR-LORE-0004); the project and this bible were titled *Prospect and the Constellation* through v0.4.13. *The Constellation* remains an Established in-world term. |
 | Creative direction | Science fantasy grounded in consistent speculative science; atmosphere and political/technological influences from Alastair Reynolds' *Revelation Space* universe |
 | Initial playable location | Elsewhere |
 | NPC direction | LLM-driven in-universe dialogue; small conversational proof of concept with curated logging for potential future LoRA fine-tuning |

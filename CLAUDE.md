@@ -1,6 +1,6 @@
-# Prospect and the Constellation
+# Prospect
 
-A text-based multiplayer sci-fi MUD built on **Evennia** (Python), where some NPCs are voiced by an LLM. Solo project. Past the original phase 1 conversation prototype; now building toward a small external **playtest** (see `docs/prospect-initial-playtest-design-spec.md`) that adds character creation, light combat, and persistent per-player quest state on top of the existing LLM-NPC/commitment infrastructure.
+A text-based multiplayer sci-fi MUD built on **Evennia** (Python), where some NPCs are voiced by an LLM. Solo project. Past the original phase 1 conversation prototype; now building toward a small external **playtest**, titled **Prospect: Elsewhere** (see `docs/prospect-initial-playtest-design-spec.md`) that adds character creation, light combat, and persistent per-player quest state on top of the existing LLM-NPC/commitment infrastructure.
 
 ## Source of truth
 

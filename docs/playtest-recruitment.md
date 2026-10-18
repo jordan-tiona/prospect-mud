@@ -88,7 +88,7 @@ Setting facts below come from bible §19 (canon synopsis), §13.1 (planned direc
 >
 > Hi r/MUD,
 >
-> I'm a solo developer building **Prospect and the Constellation**, a sci-fi MUD on Evennia. I'm looking for a handful of people to break the first playable prototype.
+> I'm a solo developer building **Prospect**, a sci-fi MUD on Evennia. I'm looking for a handful of people to break its first playable release, *Prospect: Elsewhere*.
 >
 > **Up front, since it's the first question people ask:** some NPCs speak through a large language model. That's the experiment. What the LLM does *not* do:
 > - **It doesn't write the world.** Rooms, characters, lore and quests are written by me. Each NPC only knows what someone in their position would know, from material I wrote.
@@ -127,7 +127,7 @@ Setting facts below come from bible §19 (canon synopsis), §13.1 (planned direc
 
 ### 5.2 Discord short version
 
-> **Prospect and the Constellation**: a tiny sci-fi Evennia MUD testing LLM-voiced NPCs. The world, lore and quests are written by me, and the engine checks every NPC action. Wake from cryosleep on an orbital habitat, explore a 9-room neighborhood, talk to 5 NPCs however you like, and do 3 small quests (including light combat). Looking for **4–5 testers** for [DATES] + a group session [DATE]. I want blunt feedback on whether the NPCs are fun or just a gimmick. NPC chats are logged for review. DM me or [LINK].
+> **Prospect: Elsewhere**: a tiny sci-fi Evennia MUD testing LLM-voiced NPCs. The world, lore and quests are written by me, and the engine checks every NPC action. Wake from cryosleep on an orbital habitat, explore a 9-room neighborhood, talk to 5 NPCs however you like, and do 3 small quests (including light combat). Looking for **4–5 testers** for [DATES] + a group session [DATE]. I want blunt feedback on whether the NPCs are fun or just a gimmick. NPC chats are logged for review. DM me or [LINK].
 
 ### 5.3 Owner's editing decisions
 
