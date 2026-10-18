@@ -329,7 +329,7 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   2. **Styling.** Emotes render bright gray (`format_emote`'s `|x`); narration lines are uncoloured, so an engine line and an NPC action look like two different kinds of thing when they describe the same kind of event. Render narration in the same gray. Text stays self-sufficient, so screen-reader users lose nothing.
   3. **Register.** Several lines narrate the NPC's feelings rather than what happened ("is glad to hear...", "is glad {actor} is willing...", "accepts that {actor} can't help...", "brings the matter up and offers it"). The NPC's own words carry feeling; the engine line exists to state the fact the engine changed, and in the fallback case it is the *only* thing the player sees, so a feeling with no speech attached reads as a stage direction. Each line should state one observable, finished thing in one present-tense sentence, the same shape as an emote.
 - Blocking: no
-- Status: drafted (2026-10-18)
+- Status: approved (2026-10-18; applied by Dev in 59d095e: every line as proposed, narration shown in `|x` gray, and the model's tool result and the conversation history get the `name_the_listener` form. Needs a live check of one errand)
 - Approved by: lore (behaviour wording; no setting facts)
 - Resolution: proposed lines below, current → proposed. `{npc}`/`{actor}` as in the source.
 
@@ -381,4 +381,4 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   **One constraint Dev has to handle:** the same narration string is also fed back to the model as the tool result ("(The action happened: ...)" in `say.py`'s assistant-turn builder) and written to the conversation log. In that context "you" would read as the NPC. Suggested split: author the strings in the second person as above, show them to the player as is, and pass `world.emotes.name_the_listener(narration, actor.key)` to the model and log. That helper already turns "you", "your", "you're" and the rest into the player's name, so the model keeps seeing "Mara Voss hands Jordan the faulty temperature-control module." exactly as now. Colour (`|x`) belongs at display time in `say.py`, never in the string, for the same reason.
 
   Test impact, checked 2026-10-18: `world/test_actions.py` asserts only substrings that survive ("Mara Voss", "hot", "north", "south", "west", "already there", "Tarin", "logs 2 more skitters", "Total on record: 3"); `commands/test_say.py` checks the leading blank line, which stays. No test rewrites expected.
-- Handoff: dev: apply the lines above in `world/actions.py` and `world/commitments.py`, render narration in `|x` gray in `say.py`, and feed the model/log the `name_the_listener` form.
+- Handoff: none
