@@ -49,7 +49,7 @@ from world.actions import (
 from world.appearance import appearance_context_for
 from world.commitments import commitment_context_for
 from world.conversation_log import log_turn
-from world.emotes import first_name, format_emote, name_the_listener, parse_reply
+from world.emotes import first_name, format_emote, format_narration, name_the_listener, parse_reply
 from world.llm_budget import (
     call_cost_usd,
     global_daily_limit_reached,
@@ -322,10 +322,10 @@ def _tool_result(result, caller):
     }
 
 
-def _show_narration(caller, text, lead_blank=True):
-    """An engine action line, in the same gray as NPC emotes
-    (format_emote): the same kind of event, so the same look."""
-    caller.msg(("\n" if lead_blank else "") + f"|x{text}|n")
+def _show_narration(caller, target, text, lead_blank=True):
+    """An engine action line, shown to the player only
+    (world.emotes.format_narration)."""
+    caller.msg(("\n" if lead_blank else "") + format_narration(target.key, text))
 
 
 def _render_reply_segments(target, caller, segments, pronouns, lead_blank=False):
@@ -533,7 +533,7 @@ def _handle_llm_reply(
             # Voss agrees to help" easy to miss right under her own
             # dialogue). Also separates multiple narrations from each
             # other, for a turn with more than one applied tool call.
-            _show_narration(caller, result["shown"])
+            _show_narration(caller, target, result["shown"])
 
     if needs_reaction:
         # Ask the model to react now that it's seen the outcome,
@@ -655,7 +655,7 @@ def _handle_action_reaction(
         if result.applied:
             applied_names.append(call["name"])
             if result.narration and call["name"] not in SUPPRESS_IMMEDIATE_NARRATION:
-                _show_narration(caller, result.narration)
+                _show_narration(caller, target, result.narration)
         tool_call_records.append(
             {
                 "name": call["name"],
@@ -728,7 +728,7 @@ def _handle_action_reaction_error(
     # leaving the player with no response at all.
     for call, result in zip(original_calls, tool_results):
         if result["applied"] and call["name"] in SUPPRESS_IMMEDIATE_NARRATION:
-            _show_narration(caller, result.get("shown", result["narration"]), lead_blank=False)
+            _show_narration(caller, target, result.get("shown", result["narration"]), lead_blank=False)
     # Still record the action turn in history, same as the non-error
     # path, so a failed reaction call doesn't also erase the action
     # from the model's own memory of the conversation.
@@ -1012,12 +1012,12 @@ class CmdSay(DefaultCmdSay):
             # This nudge is sent only to the speaker, not broadcast.
             npcs = present_talkative_npcs(caller.location)
             if npcs and _should_show_say_hint(caller):
-                first_name = npcs[0].key.split()[0]
+                name = first_name(npcs[0].key)
                 if len(npcs) > 1:
                     _show_say_hint(
                         caller,
                         "(More than one person here might answer that - say who you mean, "
-                        f"e.g. 'say to {first_name}, ...', or just use their name.)",
+                        f"e.g. 'say to {name}, ...', or just use their name.)",
                     )
                 else:
                     # One NPC, but other players here too, so the lone-
@@ -1026,8 +1026,8 @@ class CmdSay(DefaultCmdSay):
                     # everyone starts in the Medical Bay with Given).
                     _show_say_hint(
                         caller,
-                        f"(With other people here, {first_name} won't assume you mean them - "
-                        f"use their name, e.g. 'say to {first_name}, ...', to talk to them.)",
+                        f"(With other people here, {name} won't assume you mean them - "
+                        f"use their name, e.g. 'say to {name}, ...', to talk to them.)",
                     )
             return
         if not message:

@@ -125,6 +125,18 @@ def first_name(npc_key: str) -> str:
     return npc_key.split()[0] if npc_key.strip() else npc_key
 
 
+def format_narration(npc_key: str, text: str) -> str:
+    """An engine action line (LR-LORE-0008) for the player it's about, in
+    the same gray as an emote: the same kind of event, so the same look.
+    It starts with the NPC's first name too (LR-LORE-0009), on display
+    only, since the model and the log keep the full key. Only the
+    leading name changes, so another NPC named later in the line
+    ("...to Tarin Os.") keeps their full name."""
+    if text.startswith(npc_key + " "):
+        text = first_name(npc_key) + text[len(npc_key):]
+    return f"|x{text}|n"
+
+
 def format_emote(npc_key: str, emote_text: str, pronouns: str = "") -> str:
     """One emote's text as a third-person action line, e.g. 'smiles
     and nods' -> 'Mara smiles and nods.' Callers pass first_name(key),

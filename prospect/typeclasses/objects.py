@@ -250,13 +250,15 @@ class Parcel(ObjectParent, DefaultObject):
         # the validator has already moved the parcel.
         if inherits_from(getter, "typeclasses.npcs.TalkativeNPC"):
             from world.actions import PARCEL_COMMITMENT_TYPES, PARCEL_TAG_CATEGORY, validate_and_apply
+            from world.emotes import format_narration
 
             if self.location == giver and self.tags.get(category=PARCEL_TAG_CATEGORY):
                 for commitment_type in sorted(PARCEL_COMMITMENT_TYPES):
                     result = validate_and_apply(getter, giver, "accept_handoff", {"commitment_type": commitment_type})
                     if result.applied:
-                        if giver.location:
-                            giver.location.msg_contents(result.narration)
+                        # Second person ("...from you."), so the giver's
+                        # alone, like commands/say.py's narration.
+                        giver.msg(format_narration(getter.key, result.narration))
                         return False
             giver.msg(f"{getter.get_display_name(giver)} isn't expecting {self.get_display_name(giver)}.")
             return False

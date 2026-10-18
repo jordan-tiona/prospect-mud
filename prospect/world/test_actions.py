@@ -559,6 +559,23 @@ class ParcelActionWiringTests(TestCase):
         self.assertEqual(self._carried_parcels(), [])
         self.assertIsNotNone(get_fulfilled_commitment(self.actor, self.TYPE))
 
+    def test_give_to_tarin_narration_goes_to_the_giver_only(self):
+        # It's written to the giver as "you", so nobody else gets it; and
+        # like say.py's narration it's gray, with Tarin's first name
+        # (LR-LORE-0009).
+        self._accept()
+        parcel = self._carried_parcels()[0]
+        self.actor.location = self.tarin.location
+        bystander = create_object(
+            "typeclasses.characters.Character", key="Bystander", location=self.tarin.location, home=self.tarin.location
+        )
+        to_actor, to_bystander = [], []
+        with patch.object(self.actor, "msg", side_effect=lambda text=None, **kw: to_actor.append(text)), \
+                patch.object(bystander, "msg", side_effect=lambda text=None, **kw: to_bystander.append(text)):
+            parcel.at_pre_give(self.actor, self.tarin)
+        self.assertEqual(to_actor, ["|xTarin takes the parcel from you.|n"])
+        self.assertEqual(to_bystander, [])
+
     def test_give_to_tarin_without_an_open_errand_is_refused(self):
         self._accept()
         parcel = self._carried_parcels()[0]

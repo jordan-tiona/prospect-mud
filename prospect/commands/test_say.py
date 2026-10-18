@@ -31,6 +31,7 @@ from commands.say import (
     FIRST_PASS_SHOWN_NOTE,
     MAX_HISTORY_EXCHANGES,
     _build_followup_messages,
+    _show_narration,
     _trim_history,
 )
 from world.actions import get_quest_state
@@ -62,6 +63,27 @@ def _record_text(text="", **kwargs):
     if isinstance(text, (tuple, list)):
         text = text[0]
     return text
+
+
+class ShowNarrationTests(TestCase):
+    # LR-LORE-0009: only the acting NPC's leading name shortens.
+    def setUp(self):
+        self.sent = []
+        self.caller = type("Caller", (), {"msg": lambda _self, text: self.sent.append(text)})()
+        self.target = type("Npc", (), {"key": "Veska Renn"})()
+
+    def test_leading_name_becomes_the_first_name(self):
+        _show_narration(self.caller, self.target, "Veska Renn hands you the parcel.")
+        self.assertEqual(self.sent, ["\n|xVeska hands you the parcel.|n"])
+
+    def test_other_names_in_the_line_stay_full(self):
+        _show_narration(self.caller, self.target, "Veska Renn asks you to get the misdelivered parcel to Tarin Os.")
+        self.assertIn("Veska asks you", self.sent[0])
+        self.assertIn("to Tarin Os.", self.sent[0])
+
+    def test_line_not_starting_with_the_npc_is_unchanged(self):
+        _show_narration(self.caller, self.target, "The parcel is gone.", lead_blank=False)
+        self.assertEqual(self.sent, ["|xThe parcel is gone.|n"])
 
 
 class BuildFollowupMessagesTests(TestCase):
@@ -735,14 +757,15 @@ class SayCommandTests(_SayTestBase):
     def test_narration_says_you_to_the_player_and_names_them_to_the_model(self, mock_chat):
         # LR-LORE-0008: the player reads "you", in emote gray; the
         # model's tool result keeps the player named, since "you" there
-        # would read as the NPC.
+        # would read as the NPC. LR-LORE-0009: the player's line starts
+        # with her first name; the model keeps her full key.
         mock_chat.side_effect = [
             _reply("", tool_calls=[{"id": "call_1", "name": "serve_drink", "arguments": {"drink_type": "hot"}}]),
             _reply("Here you go."),
         ]
         self._say("hot drink please")
 
-        self.assertIn("\n|xMara Voss serves you a hot drink.|n", self.messages)
+        self.assertIn("\n|xMara serves you a hot drink.|n", self.messages)
         followup_messages = mock_chat.call_args_list[1].args[0]
         tool_message = next(m for m in followup_messages if m["role"] == "tool")
         self.assertEqual(tool_message["content"], "(The action happened: Mara Voss serves Tester a hot drink.)")
