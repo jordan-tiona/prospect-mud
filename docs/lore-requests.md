@@ -382,3 +382,13 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 
   Test impact, checked 2026-10-18: `world/test_actions.py` asserts only substrings that survive ("Mara Voss", "hot", "north", "south", "west", "already there", "Tarin", "logs 2 more skitters", "Total on record: 3"); `commands/test_say.py` checks the leading blank line, which stays. No test rewrites expected.
 - Handoff: dev: apply the lines above in `world/actions.py` and `world/commitments.py`, render narration in `|x` gray in `say.py`, and feed the model/log the `name_the_listener` form.
+
+## LR-LORE-0009: LLM emotes use the NPC's first name, matching the idle emotes
+- Requested by: owner (2026-10-18, decided in a Lore-lane session)
+- Needed for: one name form for actions in a room. The approved idle emotes (LR-LORE-0006) start with first names ("Mara wipes down a stretch of counter that was already clean."), while the model's own emotes render through `world/emotes.py`'s `format_emote` with the full object key ("Mara Voss crosses her arms."). Side by side in the same room, the two forms read as two different conventions. The owner chose first names for both; speech lines ("Mara Voss says to you, ...") are not part of this decision.
+- What's needed: **Dev:** `format_emote` (both call sites in `commands/say.py`, the player's view and the bystander view) prefixes the NPC's first name instead of `target.key`. The persona metadata has no first-name field today; Dev's choice between taking the key up to the first space or adding a `short_name:` line to the persona metadata comment. If the field route is chosen, name it and Lore adds it to the six personas (no `prompt_version` bump needed unless the field reaches the prompt). The idle-emote lines stay as approved. If LR-LORE-0008's engine action lines are also to read as emotes, the same first-name form applies to their `{npc}`; the owner can confirm when Dev takes that request.
+- Blocking: no
+- Status: open (2026-10-18)
+- Approved by: owner
+- Resolution: none needed from Lore unless Dev picks the metadata field.
+- Handoff: dev: first-name prefix in `format_emote`'s callers (and in LR-LORE-0008's lines if the owner confirms); tests in `world/tests.py` pin the full-name form and will need updating.
