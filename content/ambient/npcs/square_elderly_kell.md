@@ -3,7 +3,6 @@ ambient_id: square_elderly_kell
 room: old_quarter_square
 status: Provisional
 approval: Approved
-emotes: Draft (LR-LORE-0006, drafted by Lore 2026-10-18, awaiting owner approval)
 bible_refs: 5.1, 11.2.6, 13.5
 -->
 

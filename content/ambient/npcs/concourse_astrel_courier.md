@@ -3,7 +3,6 @@ ambient_id: concourse_astrel_courier
 room: lift_concourse
 status: Provisional
 approval: Approved
-emotes: Draft (LR-LORE-0006, drafted by Lore 2026-10-18, awaiting owner approval)
 bible_refs: 5.5, 11.2.6, 13.6
 -->
 
