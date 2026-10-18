@@ -15,7 +15,10 @@ Format (see `docs/game-plan.md` Section 4):
 - Status: open | drafted | approved | rejected
 - Approved by: lore | owner
 - Resolution: <bible section or content file, once approved>
+- Handoff: none | dev: <what's left> | tools: <what's left>
 ```
+
+**Handoff** names follow-up work another lane still owes, whatever the Status says: wording Lore drafted for a Dev-lane file, a SERVERNAME-style code change, a Tools re-export or rebuild. Name the lane and the remaining work in one line; with work for both lanes, list `dev: ...; tools: ...`. The lane that finishes its part removes it from the line, leaving `none` when nothing is left, and records the commit in Status. Dev and Tools check for open handoffs to them at the start of every session, so don't leave lane follow-ups only in the Status or Resolution prose. Omit the field, or write `none`, when nothing is owed.
 
 **Batch requests** (MUD editor, `docs/mud-editor-sector-format.md` Section 8.1) ask for several candidates to choose from rather than one specific answer. Use the same fields, plus:
 

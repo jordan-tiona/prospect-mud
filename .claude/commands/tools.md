@@ -9,7 +9,7 @@ Read `CLAUDE.md`'s "Workstream lanes" section for your boundaries. In short:
 - You never change game behavior or mechanics without a Dev-lane review, and never invent lore. If you need lore, add an `LR-TOOLS-####` entry to `docs/lore-requests.md`.
 - Don't run the Evennia server; only the Dev lane does.
 
-Before anything else, run `git merge master` so you're working from the latest state.
+Before anything else, run `git merge master` so you're working from the latest state. Then check `docs/lore-requests.md` for entries whose `Handoff` line names `tools`, whatever their Status - those are yours. When you finish, remove your part from the Handoff line (`none` if nothing is left) and record the commit in Status.
 
 Commit finished work on the `tools` branch and tell the project owner when it's ready to merge. Leave unfinished work uncommitted.
 

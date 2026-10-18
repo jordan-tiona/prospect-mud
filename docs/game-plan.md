@@ -65,7 +65,10 @@ Any lane that needs lore it doesn't have adds an entry instead of inventing it. 
 - Blocking: yes | no
 - Status: open | drafted | approved | rejected
 - Resolution: <bible section or content file, once approved>
+- Handoff: none | dev: <what's left> | tools: <what's left>
 ```
+
+`Handoff` carries follow-up work another lane owes (wording to apply, a code change, a re-export), so it can't get lost inside an `approved` Status. The lane that finishes it clears its part; Dev and Tools check for open handoffs every session.
 
 ### `docs/playtest-findings.md`: playtest findings
 
