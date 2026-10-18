@@ -119,4 +119,5 @@ Playtest of 2026-10-17, 14:42–14:53 UTC, one player (the owner), after the fix
 - First seen / last seen: 2026-10-17 14:47
 - Evidence: "Man it's cold in here." → she explained and asked "You wouldn't happen to be up for helping with that, would you?", and called accept_help in the same turn. The player said yes on the next turn and got the module.
 - Notes: Harmless here (the player said yes), but a player who said no would still have the errand marked accepted. accept_help means the player agreed. Dev: check her `## Actions` wording for accept_help; if it recurs after that, it needs an offered state like the commitments have.
-- Status: new
+- Resolution (2026-10-17, owner chose the structural fix): her errand gained an "offered" step - `ask_for_help`, then `accept_help` or `decline_help` on a later reply - and the engine drops `accept_help` when it comes in the same reply as the ask (`SAME_REPLY_EXCLUSIONS`, `world/actions.py`). Mara `prompt_version` 50. Eval results in `docs/npc-action-prompt-guidelines.md` #24. A player who volunteers before she asks now confirms once more.
+- Status: fixed (awaiting live verify)

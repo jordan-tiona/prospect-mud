@@ -119,6 +119,13 @@ FORCE_REACTION_ACTIONS = {
     # since the last report), and its result carries the only number the
     # NPC is allowed to state.
     "log_dead_skitters_with_iri",
+    # Mara's heating errand gained an "offered" step (PF-0011), so these
+    # are rejectable the same way propose/accept/decline_commitment are:
+    # accept_help is dropped when she hasn't asked yet, or asked in the
+    # same reply, and her first-pass text may already claim the yes.
+    "ask_for_help",
+    "accept_help",
+    "decline_help",
 }
 
 
@@ -423,8 +430,13 @@ def _handle_llm_reply(
 
     tool_call_records = []
     tool_results = []
+    applied_names = []
     for call in reply.tool_calls:
-        result = validate_and_apply(target, caller, call["name"], call["arguments"], player_message)
+        result = validate_and_apply(
+            target, caller, call["name"], call["arguments"], player_message, applied_earlier=applied_names
+        )
+        if result.applied:
+            applied_names.append(call["name"])
         tool_call_records.append(
             {
                 "name": call["name"],

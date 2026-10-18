@@ -23,7 +23,9 @@ from world.actions import (
     _validate_accept_handoff,
     _validate_accept_help,
     _validate_accept_replacement,
+    _validate_ask_for_help,
     _validate_decline_commitment,
+    _validate_decline_help,
     _validate_exchange_module,
     _validate_give_faulty_module,
     _validate_propose_commitment,
@@ -182,12 +184,72 @@ class ActionValidatorTests(TestCase):
     def test_quest_starts_not_started(self):
         self.assertEqual(get_quest_state(self.actor), "not_started")
 
-    def test_accept_help_from_not_started(self):
+    def test_accept_help_before_asking_is_dropped(self):
+        # PF-0011: she recorded the yes before the player had given it.
+        result = _validate_accept_help(self.mara, self.actor, {})
+        self.assertFalse(result.applied)
+        self.assertIn("haven't asked", result.reason)
+        self.assertEqual(get_quest_state(self.actor), "not_started")
+
+    def test_ask_for_help_marks_the_errand_offered(self):
+        self.assertTrue(_validate_ask_for_help(self.mara, self.actor, {}).applied)
+        self.assertEqual(get_quest_state(self.actor), "offered")
+
+    def test_ask_for_help_again_while_offered_is_dropped(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
+        self.assertFalse(_validate_ask_for_help(self.mara, self.actor, {}).applied)
+        self.assertEqual(get_quest_state(self.actor), "offered")
+
+    def test_a_repeat_ask_alongside_the_yes_does_not_drop_the_yes(self):
+        # Eval 2026-10-17: on "Sure, I'll take it" she called ask_for_help
+        # again with accept_help. The re-ask is dropped, so the yes stands.
+        _validate_ask_for_help(self.mara, self.actor, {})
+        applied = []
+        for name in ("ask_for_help", "accept_help", "give_faulty_module"):
+            result = validate_and_apply(self.mara, self.actor, name, {"confirmed": True}, applied_earlier=applied)
+            if result.applied:
+                applied.append(name)
+        self.assertEqual(applied, ["accept_help", "give_faulty_module"])
+        self.assertEqual(get_quest_state(self.actor), "has_faulty_module")
+
+    def test_ask_for_help_after_accepting_is_dropped(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
+        _validate_accept_help(self.mara, self.actor, {})
+        self.assertFalse(_validate_ask_for_help(self.mara, self.actor, {}).applied)
+        self.assertEqual(get_quest_state(self.actor), "accepted")
+
+    def test_accept_help_after_asking(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
         result = _validate_accept_help(self.mara, self.actor, {})
         self.assertTrue(result.applied)
         self.assertEqual(get_quest_state(self.actor), "accepted")
 
+    def test_decline_help_returns_the_errand_to_the_start(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
+        self.assertTrue(_validate_decline_help(self.mara, self.actor, {}).applied)
+        self.assertEqual(get_quest_state(self.actor), "not_started")
+
+    def test_decline_help_without_an_ask_is_dropped(self):
+        self.assertFalse(_validate_decline_help(self.mara, self.actor, {}).applied)
+
+    def test_accept_help_in_the_same_reply_as_the_ask_is_dropped(self):
+        asked = validate_and_apply(self.mara, self.actor, "ask_for_help", {"confirmed": True})
+        self.assertTrue(asked.applied)
+        result = validate_and_apply(
+            self.mara, self.actor, "accept_help", {"confirmed": True}, applied_earlier=["ask_for_help"]
+        )
+        self.assertFalse(result.applied)
+        self.assertIn("haven't answered yet", result.reason)
+        self.assertEqual(get_quest_state(self.actor), "offered")
+
+    def test_accept_help_in_a_later_reply_applies(self):
+        validate_and_apply(self.mara, self.actor, "ask_for_help", {"confirmed": True})
+        result = validate_and_apply(self.mara, self.actor, "accept_help", {"confirmed": True})
+        self.assertTrue(result.applied)
+        self.assertEqual(get_quest_state(self.actor), "accepted")
+
     def test_accept_help_twice_is_dropped(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
         result = _validate_accept_help(self.mara, self.actor, {})
         self.assertFalse(result.applied)
@@ -199,6 +261,7 @@ class ActionValidatorTests(TestCase):
         self.assertEqual(get_quest_state(self.actor), "not_started")
 
     def test_give_faulty_module_after_accepted(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
         result = _validate_give_faulty_module(self.mara, self.actor, {})
         self.assertTrue(result.applied)
@@ -210,6 +273,7 @@ class ActionValidatorTests(TestCase):
         self.assertEqual(get_quest_state(self.actor), "not_started")
 
     def test_full_quest_sequence(self):
+        self.assertTrue(_validate_ask_for_help(self.mara, self.actor, {}).applied)
         self.assertTrue(_validate_accept_help(self.mara, self.actor, {}).applied)
         self.assertTrue(_validate_give_faulty_module(self.mara, self.actor, {}).applied)
         self.assertTrue(_validate_exchange_module(self.tarin, self.actor, {}).applied)
@@ -218,6 +282,7 @@ class ActionValidatorTests(TestCase):
         self.assertEqual(get_quest_state(self.actor), "completed")
 
     def test_accept_replacement_too_early_is_dropped(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
         _validate_give_faulty_module(self.mara, self.actor, {})
         result = _validate_accept_replacement(self.mara, self.actor, {})
@@ -226,6 +291,7 @@ class ActionValidatorTests(TestCase):
 
     def test_quest_state_is_per_player(self):
         other = create_object("typeclasses.characters.Character", key="Other", location=self.cafe)
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
         self.assertEqual(get_quest_state(self.actor), "accepted")
         self.assertEqual(get_quest_state(other), "not_started")
@@ -234,6 +300,7 @@ class ActionValidatorTests(TestCase):
         self.assertIsNone(quest_context_for(["give_directions"], self.actor))
 
     def test_quest_context_for_mara_reflects_current_state(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
         context = quest_context_for(["serve_drink", "accept_help", "give_faulty_module", "accept_replacement"], self.actor)
         self.assertIn("accepted", context)
@@ -247,6 +314,7 @@ class ActionValidatorTests(TestCase):
         self.assertIn("not yet at a stage that involves you", context)
 
     def test_quest_context_for_tarin_reflects_his_own_stage(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
         _validate_give_faulty_module(self.mara, self.actor, {})
         context = quest_context_for(["exchange_module"], self.actor)
@@ -255,6 +323,7 @@ class ActionValidatorTests(TestCase):
     def test_quest_context_tells_tarin_not_to_raise_the_module_first(self):
         # PF-0005: given the bare state, Tarin named the module before
         # the player mentioned it. Mara handed it over, so she may.
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
         _validate_give_faulty_module(self.mara, self.actor, {})
         self.assertIn("until the player brings it up", quest_context_for(["exchange_module"], self.actor))

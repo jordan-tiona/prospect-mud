@@ -95,7 +95,8 @@ def module_exchange_hint_visible(accessing_obj, accessed_obj, *args, **kwargs):
     world.commitments. True only for a looker who hasn't started the
     errand yet, the same "not offered"-equivalent bar commitment_hint_visible
     uses, so the hint quietly stops existing for a player once they engage
-    with it, same discipline as that function.
+    with it, same discipline as that function. Mara asking ("offered")
+    hides it too; declining brings it back, as for a commitment.
     """
     from world.actions import get_quest_state
 

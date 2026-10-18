@@ -883,6 +883,27 @@ class SayCommandTests(_SayTestBase):
         self.assertFalse(kwargs["tool_calls"][0]["applied"])
         self.assertIn("not a permitted action", kwargs["tool_calls"][0]["reason"])
 
+    @patch("commands.say.chat")
+    def test_mara_asking_and_accepting_in_one_reply_only_records_the_ask(self, mock_chat):
+        # PF-0011: she asked "would you?" and called accept_help in the
+        # same reply, so a player who then said no had agreed anyway.
+        mock_chat.side_effect = [
+            _reply(
+                "It's the module. You wouldn't be up for taking it to Tarin, would you?",
+                tool_calls=[
+                    {"name": "ask_for_help", "arguments": {"confirmed": True}},
+                    {"name": "accept_help", "arguments": {"confirmed": True}},
+                ],
+            ),
+            _reply("You wouldn't be up for taking it over to Tarin, would you?"),
+        ]
+        self._say("Man it's cold in here.")
+
+        self.assertEqual(get_quest_state(self.actor), "offered")
+        calls = self.mock_log_turn.call_args.kwargs["tool_calls"]
+        self.assertEqual([c["applied"] for c in calls], [True, False])
+        self.assertIn("haven't answered yet", calls[1]["reason"])
+
     # -- reaction-triggering turns (FORCE_REACTION_ACTIONS) ---------------
 
     @patch("commands.say.chat")

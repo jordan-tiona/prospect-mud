@@ -59,16 +59,39 @@ class ActionResult:
     reason: str = ""
 
 
-def validate_and_apply(npc, actor, action_name: str, arguments: dict, player_message: str | None = None) -> ActionResult:
+# An answer can't come in the same reply as its own question: these
+# actions are dropped when the action they answer was applied earlier in
+# the same reply. Without it Mara asked "would you take it?" and recorded
+# the yes in one breath (docs/playtest-findings.md PF-0011, guideline
+# #10). Only Mara's errand so far - a player who volunteers before being
+# asked now has to confirm once more, a cost the working commitment
+# quests haven't been asked to pay.
+SAME_REPLY_EXCLUSIONS = {"accept_help": "ask_for_help"}
+
+
+def validate_and_apply(
+    npc, actor, action_name: str, arguments: dict, player_message: str | None = None, applied_earlier=()
+) -> ActionResult:
     """
     The engine validator. Checks that `action_name` is one of this
     NPC's declared permitted actions before running its specific
     validator, so an NPC can't be talked into an action its persona
     never granted it. `player_message` is the player's text this turn,
     for the validators in _PLAYER_MESSAGE_VALIDATORS that check a call
-    against it.
+    against it. `applied_earlier` names the actions already applied in
+    this same reply, for SAME_REPLY_EXCLUSIONS.
     """
     arguments = arguments or {}
+
+    if SAME_REPLY_EXCLUSIONS.get(action_name) in applied_earlier:
+        return ActionResult(
+            applied=False,
+            narration="",
+            reason=(
+                "you've only just asked them - they haven't answered yet. Wait for their reply "
+                "before treating it as agreed, and don't hand anything over"
+            ),
+        )
 
     profile = parse_persona(npc.db.npc_id)
     if action_name not in profile.actions:
@@ -108,6 +131,7 @@ def _validate_serve_drink(npc, actor, arguments: dict) -> ActionResult:
 QUEST_MODULE_EXCHANGE_KEY = "quest_module_exchange"
 QUEST_MODULE_EXCHANGE_STATES = (
     "not_started",
+    "offered",
     "accepted",
     "has_faulty_module",
     "has_replacement_module",
@@ -140,9 +164,49 @@ def _validate_quest_step(actor, required_state: str, next_state: str, narration:
     return ActionResult(True, narration)
 
 
+def _validate_ask_for_help(npc, actor, arguments: dict) -> ActionResult:
+    # The "offered" step (docs/playtest-findings.md PF-0011), the same
+    # shape as propose_commitment. Asking again after a decline is fine.
+    # A repeat ask while the first is still pending is dropped, like a
+    # repeat propose_commitment - and it has to be: the model often
+    # re-calls this alongside accept_help on the player's yes, and an
+    # applied re-ask would make SAME_REPLY_EXCLUSIONS drop that yes.
+    state = get_quest_state(actor)
+    if state == "offered":
+        return ActionResult(
+            False, "", reason="you've already asked them, and that ask stands - don't ask again"
+        )
+    if state != "not_started":
+        return ActionResult(
+            False, "", reason=f"they've already agreed to help (state {state!r}) - don't ask again"
+        )
+    _set_quest_state(actor, "offered")
+    return ActionResult(
+        True, f"{npc.key} explains the heating unit and asks {actor.key} to take the module to Tarin."
+    )
+
+
 def _validate_accept_help(npc, actor, arguments: dict) -> ActionResult:
+    if get_quest_state(actor) == "not_started":
+        return ActionResult(
+            False,
+            "",
+            reason=(
+                "you haven't asked them to take the module yet, so there's nothing for them to have "
+                "agreed to - don't hand anything over or thank them for agreeing"
+            ),
+        )
     return _validate_quest_step(
-        actor, "not_started", "accepted", f"{npc.key} agrees to let {actor.key} help with the heating unit."
+        actor, "offered", "accepted", f"{npc.key} agrees to let {actor.key} help with the heating unit."
+    )
+
+
+def _validate_decline_help(npc, actor, arguments: dict) -> ActionResult:
+    return _validate_quest_step(
+        actor,
+        "offered",
+        "not_started",
+        f"{npc.key} accepts that {actor.key} can't help with the heating unit right now.",
     )
 
 
@@ -179,7 +243,9 @@ def _validate_accept_replacement(npc, actor, arguments: dict) -> ActionResult:
 # engine truth the NPC reacts to, not something it has to remember
 # correctly from its own conversation history.
 QUEST_MODULE_EXCHANGE_ACTIONS = {
+    "ask_for_help",
     "accept_help",
+    "decline_help",
     "give_faulty_module",
     "exchange_module",
     "accept_replacement",
@@ -194,7 +260,9 @@ QUEST_MODULE_EXCHANGE_ACTIONS = {
 # his persona already claims no knowledge of the earlier stages, so
 # the engine state fed to him shouldn't contradict that.
 QUEST_STATE_VISIBILITY = {
-    "accept_help": {"not_started", "accepted"},
+    "ask_for_help": {"not_started", "offered"},
+    "accept_help": {"not_started", "offered", "accepted"},
+    "decline_help": {"offered"},
     "give_faulty_module": {"accepted", "has_faulty_module"},
     "accept_replacement": {"has_replacement_module", "completed"},
     "exchange_module": {"has_faulty_module", "has_replacement_module"},
@@ -765,7 +833,9 @@ _PLAYER_MESSAGE_VALIDATORS = {"remember_fact"}
 _ACTION_VALIDATORS = {
     "serve_drink": _validate_serve_drink,
     "give_directions": _validate_give_directions,
+    "ask_for_help": _validate_ask_for_help,
     "accept_help": _validate_accept_help,
+    "decline_help": _validate_decline_help,
     "give_faulty_module": _validate_give_faulty_module,
     "exchange_module": _validate_exchange_module,
     "accept_replacement": _validate_accept_replacement,
@@ -829,15 +899,36 @@ ACTION_SCHEMAS = {
             },
         },
     },
+    "ask_for_help": {
+        "type": "function",
+        "function": {
+            "name": "ask_for_help",
+            "description": (
+                "Ask the player to take the faulty heating-unit module to Tarin. Call "
+                "this with confirmed=true in the same reply where you ask them."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Set to true to confirm you're asking them, not just mentioning the heating.",
+                    }
+                },
+                "required": ["confirmed"],
+            },
+        },
+    },
     "accept_help": {
         "type": "function",
         "function": {
             "name": "accept_help",
             "description": (
-                "Agree to let the player help with the broken heating unit. Call "
-                "this with confirmed=true the moment you agree, before handing "
-                "over anything - it records the commitment itself, separately "
-                "from physically giving them the module."
+                "Record that the player has said yes to taking the module to Tarin, "
+                "after you asked them in an earlier reply. Call this with "
+                "confirmed=true the moment they agree, before handing over "
+                "anything - it records the commitment itself, separately from "
+                "physically giving them the module."
             ),
             "parameters": {
                 "type": "object",
@@ -845,6 +936,23 @@ ACTION_SCHEMAS = {
                     "confirmed": {
                         "type": "boolean",
                         "description": "Set to true to confirm you're agreeing to accept their help, not just discussing it.",
+                    }
+                },
+                "required": ["confirmed"],
+            },
+        },
+    },
+    "decline_help": {
+        "type": "function",
+        "function": {
+            "name": "decline_help",
+            "description": "Record that the player has said no to taking the module to Tarin. Call with confirmed=true.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "confirmed": {
+                        "type": "boolean",
+                        "description": "Set to true to confirm they actually said no.",
                     }
                 },
                 "required": ["confirmed"],

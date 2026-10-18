@@ -16,6 +16,7 @@ from world.actions import (
     _create_parcel_for,
     _create_weapon_for,
     _validate_accept_help,
+    _validate_ask_for_help,
     _validate_give_faulty_module,
     get_quest_state,
 )
@@ -112,6 +113,7 @@ class ResetQuestCommandTests(TestCase):
         self.addCleanup(log_patcher.stop)
 
     def test_resets_own_quest_state_with_no_argument(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
 
         self.actor.execute_cmd("resetquest")
@@ -123,6 +125,7 @@ class ResetQuestCommandTests(TestCase):
         other = create_object(
             "typeclasses.characters.Character", key="Other", location=self.cafe
         )
+        _validate_ask_for_help(self.mara, other, {})
         _validate_accept_help(self.mara, other, {})
 
         self.actor.execute_cmd("resetquest Other")
@@ -136,6 +139,7 @@ class ResetQuestCommandTests(TestCase):
         self.mock_log_quest_reset.assert_not_called()
 
     def test_logs_the_previous_state(self):
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
         _validate_give_faulty_module(self.mara, self.actor, {})
 
@@ -150,6 +154,7 @@ class ResetQuestCommandTests(TestCase):
 
     def test_requires_builder_permission(self):
         self.actor.permissions.remove("Builder")
+        _validate_ask_for_help(self.mara, self.actor, {})
         _validate_accept_help(self.mara, self.actor, {})
 
         self.actor.execute_cmd("resetquest")

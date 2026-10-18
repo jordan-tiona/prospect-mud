@@ -28,7 +28,13 @@ from uuid import uuid4
 from evennia import create_object
 
 from commands.say import FORCE_REACTION_ACTIONS, _build_followup_messages
-from world.actions import _create_parcel_for, get_tool_schemas, quest_context_for, validate_and_apply
+from world.actions import (
+    _create_parcel_for,
+    _set_quest_state,
+    get_tool_schemas,
+    quest_context_for,
+    validate_and_apply,
+)
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
 from world.commitments import (
@@ -121,6 +127,24 @@ def _setup_tarin_hunt_eligible_only(actor):
 
 def _setup_tarin_hunt_offered(actor):
     propose_commitment(actor, "hunt_skitters")
+
+
+def _setup_mara_asked(actor):
+    _set_quest_state(actor, "offered")
+
+
+# Mara's ask, as it reads in history once the errand is 'offered'.
+_MARA_ASKED_CONTEXT = [
+    {"role": "user", "content": "It's freezing in here."},
+    {
+        "role": "assistant",
+        "content": (
+            '"Heating unit again. It\'s the temperature module, I\'d bet on it, and Tarin at the '
+            'workshop could sort it, but I can\'t leave the counter. Any chance you\'d carry it over '
+            'to him and bring the working one back?"'
+        ),
+    },
+]
 
 
 def _setup_actor_in_room(room_key):
@@ -216,22 +240,66 @@ SCENARIOS = [
         name="mara_heating_cold_cue_does_not_give_directions",
         npc_id="mara_voss",
         player_message="Morning Mara... It's awfully cold in here.",
+        expect_calls={"ask_for_help"},
         expect_no_calls={"give_directions", "accept_help"},
-        notes="Transcript check: she should ask the player to take the module to Tarin.",
+        notes="PF-0011's shape: accept_help here is her own ask, dropped by the engine.",
     ),
     EvalScenario(
         name="mara_heating_question_does_not_give_directions",
         npc_id="mara_voss",
         player_message="What's wrong with the heating?",
+        expect_calls={"ask_for_help"},
         expect_no_calls={"give_directions", "accept_help"},
         notes="Transcript check: explain the module and ask, not 'go ask Tarin'.",
     ),
+    # PF-0011 (2026-10-17): the errand gained an "offered" step -
+    # ask_for_help, then accept_help or decline_help on a later reply.
     EvalScenario(
-        name="mara_heating_offer_accepts_and_hands_over",
+        name="mara_heating_yes_accepts_and_hands_over",
         npc_id="mara_voss",
-        player_message="I'll take the module over to Tarin for you.",
+        setup=_setup_mara_asked,
+        history=_MARA_ASKED_CONTEXT,
+        player_message="Sure, I'll take it over to Tarin.",
         expect_calls={"accept_help", "give_faulty_module"},
         notes="Guideline #9's same-turn chaining; live 2026-10-17 she accepted but didn't hand it over.",
+    ),
+    EvalScenario(
+        name="mara_heating_volunteer_before_asked_asks",
+        npc_id="mara_voss",
+        player_message="I'll take the module over to Tarin for you.",
+        expect_calls={"ask_for_help"},
+        notes=(
+            "Volunteering before her ask: she asks to confirm, the yes comes next line. She "
+            "often calls accept_help/give_faulty_module too; the engine drops both (same reply)."
+        ),
+    ),
+    EvalScenario(
+        name="mara_heating_yes_to_an_unrecorded_ask_asks",
+        npc_id="mara_voss",
+        history=_MARA_ASKED_CONTEXT,
+        player_message="Sure, I'll take it over to Tarin.",
+        expect_calls={"ask_for_help"},
+        notes=(
+            "Guideline #11's miss: she asked in words without calling ask_for_help, so the "
+            "state is still 'not_started'. Recovery is asking again via the tool, not a stuck accept."
+        ),
+    ),
+    EvalScenario(
+        name="mara_heating_question_after_ask_is_not_acceptance",
+        npc_id="mara_voss",
+        setup=_setup_mara_asked,
+        history=_MARA_ASKED_CONTEXT,
+        player_message="Is it heavy?",
+        expect_no_calls={"accept_help", "decline_help"},
+    ),
+    EvalScenario(
+        name="mara_heating_no_declines",
+        npc_id="mara_voss",
+        setup=_setup_mara_asked,
+        history=_MARA_ASKED_CONTEXT,
+        player_message="Sorry, I can't right now.",
+        expect_calls={"decline_help"},
+        expect_no_calls={"accept_help"},
     ),
     # docs/phase2c-misdelivered-parcel-proposal.md scenarios below.
     # The parcel moved from Mara to Veska 2026-10-16 (docs/errand-
@@ -612,20 +680,30 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
 
         hits = 0
         unexpected = []
+        # Applied calls change the actor's state, so every trial starts
+        # from the state the setup left, not the previous trial's.
+        starting_attributes = {attr.key: attr.value for attr in actor.attributes.all()}
         for _ in range(trials):
+            actor.attributes.clear()
+            for key, value in starting_attributes.items():
+                actor.attributes.add(key, value)
             reply = chat(messages, tools=tools, max_tokens=profile.max_reply_tokens)
             called = {call["name"] for call in reply.tool_calls}
 
             displayed_text = reply.text
             if reply.tool_calls and (called & FORCE_REACTION_ACTIONS):
-                tool_results = [
-                    {
-                        "applied": (result := validate_and_apply(npc, actor, call["name"], call["arguments"], scenario.player_message)).applied,
-                        "reason": result.reason,
-                        "narration": result.narration,
-                    }
-                    for call in reply.tool_calls
-                ]
+                tool_results = []
+                applied_names = []
+                for call in reply.tool_calls:
+                    result = validate_and_apply(
+                        npc, actor, call["name"], call["arguments"], scenario.player_message,
+                        applied_earlier=applied_names,
+                    )
+                    if result.applied:
+                        applied_names.append(call["name"])
+                    tool_results.append(
+                        {"applied": result.applied, "reason": result.reason, "narration": result.narration}
+                    )
                 followup_messages = _build_followup_messages(
                     messages, reply.text, reply.tool_calls, tool_results
                 )
