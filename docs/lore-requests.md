@@ -320,3 +320,65 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Approved by: owner
 - Resolution: `content/ambient/addressed_responses.md`, eight lines. No setting facts; the lines describe gesture only.
 - Handoff: dev: match ambient NPCs in `say to`, add the per-player once-only state and the list loader, emit the response to the room.
+
+## LR-LORE-0008: Engine action lines: second person, emote styling, observable facts
+- Requested by: owner (2026-10-18, asked for a Lore read of the engine narration lines, since they stay on screen as the fallback when the NPC's own reaction doesn't arrive)
+- Needed for: the player-facing narration strings in `world/actions.py` (hard-coded `ActionResult` text) and the per-scenario `*_narration` fields in `world/commitments.py`, shown by `commands/say.py` under the NPC's reply.
+- What's needed: a wording pass. Three things read wrong today, in order of weight:
+  1. **Person.** Every line names the player in the third person ("Mara Voss hands Jordan the faulty temperature-control module.", "...and thanks them."), yet `say.py` shows these lines only to that player, directly under "Mara Voss says to you, ..." and emotes that say "you". Only `give_directions`' "says you're already there" uses the second person. Everything the player reads about themselves should say "you".
+  2. **Styling.** Emotes render bright gray (`format_emote`'s `|x`); narration lines are uncoloured, so an engine line and an NPC action look like two different kinds of thing when they describe the same kind of event. Render narration in the same gray. Text stays self-sufficient, so screen-reader users lose nothing.
+  3. **Register.** Several lines narrate the NPC's feelings rather than what happened ("is glad to hear...", "is glad {actor} is willing...", "accepts that {actor} can't help...", "brings the matter up and offers it"). The NPC's own words carry feeling; the engine line exists to state the fact the engine changed, and in the fallback case it is the *only* thing the player sees, so a feeling with no speech attached reads as a stage direction. Each line should state one observable, finished thing in one present-tense sentence, the same shape as an emote.
+- Blocking: no
+- Status: drafted (2026-10-18)
+- Approved by: lore (behaviour wording; no setting facts)
+- Resolution: proposed lines below, current → proposed. `{npc}`/`{actor}` as in the source.
+
+  `world/actions.py`, module errand:
+  - ask_for_help: "{npc} explains the heating unit and asks {actor} to take the module to Tarin." → "{npc} asks you to take the heating unit's faulty module to Tarin Os."
+  - accept_help: "{npc} agrees to let {actor} help with the heating unit." → "{npc} agrees to let you help with the heating unit."
+  - decline_help: "{npc} accepts that {actor} can't help with the heating unit right now." → "{npc} lets the heating unit go for now."
+  - give_faulty_module: "{npc} hands {actor} the faulty temperature-control module." → "{npc} hands you the faulty temperature-control module."
+  - exchange_module: "{npc} inspects the module and hands {actor} a working replacement." → "{npc} inspects the module and hands you a working replacement."
+  - accept_replacement: "{npc} takes the replacement module from {actor} and thanks them." → "{npc} takes the replacement module from you."
+
+  `world/actions.py`, other:
+  - serve_drink: "{npc} serves {actor} a {drink_type} drink." → "{npc} serves you a {drink_type} drink."
+  - give_directions: `{npc} explains the way: take "south", then take "east".` → "{npc} points the way: south, then east." (plain exit keys, no quotes or "take"; the already-there line stays as is)
+  - log_dead_skitters_with_iri: "{npc} logs N more skitters for {actor}. Total on record: T." → "{npc} logs N more skitters for you. Total on record: T."
+  - report_parcel_delivery: "{npc} is glad to hear the parcel reached Tarin." → "{npc} notes that the parcel reached Tarin Os."
+
+  `world/commitments.py`, `ScenarioConfig` defaults:
+  - propose: "{npc} brings the matter up and offers it to {actor}." → "{npc} asks you for a hand with it."
+  - accept: "{npc} takes {actor} up on the offer to help." → "{npc} takes you up on it."
+  - decline: "{npc} accepts that {actor} isn't able to help with this." → "{npc} lets it go for now."
+  - ack: "{npc} records {actor}'s report." → "{npc} records your report."
+  - fulfill: "{npc} confirms the matter is settled." → unchanged.
+
+  deliver_parcel:
+  - propose: "{npc} explains the mixed-up parcel and asks {actor} to help get it where it belongs." → "{npc} asks you to get the misdelivered parcel to Tarin Os."
+  - accept: "{npc} hands {actor} the parcel." → "{npc} hands you the parcel."
+  - decline: "{npc} accepts that {actor} can't help with the parcel right now." → "{npc} sets the parcel aside for now."
+  - fulfill: "{npc} takes the parcel from {actor} and sees it's properly accounted for." → "{npc} takes the parcel from you." (the "accounted for" tail is a leftover from when the Civic Office could be the recipient)
+
+  verify_display_revision:
+  - propose: "{npc} asks {actor} to confirm the display is showing the current revision." → "{npc} asks you to check the display's revision number with the Civic Office."
+  - accept: "{npc} is glad {actor} is willing to check the number with the Civic Office." → "{npc} notes you'll check the number with the Civic Office."
+  - ack: "{npc} confirms the revision {actor} reported matches the record." → "{npc} confirms the revision you reported matches the record."
+  - fulfill: "{npc} is glad to hear the display's revision checked out." → "{npc} marks the display check as done."
+
+  tend_planting_bed:
+  - propose: "{npc} mentions the neglected planting bed and asks {actor} to help tend it." → "{npc} asks you to help tend the square's neglected planting bed."
+  - accept: "{npc} is glad {actor} is willing to help with the bed." → "{npc} notes you'll see to the planting bed."
+  - decline: "{npc} accepts that {actor} can't help with the planting bed right now." → "{npc} lets the planting bed go for now."
+  - fulfill: "{npc} is glad to see the planting bed properly tended." → "{npc} marks the planting bed as tended."
+
+  hunt_skitters:
+  - propose: "{npc} brings up the skitter problem and asks {actor} to help clear some out." → "{npc} asks you to help clear some skitters out."
+  - accept: "{npc} is glad {actor} is willing to help, and lends over the shock baton for the job." → "{npc} lends you the shock baton."
+  - decline: "{npc} accepts that {actor} can't help with the skitters right now." → "{npc} lets the skitter job go for now."
+  - fulfill: "{npc} is glad to hear the skitters have been thinned out." → "{npc} marks the skitter job as done."
+
+  **One constraint Dev has to handle:** the same narration string is also fed back to the model as the tool result ("(The action happened: ...)" in `say.py`'s assistant-turn builder) and written to the conversation log. In that context "you" would read as the NPC. Suggested split: author the strings in the second person as above, show them to the player as is, and pass `world.emotes.name_the_listener(narration, actor.key)` to the model and log. That helper already turns "you", "your", "you're" and the rest into the player's name, so the model keeps seeing "Mara Voss hands Jordan the faulty temperature-control module." exactly as now. Colour (`|x`) belongs at display time in `say.py`, never in the string, for the same reason.
+
+  Test impact, checked 2026-10-18: `world/test_actions.py` asserts only substrings that survive ("Mara Voss", "hot", "north", "south", "west", "already there", "Tarin", "logs 2 more skitters", "Total on record: 3"); `commands/test_say.py` checks the leading blank line, which stays. No test rewrites expected.
+- Handoff: dev: apply the lines above in `world/actions.py` and `world/commitments.py`, render narration in `|x` gray in `say.py`, and feed the model/log the `name_the_listener` form.
