@@ -38,11 +38,12 @@ PARCEL_GIVER_NPC_IDS = tuple(dict.fromkeys((SCENARIOS["deliver_parcel"].effectiv
 
 class CmdForget(Command):
     """
-    Clear your conversation history with an NPC, without restarting
-    the server.
+    Clear your conversation history with an NPC, or another player's,
+    without restarting the server.
 
     Usage:
       forget <npc>
+      forget <npc> = <player>
     """
 
     key = "forget"
@@ -51,42 +52,56 @@ class CmdForget(Command):
 
     def func(self):
         caller = self.caller
-        target_name = self.args.strip()
+        npc_name, _, player_name = self.args.partition("=")
+        npc_name, player_name = npc_name.strip(), player_name.strip()
 
-        if not target_name:
-            caller.msg("Forget whom? Usage: forget <npc>")
+        if not npc_name:
+            caller.msg("Forget whom? Usage: forget <npc>, or forget <npc> = <player>")
             return
 
-        target = caller.search(target_name, location=caller.location)
+        target = caller.search(npc_name, location=caller.location)
         if not target:
             return
 
+        player = caller.search(player_name, global_search=True) if player_name else caller
+        if not player:
+            return
+        who, whose = ("you", "your") if player == caller else (player.key, f"{player.key}'s")
+
         if not inherits_from(target, "typeclasses.npcs.TalkativeNPC"):
-            caller.msg(f"{target.key} doesn't seem to remember anything about you.")
+            caller.msg(f"{target.key} doesn't seem to remember anything about {who}.")
             return
 
         conversation_ids = getattr(target.ndb, "conversation_ids", None)
-        old_conversation_id = conversation_ids.get(caller.dbref) if conversation_ids else None
+        old_conversation_id = conversation_ids.get(player.dbref) if conversation_ids else None
 
-        cleared = False
-        for ndb_attr in ("conversations", "conversation_ids", "turn_counters"):
-            store = getattr(target.ndb, ndb_attr, None)
-            if store and store.pop(caller.dbref, None) is not None:
-                cleared = True
-        pending = target.ndb.pending
-        if pending:
-            pending.discard(caller.dbref)
-
-        if cleared:
+        if _forget_player(target, player.dbref):
             log_reset(
                 conversation_id=old_conversation_id,
                 npc_id=getattr(target.db, "npc_id", target.key),
-                actor_key=caller.key,
-                actor_dbref=caller.dbref,
+                actor_key=player.key,
+                actor_dbref=player.dbref,
             )
-            caller.msg(f"You clear your conversation history with {target.key}.")
+            caller.msg(f"You clear {whose} conversation history with {target.key}.")
         else:
-            caller.msg(f"You have no conversation history with {target.key} to clear.")
+            caller.msg(f"There's no conversation history between {target.key} and {who} to clear.")
+
+
+def _forget_player(npc, dbref) -> bool:
+    """Drop `dbref` from every per-player store on the NPC's ndb, found
+    by scanning rather than listed by name (engineering-pitfalls #3):
+    the hand-kept list missed the duplicate-line gate and
+    world/overheard.py's notes. True if anything but the in-flight
+    marker was cleared."""
+    cleared = False
+    for attr in npc.nattributes.all():
+        store = attr.value
+        if isinstance(store, dict) and dbref in store:
+            del store[dbref]
+            cleared = True
+        elif isinstance(store, set):
+            store.discard(dbref)
+    return cleared
 
 
 class CmdResetQuest(Command):

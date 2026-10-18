@@ -71,6 +71,33 @@ class ForgetCommandTests(TestCase):
             actor_dbref=self.actor.dbref,
         )
 
+    def test_clears_every_per_player_store_not_just_the_history(self):
+        # engineering-pitfalls #3: the old hand-kept list left the
+        # duplicate-line gate and the overheard notes behind.
+        self.mara.ndb.conversations = {self.actor.dbref: []}
+        self.mara.ndb.last_player_message = {self.actor.dbref: "Hello."}
+        self.mara.ndb.overheard = {self.actor.dbref: {"Guruth": 0}, "#999": {"Tester": 0}}
+        self.mara.ndb.pending = {self.actor.dbref}
+
+        self.actor.execute_cmd("forget Mara Voss")
+
+        self.assertNotIn(self.actor.dbref, self.mara.ndb.last_player_message)
+        self.assertEqual(self.mara.ndb.overheard, {"#999": {"Tester": 0}})
+        self.assertEqual(self.mara.ndb.pending, set())
+
+    def test_clears_another_players_history(self):
+        guruth = create_object("typeclasses.characters.Character", key="Guruth", location=self.cafe)
+        self.mara.ndb.conversations = {
+            guruth.dbref: [{"role": "user", "content": "hi"}],
+            self.actor.dbref: [{"role": "user", "content": "hello"}],
+        }
+
+        self.actor.execute_cmd("forget Mara Voss = Guruth")
+
+        self.assertEqual(list(self.mara.ndb.conversations), [self.actor.dbref])
+        self.assertTrue(any("clear Guruth's conversation history" in m for m in self.messages))
+        self.assertEqual(self.mock_log_reset.call_args.kwargs["actor_key"], "Guruth")
+
     def test_no_history_does_not_log_a_reset(self):
         self.actor.execute_cmd("forget Mara Voss")
 
