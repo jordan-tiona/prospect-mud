@@ -60,6 +60,8 @@ from django.conf import settings
 from evennia.commands.cmdhandler import CMD_LOGINSTART
 from evennia.utils import class_from_module, utils
 
+from world.accessibility import SCREENREADER_HINT, uses_screenreader
+
 COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
 
 # The splash art lives at the repo root, one level up from settings.GAME_DIR
@@ -74,7 +76,16 @@ _WHO_ARE_YOU_PROMPT = '|cWho are you?|n |W(Leave blank if you\'re new)|n'
 _OLD_CONNECT_WORDS = ("connect", "conn", "con", "co")
 
 
+# Sent ahead of the art, so a screen reader reads it before ~600
+# punctuation marks it can then be silenced through (owner, 2026-10-17).
+_WELCOME_LINE = "Welcome to Prospect MUD. Who are you? " + SCREENREADER_HINT
+
+
 def _show_splash(session):
+    session.msg(_WELCOME_LINE)
+    if uses_screenreader(session):
+        # The client said so (MTTS) before login, so skip the art.
+        return
     try:
         with open(_SPLASH_PATH, "r", encoding="ascii") as splash_file:
             session.msg(splash_file.read(), options={"raw": True})

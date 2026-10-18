@@ -36,6 +36,7 @@ work.
 from evennia.objects.objects import DefaultRoom
 from evennia.utils.utils import inherits_from, iter_to_str
 
+from world.accessibility import talk_marker, uses_screenreader
 from world.commitments import hint_pose_for
 
 from .objects import PARAGRAPH_INDENT, ObjectParent, indent_paragraphs
@@ -55,7 +56,7 @@ _DIRECTION_ORDER = [
 ]
 
 
-def _presence_line(entity, name, color, looker=None):
+def _presence_line(entity, name, color, looker=None, marker=""):
     """'<name> is here[, <pose>].' - shared by NPCs and player characters.
     `color` is an Evennia color-markup letter: bright cyan (c) for
     talk-capable NPCs and real players, dark cyan (C) for ambient
@@ -73,6 +74,9 @@ def _presence_line(entity, name, color, looker=None):
     hint_pose = hint_pose_for(npc_id, looker) if npc_id and looker is not None else None
     pose = hint_pose or entity.db.ambient_pose
     line = f"{name} is here, {pose}." if pose else f"{name} is here."
+    if marker:
+        # world.accessibility's talk marker, for a screen-reader looker.
+        line = f"{line} {marker}"
     return f"|{color}{line}|n"
 
 
@@ -116,7 +120,10 @@ class Room(ObjectParent, DefaultRoom):
         for thing in things:
             name = thing.get_display_name(looker, **kwargs)
             if inherits_from(thing, "typeclasses.npcs.TalkativeNPC"):
-                lines.append(_presence_line(thing, name, "c", looker=looker))
+                # Bright vs dark cyan is the only cue to who talks;
+                # a screen reader needs it in words.
+                marker = talk_marker(thing) if uses_screenreader(looker) else ""
+                lines.append(_presence_line(thing, name, "c", looker=looker, marker=marker))
             elif inherits_from(thing, "typeclasses.npcs.NPC"):
                 lines.append(_presence_line(thing, name, "C", looker=looker))
             else:

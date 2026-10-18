@@ -7,6 +7,8 @@ Run with:
     evennia test typeclasses
 """
 
+from unittest.mock import patch
+
 from django.test import TestCase
 from evennia import create_object
 
@@ -103,6 +105,45 @@ class RoomAppearanceTests(TestCase):
         self.assertEqual(
             self.room.get_display_things(self.looker), "    |cTarin Os is here.|n"
         )
+
+    # -- screen readers ------------------------------------------------------
+    # Bright vs dark cyan is the only cue to who talks, so a looker in
+    # screen-reader mode gets it in words (world/accessibility.py).
+
+    def test_screen_reader_looker_is_told_who_they_can_talk_to(self):
+        npc = create_object("typeclasses.npcs.TalkativeNPC", key="Given Marr", location=self.room)
+        npc.db.npc_id = "given_marr"
+        with patch("typeclasses.rooms.uses_screenreader", return_value=True):
+            output = self.room.get_display_things(self.looker)
+        self.assertEqual(output, "    |cGiven Marr is here. (You can talk to him.)|n")
+
+    def test_screen_reader_marker_goes_after_the_pose(self):
+        npc = create_object("typeclasses.npcs.TalkativeNPC", key="Mara Voss", location=self.room)
+        npc.db.npc_id = "mara_voss"
+        npc.db.ambient_pose = "wiping the counter"
+        with patch("typeclasses.rooms.uses_screenreader", return_value=True):
+            output = self.room.get_display_things(self.looker)
+        self.assertEqual(output, "    |cMara Voss is here, wiping the counter. (You can talk to her.)|n")
+
+    def test_screen_reader_marker_falls_back_to_them_without_a_persona(self):
+        create_object("typeclasses.npcs.TalkativeNPC", key="Someone", location=self.room)
+        with patch("typeclasses.rooms.uses_screenreader", return_value=True):
+            output = self.room.get_display_things(self.looker)
+        self.assertIn("(You can talk to them.)", output)
+
+    def test_ambient_npc_gets_no_marker_for_a_screen_reader(self):
+        create_object("typeclasses.npcs.NPC", key="Passerby", location=self.room)
+        with patch("typeclasses.rooms.uses_screenreader", return_value=True):
+            output = self.room.get_display_things(self.looker)
+        self.assertEqual(output, "    |CPasserby is here.|n")
+
+    def test_uses_screenreader_reads_the_looker_sessions(self):
+        from world.accessibility import uses_screenreader
+
+        self.assertFalse(uses_screenreader(self.looker))
+        session = type("S", (), {"protocol_flags": {"SCREENREADER": True}})()
+        with patch.object(type(self.looker.sessions), "all", return_value=[session]):
+            self.assertTrue(uses_screenreader(self.looker))
 
     # -- discoverability hint pose ------------------------------
     # verify_display_revision (Daven holds/proposes it since docs/

@@ -29,6 +29,7 @@ class _FakeSession:
         self.msgs = []
         self.msg_options = []
         self.address = f"10.0.1.{next(_next_fake_ip)}"
+        self.protocol_flags = {}
         self.sessionhandler = Mock()
 
     def msg(self, text="", **kwargs):
@@ -67,13 +68,28 @@ class ScriptedLoginTests(TestCase):
         gen = self.cmd.func()
         prompt = gen.send(None)
         self.assertIn("Who are you?", prompt)
-        # The splash is the first thing sent, before the prompt itself.
-        self.assertIn("\x1b[", self.session.msgs[0])
+        # The splash comes after the welcome line, before the prompt itself.
+        self.assertIn("\x1b[", self.session.msgs[1])
+
+    def test_welcome_line_comes_before_the_art_for_screen_readers(self):
+        gen = self.cmd.func()
+        gen.send(None)
+        self.assertIn("Welcome to Prospect MUD", self.session.msgs[0])
+        self.assertIn("option/save screenreader=on", self.session.msgs[0])
+        self.assertNotIn("\x1b[", self.session.msgs[0])
+
+    def test_a_client_reporting_a_screen_reader_gets_no_art(self):
+        self.session.protocol_flags["SCREENREADER"] = True
+        gen = self.cmd.func()
+        prompt = gen.send(None)
+        self.assertIn("Who are you?", prompt)
+        self.assertEqual(len(self.session.msgs), 1)
+        self.assertIn("Welcome to Prospect MUD", self.session.msgs[0])
 
     def test_splash_is_sent_raw_so_it_is_not_reprocessed_as_evennia_markup(self):
         gen = self.cmd.func()
         gen.send(None)
-        self.assertEqual(self.session.msg_options[0], {"raw": True})
+        self.assertEqual(self.session.msg_options[1], {"raw": True})
 
     def test_old_style_connect_line_logs_in_without_a_second_password_prompt(self):
         Account = class_from_module(settings.BASE_ACCOUNT_TYPECLASS)
