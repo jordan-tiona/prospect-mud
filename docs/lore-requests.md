@@ -242,7 +242,7 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Needed for: screen-reader support, built 2026-10-17 (`prospect/world/accessibility.py`). In screen-reader mode, Evennia strips colour codes and table borders, and the room display adds "(You can talk to her.)" after each NPC who talks, since bright versus dark cyan is otherwise the only cue. The login screen's first line already says "Using a screen reader? Once you're in, type option/save screenreader=on." (OOC interface text, written by Dev), but anyone who misses it there has no other in-game pointer.
 - What's needed: One added sentence for `_ROOM_TANNOYS["medical_bay"]` in `prospect/world/tutorial.py` (a Dev-lane file: write the new text in Resolution and Dev applies it), telling a player using a screen reader to type OPTION/SAVE SCREENREADER=ON. `/save` keeps it on for every later login; without it the setting lasts only until they disconnect. Like the PLAYTEST sentence, it's an out-of-character instruction. The current announcement is the LR-DEV-0006 Resolution text above; it's already long, so suggest a cut if one helps.
 - Blocking: no (the login line covers it), but wanted for the public playtest
-- Status: drafted (2026-10-17; **Dev:** apply to `_ROOM_TANNOYS["medical_bay"]`, then mark approved)
+- Status: approved (2026-10-17; applied by Dev to `_ROOM_TANNOYS["medical_bay"]`, no cuts)
 - Approved by: lore (out-of-character interface instruction, no setting content; the owner approved the previous versions of this announcement, so they may want to glance at it)
 - Resolution: Add one sentence after the PLAYTEST sentence and before TANNOY, so the two out-of-character interface instructions sit together at the end:
 

@@ -92,7 +92,9 @@ _ROOM_TANNOYS = {
         "wherever they are, type TELL, then their name, then your message. "
         "To talk with the other testers and the staff running this playtest, "
         "type PLAYTEST, or PT, and then your message; to stop hearing that "
-        "channel, type PLAYTEST OFF. To hear this again, type TANNOY.",
+        "channel, type PLAYTEST OFF. If you use a screen reader, type "
+        "OPTION/SAVE SCREENREADER=ON once and it stays on for every later "
+        "visit. To hear this again, type TANNOY.",
     ),
 }
 
