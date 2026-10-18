@@ -23,7 +23,13 @@ from evennia import create_object
 
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
-from world.tutorial import _fire_delayed_nudge, maybe_schedule_nudge, tannoy_text_for_room
+from world.tutorial import (
+    TANNOY_BLOCK_PAUSE,
+    _fire_delayed_nudge,
+    announce_tannoy,
+    maybe_schedule_nudge,
+    tannoy_text_for_room,
+)
 
 
 class TannoyTests(TestCase):
@@ -54,6 +60,41 @@ class TannoyTests(TestCase):
         self.assertTrue(text.startswith("A tannoy near the ceiling crackles to life: "))
         self.assertIn(' |c"Attention, new arrivals.', text)
         self.assertTrue(text.endswith('type TANNOY."|n'))
+
+    def test_tannoy_is_three_blocks_with_a_blank_line_between(self):
+        text = tannoy_text_for_room(self.rooms["medical_bay"])
+        self.assertEqual(text.count('|c"'), 3)
+        self.assertEqual(text.count("|n\n\n"), 2)
+
+    def test_tannoy_blocks_arrive_paced_on_arrival(self):
+        with patch("world.tutorial.utils.delay") as mock_delay:
+            announce_tannoy(self.character)
+        self.assertEqual(len(self.sent), 1)
+        self.assertIn("Attention, new arrivals.", self.sent[0])
+        self.assertNotIn("PLAYTEST", self.sent[0])
+        waits = [call.args[0] for call in mock_delay.call_args_list]
+        self.assertEqual(waits, [TANNOY_BLOCK_PAUSE, TANNOY_BLOCK_PAUSE * 2])
+        for call in mock_delay.call_args_list:
+            call.args[1](*call.args[2:])
+        self.assertEqual(len(self.sent), 3)
+        self.assertIn("PLAYTEST", self.sent[2])
+
+    def test_later_blocks_stop_if_the_player_leaves(self):
+        with patch("world.tutorial.utils.delay") as mock_delay:
+            announce_tannoy(self.character)
+        self.character.location = self.rooms["old_quarter_square"]
+        for call in mock_delay.call_args_list:
+            call.args[1](*call.args[2:])
+        self.assertEqual(len(self.sent), 1)
+
+    def test_screen_reader_gets_the_whole_tannoy_at_once(self):
+        with patch("world.tutorial.uses_screenreader", return_value=True), patch(
+            "world.tutorial.utils.delay"
+        ) as mock_delay:
+            announce_tannoy(self.character)
+        mock_delay.assert_not_called()
+        self.assertEqual(len(self.sent), 1)
+        self.assertIn("PLAYTEST", self.sent[0])
 
     def test_tannoy_text_for_room_none_elsewhere(self):
         self.assertIsNone(tannoy_text_for_room(self.rooms["old_quarter_square"]))

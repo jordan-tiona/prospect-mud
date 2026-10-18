@@ -51,6 +51,8 @@ rather than being blindsided by something it doesn't remember saying.
 
 from evennia.utils import utils
 
+from world.accessibility import uses_screenreader
+
 NUDGE_DELAY = 20  # seconds, non-blocking (evennia.utils.utils.delay) - "delayed" lines only
 
 _ROOM_NUDGES = {
@@ -78,25 +80,31 @@ _ROOM_NUDGES = {
 
 # Owner-approved wording (LR-DEV-0001, 2026-10-16). Fires every time a
 # player enters the room (see module docstring), via a room
-# announcement rather than an NPC line. (lead-in, spoken words): the
-# spoken part is shown in bright cyan with its quotes, like any other
-# dialogue (owner, 2026-10-16).
+# announcement rather than an NPC line. (lead-in, spoken blocks): each
+# block is shown in bright cyan with its quotes, like any other dialogue
+# (owner, 2026-10-16), with a blank line between blocks and, on arrival,
+# TANNOY_BLOCK_PAUSE seconds between them (owner, 2026-10-17).
 _ROOM_TANNOYS = {
     "medical_bay": (
         "A tannoy near the ceiling crackles to life:",
-        "Attention, new arrivals. To talk to someone, type SAY and then what "
-        "you want to say. To move, type a direction, such as NORTH or "
-        "SOUTHWEST. To look at something, type LOOK and then its name; to "
-        "study it more closely, type PROBE and then its name. To change how "
-        "others see you, type DESCRIBE. To speak privately with someone, "
-        "wherever they are, type TELL, then their name, then your message. "
-        "To talk with the other testers and the staff running this playtest, "
-        "type PLAYTEST, or PT, and then your message; to stop hearing that "
-        "channel, type PLAYTEST OFF. If you use a screen reader, type "
-        "OPTION/SAVE SCREENREADER=ON once and it stays on for every later "
-        "visit. To hear this again, type TANNOY.",
+        (
+            "Attention, new arrivals. To talk to someone, type SAY and then "
+            "what you want to say. To move, type a direction, such as NORTH "
+            "or SOUTHWEST. To look at something, type LOOK and then its name; "
+            "to study it more closely, type PROBE and then its name.",
+            "To change how others see you, type DESCRIBE. To speak privately "
+            "with someone, wherever they are, type TELL, then their name, "
+            "then your message.",
+            "To talk with the other testers and the staff running this "
+            "playtest, type PLAYTEST, or PT, and then your message; to stop "
+            "hearing that channel, type PLAYTEST OFF. If you use a screen "
+            "reader, type OPTION/SAVE SCREENREADER=ON once and it stays on "
+            "for every later visit. To hear this again, type TANNOY.",
+        ),
     ),
 }
+
+TANNOY_BLOCK_PAUSE = 3  # seconds between blocks on arrival
 
 
 def _room_has_tag(room, tag):
@@ -121,16 +129,25 @@ def _speak(character, npc, text):
     )
 
 
-def tannoy_text_for_room(room):
-    """The announcement text for `room`, or None if it has no tannoy.
-    Shared by `maybe_schedule_nudge` (fires it on every entry) and
-    `commands/tannoy.py`'s `tannoy` command (repeats it on demand)."""
+def tannoy_blocks_for_room(room):
+    """The announcement for `room` as a list of blocks, the lead-in on
+    the first, or None if it has no tannoy."""
     if not room:
         return None
-    for room_tag, (lead_in, speech) in _ROOM_TANNOYS.items():
+    for room_tag, (lead_in, blocks) in _ROOM_TANNOYS.items():
         if _room_has_tag(room, room_tag):
-            return f'{lead_in} |c"{speech}"|n'
+            spoken = [f'|c"{block}"|n' for block in blocks]
+            spoken[0] = f"{lead_in} {spoken[0]}"
+            return spoken
     return None
+
+
+def tannoy_text_for_room(room):
+    """The whole announcement for `room` at once, blocks separated by a
+    blank line, or None if it has no tannoy. `commands/tannoy.py`'s
+    `tannoy` command uses this: someone asking for it wants it now."""
+    blocks = tannoy_blocks_for_room(room)
+    return "\n\n".join(blocks) if blocks else None
 
 
 def announce_tannoy(character):
@@ -141,9 +158,24 @@ def announce_tannoy(character):
     the Medical Bay before the player is logged in to it, so the arrival
     announcement reaches nobody - the puppet call is what a new player
     actually sees (found live, 2026-10-16)."""
-    tannoy_text = tannoy_text_for_room(character.location)
-    if tannoy_text:
-        character.msg("\n" + tannoy_text)
+    room = character.location
+    blocks = tannoy_blocks_for_room(room)
+    if not blocks:
+        return
+    if uses_screenreader(character):
+        # All at once: a block arriving mid-sentence can cut off the
+        # screen reader still reading the one before.
+        character.msg("\n" + "\n\n".join(blocks))
+        return
+    character.msg("\n" + blocks[0])
+    for index, block in enumerate(blocks[1:], start=1):
+        utils.delay(TANNOY_BLOCK_PAUSE * index, _send_tannoy_block, character, room, block)
+
+
+def _send_tannoy_block(character, room, block):
+    # Heard only in the room it's playing in.
+    if character.location == room:
+        character.msg("\n" + block)
 
 
 def maybe_schedule_nudge(character):
