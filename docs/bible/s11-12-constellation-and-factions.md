@@ -2,7 +2,7 @@ _Part of the split design bible - see [`00-index.md`](00-index.md) for the statu
 
 ## 11. The Constellation and its habitats
 
-**Status:** The pre-Bloom Constellation, Elsewhere's primacy, separatist origins, contemporary working structure and broad civic republic/equality principles, and the decision not to rebuild Haven are established. Freehold and Meridian remain entirely provisional, as does Elsewhere's naming anecdote. Detailed constitutional arrangements, inter-habitat governance and AI policies are unresolved.
+**Status:** The pre-Bloom Constellation, Elsewhere's primacy, separatist origins, contemporary working structure and broad civic republic/equality principles, and the decision not to rebuild Haven are established. Freehold and Meridian remain entirely provisional, as does Elsewhere's naming anecdote. Detailed constitutional arrangements, inter-habitat governance and AI policies are unresolved. **Pending (2026-10-18, LR-OWNER-0001):** the owner has directed that Freehold and Meridian become official and asked for a handful of further habitats; §§11.3, 11.4, 11.7 and 11.8 hold the resulting Draft, which is not canon until the owner approves it item by item.
 
 ### 11.1 Origins
 
@@ -79,27 +79,29 @@ Specific holidays, dialects, styles of dress, prominent parties, religious custo
 
 ### 11.3 Freehold
 
-**Status:** Proposed habitat, not yet confirmed.
+**Status: Draft, awaiting project-owner approval (LR-OWNER-0001, 2026-10-18). Until the owner approves, Freehold's previous status, *proposed habitat*, stands, and nothing below reaches an NPC prompt or a `content/` file.** The owner directed on 2026-10-18 that Freehold become an official habitat. The first paragraph firms up what this section already proposed; the rest is new detail added so NPCs have something definite to say, and each new item is listed for the owner in the request.
 
-Freehold began as an industrial construction or manufacturing facility staffed substantially by engineered peoples.
+Freehold began as an orbital construction and manufacturing yard, built and owned by Haven-based interests and staffed substantially by engineered peoples. After a long labour and political struggle, its workforce gained ownership of the yard and declared it an independent habitat. The name commemorates freedom from the historic treatment of engineered peoples as property. Freehold's independence came before the Bloom; whether it came before or after the end of servitude in Haven's own law stays undecided, just as §3 leaves Elsewhere's order relative to that undecided.
 
-Following a labor and political struggle, its workers gained ownership and established an independent habitat.
+Freehold is owned collectively by the people who live and work there. Its industrial plant is held in common and run through work cooperatives, which also form the basis of its government: a Freeholder's standing comes from their cooperative and their trade, and there is no private ownership of the habitat's heavy industry. The exact constitution, offices and voting arrangements are not fixed.
 
-Its name commemorates freedom from the historic treatment of engineered peoples as property.
+Freehold is the Constellation's heavy-industry habitat: shipbuilding, ship repair, pressure equipment and structural fabrication. Its yards have built or extended much of the Constellation's large structure, including later sections of Elsewhere's cylinder. Physically it is a working yard first and a home second: a long spine of docks and fabrication halls with spun habitation rings grown along it over the centuries, plain and well kept.
 
-Its modern society might emphasize labor institutions, cooperatives, collective self-determination, and industrial expertise.
+All seven peoples live on Freehold, but the Astrel, Voldren and Selk are the majority, and its culture is theirs by weight of numbers: plain speech, pride in skilled work, impatience with rank that isn't earned, and a settled conviction that collective ownership is simply the correct way to run a habitat. Elsewhere and Freehold are on good terms, and have bought each other's work for as long as both have existed. Elsewherians generally regard Freeholders as blunt, dependable and a little preachy about ownership; Freeholders regard Elsewhere as comfortable and talkative.
 
 ### 11.4 Meridian
 
-**Status:** Proposed habitat, not yet confirmed.
+**Status: Draft, awaiting project-owner approval (LR-OWNER-0001, 2026-10-18). Until the owner approves, Meridian's previous status, *proposed habitat*, stands, and nothing below reaches an NPC prompt or a `content/` file.** The owner directed on 2026-10-18 that Meridian become an official habitat. The first paragraph firms up what this section already proposed; the rest is new detail, listed item by item for the owner in the request.
 
-Meridian developed around a major orbital freight, trade, or transportation hub.
+Meridian grew around the Constellation's principal freight transfer hub, the point through which trade between Haven and the habitats, and later among the habitats themselves, was routed and financed. It became the Constellation's financial and commercial centre. After the Bloom, its shipping and trading houses reorganised the Constellation's trade around the habitats instead of Haven, which secured Meridian's position for good.
 
-It became an important financial and commercial center connecting Haven and the emerging habitats.
+Meridian's government is strongly shaped by commercial interests: its great trading houses hold seats in its governing body by right, alongside elected members. No house, bank, exchange or office is named, and the exact constitution is not fixed.
 
-Following the Bloom, Meridian's institutions might have played a major role in reorganizing trade throughout the Constellation.
+Meridian is the richest habitat and the most unequal. Fortunes are made and lost there and wealth is worn openly. The Constellation's finest goods, imports and luxuries pass through it, and so do people who arrived with nothing and work its docks and warehouses. The legal equality of the seven peoples holds on Meridian, but its old trading houses are disproportionately ancestral-descended, and the engineered peoples are over-represented on its docks and under-represented in its boardrooms, a pattern Meridian's politics treats as a private matter rather than a public one.
 
-Its political institutions may be substantially influenced by commercial interests, with opportunities for wealth, competition, and economic inequality.
+Physically, Meridian is not one planned structure but a cluster: the old transfer hub at its heart, ringed and layered over the centuries with docks, warehouses, exchanges and spun residential sections of every age, linked by transit lines.
+
+Elsewherians think of Meridian as sharp, fast and money-minded, the place to go for anything Elsewhere does not stock, and watch its traders with a mixture of respect and wariness. Meridian's traders think of Elsewhere as a large, steady, slightly dull market. The two habitats trade heavily and quarrel about duties.
 
 ### 11.5 The Constellation after the Bloom
 
@@ -128,6 +130,72 @@ Historical prejudice against engineered peoples may persist in certain instituti
 Attitudes toward advanced AI may also vary. Some habitats could enforce traditional prohibitions rigorously, while others permit carefully controlled research.
 
 The degree of shared law, common defense, inter-habitat diplomacy, and political coordination remains unresolved.
+
+
+### 11.7 The other major habitats
+
+**Status: Draft, awaiting project-owner approval (LR-OWNER-0001, 2026-10-18). Not canon. Nothing here reaches an NPC prompt or a `content/` file until the owner approves it.** The owner asked on 2026-10-18 for a handful of further habitats so that NPCs have something to talk about when the Constellation comes up. Each habitat below follows one of §11.1's origin types and one axis of §11.6's diversity, and each carries only what an Elsewhere resident would plausibly know or repeat. Constitutions, office names, populations and any date finer than "before" or "after the Bloom" are deliberately left open. The names follow the translation convention (§2): meaningful names rendered in English, like *Elsewhere* and *Freehold*.
+
+**Roster.** With Elsewhere, Freehold and Meridian, the five below make **eight major habitats**, which any ordinary resident of the Constellation knows by name. Smaller stations, platforms and work-sites exist between them, uncounted here, and nobody would call one of those a habitat in its own right. Adding a ninth major habitat later is a worldbuilding decision, not a continuity error.
+
+| Habitat | Origin (§11.1 type) | Founded | One line |
+|---|---|---|---|
+| Elsewhere | Political independence from Haven | About 400 years ago | Civic republic, the Constellation's broadest society (§11.2) |
+| Freehold | Industrial facility, worker-owned | Before the Bloom | Heavy industry, cooperative ownership (§11.3) |
+| Meridian | Commercial venture | Before the Bloom | Trade and finance, rich and unequal (§11.4) |
+| Anchorage | Haven's own orbital infrastructure | Before the Bloom, as Haven's port | Refugee-descended; keeps Haven's records and claims its succession (§11.7.1) |
+| Threshold | Specialised orbital infrastructure | After the Bloom | The one gateway between the Constellation and Prospect's surface (§11.7.2) |
+| Lantern | Movement of scholars leaving Haven | Before the Bloom | Research charter; permits inquiry the others forbid (§11.7.3) |
+| Tailings | Industrial facilities, never chartered | Before the Bloom | Rough cluster of processing platforms; cheap work, few questions (§11.7.4) |
+| Hermitage | Movement leaving Haven to live apart | Before the Bloom | Ascetic and self-sufficient; sealed for a century after the Bloom (§11.7.5) |
+
+#### 11.7.1 Anchorage
+
+Anchorage was Haven's orbital port: the stationary station where traffic between the city on the surface and the habitats changed ships. It was built, owned and run by Haven, and before the Bloom it was Haven's presence in orbit rather than a habitat in its own right.
+
+When Haven fell, Anchorage took in more of the evacuees than any other single place, and then closed itself to the surface for good: nothing from Prospect has docked there since. Its holds, docks and transit halls were converted to housing in the emergency and never converted back, and it has been crowded ever since. Its people are largely the descendants of Haven's survivors.
+
+Anchorage holds Haven's surviving records and archives, and keeps Haven's forms, manners and public ceremonies alive with a formality the other habitats find old-fashioned. Its government maintains that it is the lawful continuation of Haven's government. No other habitat recognises the claim and most ignore it, but it has never been withdrawn, and it is the main reason the question of Haven's succession is still a live one 150 years on. What Haven's government actually was, and what Anchorage's institutions look like today, are not fixed (§§9 and 17).
+
+Anchorage is poorer than it was, proud, and inclined to believe the habitats abandoned Haven. An Elsewherian thinks of Anchorage as formal, crowded and living in the past, and of its people as decent and a little sad; Anchorage thinks of Elsewhere as the habitat that left first. If a family wants to know who its people were in Haven, Anchorage is where the records are.
+
+#### 11.7.2 Threshold
+
+Threshold is the low-orbit station through which everything moving between the Constellation and Prospect's surface must pass: expeditions going down, salvage, samples and ore coming up, and the people doing the work. It was built after the Bloom, when the habitats needed a gateway to the planet that was not Haven and that no single habitat controlled. It is the one major habitat whose existence is a response to the Bloom (§11.1 says the habitats' origins are not *primarily* such a response, and Threshold is the exception).
+
+Threshold's work is quarantine, decontamination, outfitting and transfer. Nothing comes up from Prospect without passing its checks, and the habitats' freedom from the planet's life depends on those checks holding. It is run under a standing agreement among the major habitats, each of which contributes staff and funds. The agreement's name and terms, and whether it extends to any matter beyond Threshold, are left open; it is the only piece of shared Constellation-wide administration this bible establishes, and §11.6's wider question of shared law and coordination stays unresolved.
+
+Its population is small and largely transient: quarantine and station staff, surface workers between contracts, outfitters, salvage brokers and the people who do business with them. The work is dangerous and well paid. Elsewherians say someone has "gone down" or "gone to Threshold" in much the same tone, and know the station as the place where a person can make money fast or not come back; a surface permit, protective gear and a contract are all arranged there. Prospect's surface itself remains as §§13.7 and 17 leave it: hostile, gated, and not yet in the game.
+
+#### 11.7.3 Lantern
+
+Lantern was founded before the Bloom by scholars, institutes and their households leaving Haven for the freedom to pursue inquiry Haven restricted. It is governed under a research charter by its institutes; what that looks like in offices and votes is not fixed.
+
+Lantern is the Constellation's centre of learning and research: Venn–Saye dynamics, Prospect's biology (studied on samples brought up through Threshold), life-support science and instruments. It is also the one habitat that permits carefully controlled research into machine autonomy, under oversight it considers strict and the rest of the Constellation considers inadequate. This is the single most common thing said about Lantern elsewhere. The inherited prohibitions of §§4 and 16.1 stand everywhere else, no unrestricted machine intelligence exists anywhere in the Constellation, and Lantern's research has produced none; whether it ever would is left open.
+
+Elsewherians think of Lantern as clever, strange and a little dangerous. They admire its learning, send gifted children there to study, and say some version of "Lantern will get us all killed one day" without quite believing it. Lantern thinks of Elsewhere as sensible and incurious. Fine instruments, advanced Fieldworks equipment and specialist training are the things to go to Lantern for.
+
+#### 11.7.4 Tailings
+
+Tailings is not one structure but a cluster of old ore-processing and refining platforms, built before the Bloom to process material lifted from Prospect's surface, that became a settlement because the people who worked on them stayed. It was never chartered as a habitat and has no single government: each platform is run by whoever runs it, and what coordination exists is informal. The others count it as a habitat because it is too large and too permanent to count as anything else.
+
+Living there is cheap and hard. Work is available to anyone who can do it, and few questions are asked about who someone was before. Elsewhere's regulation and Meridian's duties reach it unevenly, and goods and people that want to avoid either tend to pass through Tailings. Its quarantine is Threshold's, like everyone else's: what it avoids is money and paperwork, not biosecurity.
+
+Elsewherians speak of Tailings with a mixture of pity and suspicion. A person "ended up on Tailings", and a thing of doubtful origin "came through Tailings". Raw material, scrap, machine parts of uncertain provenance and labour are what it has to offer, and it is the obvious place in the Constellation for a person who does not want to be found.
+
+#### 11.7.5 Hermitage
+
+Hermitage was founded before the Bloom by a movement that left Haven to live apart under a shared discipline of restraint and self-sufficiency. Whether that discipline is a religion, a philosophy or a way of life, and what its beliefs are, is deliberately left unresolved. It is enough that Hermitage's people keep to it, do not proselytise, and do not discuss it much with outsiders.
+
+At the Bloom, Hermitage sealed its docks against contamination and kept them sealed for about a century, long after the other habitats had satisfied themselves of the danger. It reopened within living memory, roughly two generations ago, and has traded cautiously since. A century alone made it self-sufficient to a degree no other habitat matches: Hermitage makes, grows and mends nearly everything it uses, and its cultivars, textiles and handwork are distinct enough to be recognised anywhere.
+
+Its population is small, and its people are quiet, plain in dress and manner, and noticed when they travel because they so rarely do. Elsewherians find Hermitage admirable, odd and slightly unnerving in about equal measure, and say "nobody really knows what they get up to", which is true. Hermitage, for its part, thinks Elsewhere is loud.
+
+### 11.8 What an ordinary Elsewhere resident knows about the other habitats
+
+**Status: Draft, awaiting project-owner approval (LR-OWNER-0001, 2026-10-18). Not canon.** This paragraph is the prompt-bound form of §§11.3, 11.4 and 11.7, written to be appended to `content/common-knowledge.md` (every talk NPC's prompt, so every `prompt_version` bumps when it lands) and stored as lore chunk `11.8`. It says only what any resident would know and leaves out everything an NPC should not state as fact. It is kept short on purpose: every word is paid for on every call.
+
+> Elsewhere is one of eight major habitats in the Constellation, with smaller stations scattered between them. Freehold is the worker-owned industrial habitat; its yards build and repair the Constellation's ships. Meridian is the trading and financial hub, where almost anything can be found and the rich and the poor live in plain sight of one another. Anchorage was Haven's orbital port; it took in many of the Bloom's survivors, keeps Haven's records and old ways, and its government still calls itself Haven's lawful successor, which nobody else accepts. Threshold is the low-orbit station that everything going down to Prospect, or coming back up, must pass through; the work there is dangerous and well paid. Lantern is the research habitat, admired for its learning and distrusted for the research it allows, including work with machine minds that every other habitat forbids. Tailings is a rough cluster of old processing platforms where people go for cheap work or to not be found. Hermitage shut itself off at the Bloom for about a century, and its few, quiet people have only lately begun to travel again. People go between habitats by ferry; most Elsewherians have visited one or two, and have opinions about all of them.
 
 
 ---

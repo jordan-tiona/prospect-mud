@@ -392,3 +392,13 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Approved by: owner
 - Resolution: none needed from Lore unless Dev picks the metadata field.
 - Handoff: none
+
+## LR-OWNER-0001: Make Freehold and Meridian official, and add a handful of further habitats
+- Requested by: owner
+- Needed for: NPC conversation when the Constellation comes up (the common-knowledge sheet, which every talk NPC's prompt carries); hard rule 4 currently names Freehold and Meridian as its examples of Provisional content that must never reach a prompt
+- What's needed: Promote Freehold and Meridian (bible §§11.3, 11.4) from *proposed habitat* to Established, and add a handful of other habitats so NPCs have something definite to say about the rest of the Constellation. Owner's words, 2026-10-18: "The bible has a couple more habitats marked provisional. I'd like to make them official, along with a handful of others, so NPCs have something to talk about when the subject of The Constellation comes up."
+- Blocking: no
+- Status: drafted (2026-10-18, bible v0.4.17). Freehold and Meridian are rewritten as firm text in §§11.3 and 11.4; five new habitats and an eight-habitat roster rule are in §11.7; the prompt-bound common-knowledge paragraph is §11.8. All four sections are marked Draft and nothing in them is canon or reaches a prompt until the owner approves it. The items for the owner's decision are listed, one line each, in the Lore session summary of 2026-10-18; the owner can approve or reject each habitat and each detail separately.
+- Approved by: pending (owner)
+- Resolution: bible §§11.3, 11.4, 11.7, 11.8 (Draft). On approval, Lore removes the Draft markers and does the consistency pass §18 item 3 calls for: §2 terminology rows for Freehold and Meridian go to Established and five rows are added; the §11 status line, §12.1/§12.2 rows, §14.2's examples, the §17 safeguard "That Freehold and Meridian are finalized habitats", the §17.1 dependency row and the §19 synopsis are updated; the §11.8 paragraph is appended to `content/common-knowledge.md` and all six personas' `prompt_version` bump; lore chunks `content/lore/11.3.md`, `11.4.md`, `11.7.md` and `11.8.md` are written; CLAUDE.md and AGENTS.md hard rule 4 get a still-Provisional example in place of Freehold/Meridian (the Sealing stays).
+- Handoff: dev (only after the owner approves, not before): `test_provisional_lore_never_appears` in `prospect/world/tests.py` must stop forbidding "Freehold" and "Meridian" in prompts and use a still-Provisional stand-in (keep "the Sealing"); no export or rebuild expected, since the prompt builder reads `content/common-knowledge.md` at runtime
