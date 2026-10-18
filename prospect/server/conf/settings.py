@@ -33,7 +33,8 @@ from evennia.settings_default import *
 
 # The game is "Prospect"; "Elsewhere" is the initial playtest release's
 # subtitle (LR-LORE-0004). Drop the subtitle once a second release exists.
-# Display-only: feeds the MSSP NAME field, the webclient/website title and
+# Display-only: feeds the login welcome line (commands/scripted_login.py),
+# the MSSP NAME field, the webclient/website title and
 # the (currently unshown) stock connection screen; nothing keys off it.
 SERVERNAME = "Prospect: Elsewhere"
 

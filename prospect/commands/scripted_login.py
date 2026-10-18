@@ -78,7 +78,7 @@ _OLD_CONNECT_WORDS = ("connect", "conn", "con", "co")
 
 # Sent ahead of the art, so a screen reader reads it before ~600
 # punctuation marks it can then be silenced through (owner, 2026-10-17).
-_WELCOME_LINE = "Welcome to Prospect MUD. Who are you? " + SCREENREADER_HINT
+_WELCOME_LINE = f"Welcome to {settings.SERVERNAME}. Who are you? " + SCREENREADER_HINT
 
 
 def _show_splash(session):

@@ -74,7 +74,7 @@ class ScriptedLoginTests(TestCase):
     def test_welcome_line_comes_before_the_art_for_screen_readers(self):
         gen = self.cmd.func()
         gen.send(None)
-        self.assertIn("Welcome to Prospect MUD", self.session.msgs[0])
+        self.assertIn(f"Welcome to {settings.SERVERNAME}.", self.session.msgs[0])
         self.assertIn("option/save screenreader=on", self.session.msgs[0])
         self.assertNotIn("\x1b[", self.session.msgs[0])
 
@@ -84,7 +84,7 @@ class ScriptedLoginTests(TestCase):
         prompt = gen.send(None)
         self.assertIn("Who are you?", prompt)
         self.assertEqual(len(self.session.msgs), 1)
-        self.assertIn("Welcome to Prospect MUD", self.session.msgs[0])
+        self.assertIn(f"Welcome to {settings.SERVERNAME}.", self.session.msgs[0])
 
     def test_splash_is_sent_raw_so_it_is_not_reprocessed_as_evennia_markup(self):
         gen = self.cmd.func()
