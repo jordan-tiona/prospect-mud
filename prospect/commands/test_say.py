@@ -1114,14 +1114,32 @@ class SayCommandTests(_SayTestBase):
     def test_the_reaction_gets_no_tools_when_nothing_needs_retrying(self, mock_chat):
         mock_chat.side_effect = [
             _reply(
-                "Would you take it to Tarin?",
-                tool_calls=[{"name": "ask_for_help", "arguments": {"confirmed": True}}],
+                "Sure, I'll point you there.",
+                tool_calls=[{"name": "give_directions", "arguments": {"destination": "Maintenance Workshop"}}],
             ),
-            _reply("No rush, think it over."),
+            _reply("Head out and you'll find it."),
         ]
-        self._say("Man it's cold in here.")
+        self._say("How do I get to the workshop?")
 
         self.assertIsNone(mock_chat.call_args_list[1].kwargs["tools"])
+
+    @patch("commands.say.chat")
+    def test_a_shown_and_recorded_ask_gets_no_reaction_or_engine_line(self, mock_chat):
+        # Live 2026-10-18: after her shown ask, the reaction read the
+        # recorded ask as a yes ("I'm glad you're up for it"), under an
+        # engine line repeating what she'd just said.
+        mock_chat.return_value = _reply(
+            "Would you take the module over to Tarin for me?",
+            tool_calls=[{"name": "ask_for_help", "arguments": {"confirmed": True}}],
+        )
+        self._say("Man it's cold in here.")
+
+        self.assertEqual(mock_chat.call_count, 1)
+        self.assertEqual(get_quest_state(self.actor), "offered")
+        self.assertTrue(any("Would you take the module over to Tarin" in m for m in self.messages))
+        self.assertFalse(any("explains the heating unit" in m for m in self.messages))
+        history = self.mara.ndb.conversations[self.actor.dbref]
+        self.assertEqual(history[-1]["role"], "tool")
 
     @patch("commands.say.chat")
     def test_a_reaction_call_it_wasnt_offered_is_dropped(self, mock_chat):

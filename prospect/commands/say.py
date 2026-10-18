@@ -78,7 +78,13 @@ MAX_HISTORY_EXCHANGES = 8  # player+NPC message pairs kept per player per NPC
 # shown by _handle_action_reaction_error as a fallback, since otherwise
 # a slow/unavailable model would leave the player with no response at
 # all for these actions.
-SUPPRESS_IMMEDIATE_NARRATION = {"give_directions"}
+SUPPRESS_IMMEDIATE_NARRATION = {"give_directions", "ask_for_help"}
+
+# Actions whose outcome is the NPC's own words: once those words have
+# been shown and the call applied, a follow-up reaction has nothing to
+# add. Live 2026-10-18 it read Mara's recorded ask as the player's yes
+# ("I'm glad you're up for it") straight after she'd asked.
+SPOKEN_ACTIONS = {"ask_for_help"}
 
 # Actions whose result is useless without the NPC's own follow-up
 # reaction - a drink or a part is self-explanatory once handed over,
@@ -490,6 +496,8 @@ def _handle_llm_reply(
     )
     if first_pass_shown:
         _render_reply_segments(target, caller, segments, pronouns, lead_blank=True)
+        if tool_call_names & FORCE_REACTION_ACTIONS <= SPOKEN_ACTIONS:
+            needs_reaction = False
 
     for call, result in zip(reply.tool_calls, tool_results):
         if result["applied"] and result["narration"] and call["name"] not in SUPPRESS_IMMEDIATE_NARRATION:
@@ -626,7 +634,7 @@ def _handle_action_reaction(
             result = ActionResult(False, "", reason=f"'{call['name']}' wasn't available in this reply")
         if result.applied:
             applied_names.append(call["name"])
-            if result.narration:
+            if result.narration and call["name"] not in SUPPRESS_IMMEDIATE_NARRATION:
                 _msg_with_lead_blank(caller, result.narration)
         tool_call_records.append(
             {
