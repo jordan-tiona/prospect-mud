@@ -115,6 +115,14 @@ class Room(ObjectParent, DefaultRoom):
 
     def get_display_things(self, looker, **kwargs):
         things = self.filter_visible(self.contents_get(content_type="object"), looker, **kwargs)
+        if kwargs.get("glance"):
+            # The arrival glance leaves out objects flagged off it
+            # (world/entity_kinds.py's `glance`, LR-LORE-0005); `look`
+            # shows everything. Unflagged objects show.
+            things = [
+                thing for thing in things
+                if inherits_from(thing, "typeclasses.npcs.NPC") or thing.attributes.get("in_glance") is not False
+            ]
 
         # Objects first, then ambient NPCs, then the NPCs who talk
         # (owner, 2026-10-17), each group in its own creation order.

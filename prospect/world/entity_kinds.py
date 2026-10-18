@@ -23,6 +23,13 @@ Per kind:
     locks             - optional lock string template, formatted from params
     probe             - False for kinds whose look text is per-player and that
                         ignore db.probe_desc (commands/probe.py); default True
+    glance            - False for kinds whose room line is left out of the
+                        arrival glance (shown only on an explicit `look`);
+                        default True. A content file's `glance: show | hide`
+                        metadata line overrides it per object, and the export
+                        writes the result as the `in_glance` attribute
+                        (typeclasses/rooms.py; LR-LORE-0005). NPC kinds
+                        ignore it: their presence lines always show.
 """
 
 ROOM_KIND = {
@@ -75,6 +82,7 @@ KINDS = {
         "params": {},
     },
     "ambient_object": {
+        "glance": False,  # the room prose carries their atmosphere
         "typeclass": "typeclasses.objects.RoomObject",
         "tag_category": "phase1_ambient",
         "content_dir": "ambient/objects",
@@ -143,6 +151,7 @@ KINDS = {
         "params": {},
     },
     "planting_bed": {
+        "glance": False,  # playtest spec: keep the beds out of the listing
         "probe": False,  # per-looker look text; probe shows it too
         "typeclass": "typeclasses.objects.PlantingBed",
         "tag_category": "garden_prop",
