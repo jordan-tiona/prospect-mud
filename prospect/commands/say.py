@@ -975,19 +975,22 @@ class CmdSay(DefaultCmdSay):
         # separate conversations when more than one player is talking
         # to NPCs in the same room (or more than one talk-capable NPC
         # is present, as in the Civic Office since phase 2B).
+        # The leading "\n" separates the line from an NPC reply just above
+        # it (project owner, 2026-10-18); embedded rather than a separate
+        # msg("") for the reason in _msg_with_lead_blank.
         if target is not None:
             if is_question:
-                msg_self = '{self} ask {all_receivers}, |c"{speech}"|n'
-                msg_location = '{object} asks {all_receivers}, |c"{speech}"|n'
+                msg_self = '\n{self} ask {all_receivers}, |c"{speech}"|n'
+                msg_location = '\n{object} asks {all_receivers}, |c"{speech}"|n'
             else:
-                msg_self = '{self} say to {all_receivers}, |c"{speech}"|n'
-                msg_location = '{object} says to {all_receivers}, |c"{speech}"|n'
+                msg_self = '\n{self} say to {all_receivers}, |c"{speech}"|n'
+                msg_location = '\n{object} says to {all_receivers}, |c"{speech}"|n'
         elif is_question:
-            msg_self = '{self} ask, |c"{speech}"|n'
-            msg_location = '{object} asks, |c"{speech}"|n'
+            msg_self = '\n{self} ask, |c"{speech}"|n'
+            msg_location = '\n{object} asks, |c"{speech}"|n'
         else:
-            msg_self = '{self} say, |c"{speech}"|n'
-            msg_location = '{object} says, |c"{speech}"|n'
+            msg_self = '\n{self} say, |c"{speech}"|n'
+            msg_location = '\n{object} says, |c"{speech}"|n'
         caller.at_say(
             speech, msg_self=msg_self, msg_location=msg_location,
             receivers=[target] if target is not None else None,

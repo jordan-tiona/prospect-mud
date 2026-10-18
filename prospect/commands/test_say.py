@@ -422,6 +422,20 @@ class SayCommandTests(_SayTestBase):
         self.assertIn("Afternoon.", reply_msg)
 
     @patch("commands.say.chat")
+    def test_own_speech_is_preceded_by_a_blank_line(self, mock_chat):
+        # Owner, 2026-10-18: a blank line between an NPC's reply and the
+        # player's next line, embedded like the reply's own (see above).
+        mock_chat.return_value = _reply("Afternoon.")
+        other = self._add_other_player()
+        heard = []
+        other.msg = lambda text="", **kw: heard.append(_record_text(text, **kw))
+
+        self._say("hello there")
+
+        self.assertTrue(next(m for m in self.messages if "You say" in m).startswith("\n"))
+        self.assertTrue(next(m for m in heard if "Tester says" in m).startswith("\n"))
+
+    @patch("commands.say.chat")
     def test_say_capitalizes_and_punctuates_player_speech(self, mock_chat):
         mock_chat.return_value = _reply("Afternoon.")
         self._say("hello there")
