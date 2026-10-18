@@ -242,6 +242,14 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Needed for: screen-reader support, built 2026-10-17 (`prospect/world/accessibility.py`). In screen-reader mode, Evennia strips colour codes and table borders, and the room display adds "(You can talk to her.)" after each NPC who talks, since bright versus dark cyan is otherwise the only cue. The login screen's first line already says "Using a screen reader? Once you're in, type option/save screenreader=on." (OOC interface text, written by Dev), but anyone who misses it there has no other in-game pointer.
 - What's needed: One added sentence for `_ROOM_TANNOYS["medical_bay"]` in `prospect/world/tutorial.py` (a Dev-lane file: write the new text in Resolution and Dev applies it), telling a player using a screen reader to type OPTION/SAVE SCREENREADER=ON. `/save` keeps it on for every later login; without it the setting lasts only until they disconnect. Like the PLAYTEST sentence, it's an out-of-character instruction. The current announcement is the LR-DEV-0006 Resolution text above; it's already long, so suggest a cut if one helps.
 - Blocking: no (the login line covers it), but wanted for the public playtest
-- Status: open
-- Approved by:
-- Resolution:
+- Status: drafted (2026-10-17; **Dev:** apply to `_ROOM_TANNOYS["medical_bay"]`, then mark approved)
+- Approved by: lore (out-of-character interface instruction, no setting content; the owner approved the previous versions of this announcement, so they may want to glance at it)
+- Resolution: Add one sentence after the PLAYTEST sentence and before TANNOY, so the two out-of-character interface instructions sit together at the end:
+
+  > If you use a screen reader, type OPTION/SAVE SCREENREADER=ON once and it stays on for every later visit.
+
+  Full announcement with it in place:
+
+  > A tannoy near the ceiling crackles to life: "Attention, new arrivals. To talk to someone, type SAY and then what you want to say. To move, type a direction, such as NORTH or SOUTHWEST. To look at something, type LOOK and then its name; to study it more closely, type PROBE and then its name. To change how others see you, type DESCRIBE. To speak privately with someone, wherever they are, type TELL, then their name, then your message. To talk with the other testers and the staff running this playtest, type PLAYTEST, or PT, and then your message; to stop hearing that channel, type PLAYTEST OFF. If you use a screen reader, type OPTION/SAVE SCREENREADER=ON once and it stays on for every later visit. To hear this again, type TANNOY."
+
+  Notes: the command is written in capitals like every other command in the announcement (the login line has it in lower case; Evennia accepts either), and a speech synthesiser reads it as "option slash save screenreader equals on", which is what the player types. "Once" and "stays on for every later visit" carry the point of `/save` without explaining switches. The sentence doesn't say what the mode does; a player who needs it already knows they want it, and the login line says nothing more either. The announcement plays on every Medical Bay entry, so length costs screen-reader users most: if a cut is wanted, drop the PLAYTEST OFF clause first ("; to stop hearing that channel, type PLAYTEST OFF"), which `help playtest` covers, then the direction examples ("such as NORTH or SOUTHWEST"), as LR-DEV-0006 already suggested. The sentence stays correct either way.
