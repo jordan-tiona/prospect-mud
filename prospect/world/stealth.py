@@ -61,7 +61,7 @@ def hide(character):
 # Owner's wording (2026-10-17): announced to the room when staff become
 # visible or hidden, in the shape of the movement lines
 # (typeclasses/characters.py).
-REVEAL_ANNOUNCEMENT = "{object} arrives from... the ether?"
+REVEAL_ANNOUNCEMENT = "{object} arrives from... nowhere?"
 HIDE_ANNOUNCEMENT = "{object} leaves to the... nowhere?"
 
 
