@@ -87,6 +87,24 @@ def strip_comments(text):
     return re.sub(r'\n{3,}', '\n\n', _COMMENT_RE.sub('', text)).strip()
 
 
+# One grid step per compass exit; up/down change z (docs/gmcp.md, "Map coordinates").
+MAP_STEPS = {
+    'north': (0, 1, 0), 'south': (0, -1, 0), 'east': (1, 0, 0), 'west': (-1, 0, 0),
+    'northeast': (1, 1, 0), 'northwest': (-1, 1, 0), 'southeast': (1, -1, 0), 'southwest': (-1, -1, 0),
+    'up': (0, 0, 1), 'down': (0, 0, -1),
+}
+MAP_STEPS.update({short: MAP_STEPS[word] for short, word in (
+    ('n', 'north'), ('s', 'south'), ('e', 'east'), ('w', 'west'), ('ne', 'northeast'), ('nw', 'northwest'),
+    ('se', 'southeast'), ('sw', 'southwest'), ('u', 'up'), ('d', 'down'))})
+MAP_AXES = ('x', 'y', 'z')
+
+
+def valid_map_pin(pin):
+    """A room's map_pin: exactly whole-number x, y and z."""
+    return isinstance(pin, dict) and set(pin) == set(MAP_AXES) and all(
+        isinstance(pin[a], int) and not isinstance(pin[a], bool) for a in MAP_AXES)
+
+
 @dataclass
 class ContentFile:
     """A content/ Markdown file as the editor sees it. `sections` and `heading`

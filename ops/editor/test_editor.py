@@ -68,6 +68,7 @@ You are someone.
 BASE_SECTOR = {
     'format_version': 1,
     'sector_id': 'test',
+    'map_anchor': 'room_a',
     'rooms': {
         'room_a': {'title': 'Room A', 'content': 'rooms/room_a.md'},
         'room_b': {'title': 'Room B', 'content': 'rooms/room_b.md'},
@@ -128,6 +129,7 @@ class CheckTests(unittest.TestCase):
 
     def test_return_exit_words_are_claimed_too(self):
         self.add_room_c()
+        del self.sector['map_anchor']  # this layout also overlaps on the grid; not what's tested here
         self.sector['exits'].append({'from': 'room_c', 'to': 'room_a', 'key': 'down', 'aliases': [],
                                      'return': {'key': 'north', 'aliases': []}})
         self.assertEqual(codes(self.run_check(), check.ERROR), ['duplicate_exit'])
@@ -226,7 +228,7 @@ class CheckTests(unittest.TestCase):
     def test_disconnected_and_exitless_rooms(self):
         self.write('rooms/room_c.md', ROOM_FILE.format(id='room_c', text='Alone.'))
         self.sector['rooms']['room_c'] = {'title': 'Room C', 'content': 'rooms/room_c.md'}
-        self.assertEqual(codes(self.run_check(), check.WARNING), ['disconnected', 'no_exits'])
+        self.assertEqual(codes(self.run_check(), check.WARNING), ['disconnected', 'no_exits', 'off_map'])
 
     def test_required_rooms(self):
         kinds = self.root / KINDS_FILE
@@ -299,7 +301,8 @@ class ExportTests(CheckTests.__base__):
         manifest = read_json(path)
         self.assertEqual(manifest['rooms']['room_a'], {
             'title': 'Room A', 'typeclass': 'typeclasses.rooms.Room', 'tag_category': 'phase1_neighborhood',
-            'desc': 'A plain room.', 'glance': None})
+            'desc': 'A plain room.', 'glance': None, 'map': {'x': 0, 'y': 0, 'z': 0}})
+        self.assertEqual(manifest['rooms']['room_b']['map'], {'x': 0, 'y': 1, 'z': 0})
         self.assertEqual(manifest['exits'], [
             {'id': 'room_a__north', 'from': 'room_a', 'to': 'room_b', 'key': 'north', 'aliases': ['n']},
             {'id': 'room_b__south', 'from': 'room_b', 'to': 'room_a', 'key': 'south', 'aliases': ['s']}])
@@ -311,6 +314,19 @@ class ExportTests(CheckTests.__base__):
             'content/ambient/objects/thing.md', 'content/rooms/room_a.md', 'content/rooms/room_b.md',
             'sectors/test/sector.json'])
         self.assertNotIn('editor', path.read_text(encoding='utf-8'))
+
+    def test_overlap_refuses_export(self):
+        self.sector['rooms']['room_b']['map_pin'] = {'x': 0, 'y': 0, 'z': 0}
+        issues, path = self.export()
+        self.assertIsNone(path)
+        self.assertIn('map_overlap', codes(issues, check.ERROR))
+
+    def test_a_room_off_the_map_exports_without_coordinates(self):
+        self.sector['exits'][0].update(key='door', aliases=[])
+        issues, path = self.export()
+        self.assertIn('off_map', codes(issues, check.WARNING))
+        rooms = read_json(path)['rooms']
+        self.assertEqual((rooms['room_a']['map'], 'map' in rooms['room_b']), ({'x': 0, 'y': 0, 'z': 0}, False))
 
     def test_one_way_exit_exports_one_direction(self):
         self.sector['exits'][0]['return'] = None
@@ -429,6 +445,92 @@ class RealSectorTests(unittest.TestCase):
         # Structure must be sound; the remaining errors are content still awaiting approval.
         issues = check.check(ROOT, ['elsewhere'])
         self.assertEqual([c for c in codes(issues, check.ERROR) if c not in ('not_approved', 'draft_field')], [])
+
+
+def grid_sector(exits, anchor='sq', pins=None):
+    """A bare sector for map_grid(): the rooms named in `exits`, each optionally pinned."""
+    ids = sorted({e['from'] for e in exits} | {e['to'] for e in exits})
+    sector = {'rooms': {r: {'title': r} for r in ids}, 'exits': exits}
+    if anchor:
+        sector['map_anchor'] = anchor
+    for room, pin in (pins or {}).items():
+        sector['rooms'][room]['map_pin'] = pin
+    return sector
+
+
+def link(src, dst, key, back):
+    return {'from': src, 'to': dst, 'key': key, 'aliases': [], 'return': {'key': back, 'aliases': []} if back else None}
+
+
+class MapGridTests(unittest.TestCase):
+    """The owner's grid policy (2026-10-18, docs/gmcp.md "Map coordinates")."""
+
+    def grid(self, *args, **kwargs):
+        return check.map_grid(grid_sector(*args, **kwargs))
+
+    def test_one_step_per_compass_exit_and_up_down_change_z(self):
+        coords, issues = self.grid([link('sq', 'n', 'north', 'south'), link('sq', 'ne', 'northeast', 'southwest'),
+                                    link('w', 'sq', 'east', 'west'), link('ne', 'top', 'up', 'down'),
+                                    link('sw', 'sq', 'ne', 'sw')])
+        self.assertEqual(issues, [])
+        self.assertEqual(coords, {'sq': (0, 0, 0), 'n': (0, 1, 0), 'ne': (1, 1, 0), 'w': (-1, 0, 0),
+                                  'top': (1, 1, 1), 'sw': (-1, -1, 0)})
+
+    def test_one_way_exit_places_the_room_either_side(self):
+        coords, issues = self.grid([link('sq', 'n', 'north', None), link('s', 'sq', 'north', None)])
+        self.assertEqual(issues, [])
+        self.assertEqual(coords, {'sq': (0, 0, 0), 'n': (0, 1, 0), 's': (0, -1, 0)})
+
+    def test_two_rooms_on_one_cell_is_an_error_for_each(self):
+        # Elsewhere's shape today: west, then southwest-and-north, both land on (-1,0).
+        coords, issues = self.grid([link('sq', 'civic', 'west', 'east'),
+                                    link('sq', 'street', 'southwest', 'northeast'),
+                                    link('street', 'office', 'north', 'south')])
+        self.assertEqual(coords['civic'], coords['office'])
+        self.assertEqual([(i.level, i.code, i.where) for i in issues],
+                         [(check.ERROR, 'map_overlap', 'room civic'), (check.ERROR, 'map_overlap', 'room office')])
+
+    def test_the_recommended_elsewhere_fix_and_the_pin_both_clear_the_overlap(self):
+        exits = [link('sq', 'civic', 'west', 'east'), link('sq', 'street', 'southwest', 'northeast'),
+                 link('street', 'office', 'northwest', 'southeast')]
+        coords, issues = self.grid(exits)
+        self.assertEqual((issues, coords['office']), ([], (-2, 0, 0)))
+        exits[2] = link('street', 'office', 'north', 'south')
+        coords, issues = self.grid(exits, pins={'office': {'x': -2, 'y': 0, 'z': 0}})
+        self.assertEqual((issues, coords['office']), ([], (-2, 0, 0)))
+
+    def test_a_loop_that_does_not_close_warns_on_the_mismatched_exit(self):
+        coords, issues = self.grid([link('sq', 'a', 'north', 'south'), link('a', 'b', 'east', 'west'),
+                                    link('b', 'sq', 'west', 'east')])
+        self.assertEqual(coords['b'], (1, 0, 0))  # east of sq, reached before the way round via a
+        self.assertEqual(sorted((i.level, i.code, i.where) for i in issues), [
+            (check.WARNING, 'exit_off_grid', 'exit[1] a->b'),
+            (check.WARNING, 'exit_off_grid', 'exit[1] a->b (return)')])
+
+    def test_a_pin_overrides_and_confirms_a_long_exit(self):
+        coords, issues = self.grid([link('sq', 'hall', 'east', 'west'), link('hall', 'yard', 'east', 'west')],
+                                   pins={'hall': {'x': 3, 'y': 0, 'z': 0}})
+        self.assertEqual(issues, [])
+        self.assertEqual(coords, {'sq': (0, 0, 0), 'hall': (3, 0, 0), 'yard': (4, 0, 0)})
+
+    def test_a_room_only_reached_by_a_named_exit_is_off_the_map_until_pinned(self):
+        exits = [link('sq', 'hatch_room', 'hatch', 'out'), link('hatch_room', 'beyond', 'north', 'south')]
+        coords, issues = self.grid(exits)
+        self.assertEqual(coords, {'sq': (0, 0, 0)})
+        self.assertEqual(sorted((i.code, i.where) for i in issues),
+                         [('off_map', 'room beyond'), ('off_map', 'room hatch_room')])
+        coords, issues = self.grid(exits, pins={'hatch_room': {'x': 0, 'y': 0, 'z': -1}})
+        self.assertEqual((issues, coords['beyond']), ([], (0, 1, -1)))
+
+    def test_anchor_and_pin_problems(self):
+        exits = [link('sq', 'n', 'north', 'south')]
+        coords, issues = self.grid(exits, anchor=None)
+        self.assertEqual((coords, codes(issues)), ({}, ['no_map_anchor']))
+        _coords, issues = self.grid(exits, anchor='nowhere')
+        self.assertEqual(codes(issues, check.ERROR), ['bad_map_anchor'])
+        for bad in ({'x': 1, 'y': 2}, {'x': 1, 'y': 2, 'z': 0.5}, {'x': True, 'y': 0, 'z': 0}, [0, 0, 0]):
+            _coords, issues = self.grid(exits, pins={'n': bad})
+            self.assertEqual(codes(issues, check.ERROR), ['bad_map_pin'], bad)
 
 
 class ParseContentTests(unittest.TestCase):

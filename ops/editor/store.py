@@ -16,7 +16,7 @@ import threading
 import time
 
 from world_model import (FORMAT_VERSION, ID_RE, content_path, dismissed_path, dump_json, load_dismissed, load_kinds,
-                         read_json, sector_path, write_json)
+                         read_json, sector_path, valid_map_pin, write_json)
 
 HISTORY_DIR = '.history'
 AUTOSAVE_DIR = '.autosave'
@@ -70,8 +70,8 @@ def version_of(root, sector_id):
 
 # ----------------------------------------------------------- validation
 
-TOP_KEYS = {'format_version', 'sector_id', 'notes', 'rooms', 'exits', 'entities'}
-ROOM_KEYS = {'title', 'content', 'editor', 'notes'}
+TOP_KEYS = {'format_version', 'sector_id', 'notes', 'map_anchor', 'rooms', 'exits', 'entities'}
+ROOM_KEYS = {'title', 'content', 'editor', 'map_pin', 'notes'}
 EXIT_KEYS = {'from', 'to', 'key', 'aliases', 'return'}
 RETURN_KEYS = {'key', 'aliases'}
 ENTITY_KEYS = {'kind', 'room', 'content', 'aliases', 'params', 'notes'}
@@ -100,6 +100,8 @@ def validate_shape(root, sector_id, sector):
     rooms = sector.get('rooms')
     if not isinstance(rooms, dict):
         return problems + ['rooms must be an object']
+    if 'map_anchor' in sector and sector['map_anchor'] not in rooms:
+        problems.append('map_anchor must be a room in this sector')
     for room_id, room in rooms.items():
         where = f'room {room_id}'
         if not ID_RE.fullmatch(room_id):
@@ -117,6 +119,8 @@ def validate_shape(root, sector_id, sector):
             problems.append(f'{where}: editor position must be numbers')
         elif not _str_list(editor.get('former_titles', [])):
             problems.append(f'{where}: former titles must be a list of text')
+        if 'map_pin' in room and not valid_map_pin(room['map_pin']):
+            problems.append(f'{where}: map pin must be whole numbers x, y and z')
         if not isinstance(room.get('notes', ''), str):
             problems.append(f'{where}: notes must be text')
 

@@ -43,9 +43,9 @@ Sent on puppet.
 - **`Comm.Channel`** (the playtest channel, `tell`), and possibly room speech, for clients that split chat into its own window. Screen-reader users on Mudlet and MUSHclient use this.
 - **Not yet:** `Char.Items`, quest/commitment tracking and skills. Those systems are still changing shape.
 
-## Map coordinates (Tools follow-up)
+## Map coordinates
 
-`Room.Info` sends `coords` only when a room has `db.map_coords`, and today none do. The editor's `editor.x`/`editor.y` values are canvas pixels on an uneven spacing, and export strips them.
+`Room.Info` sends `coords` only when a room has `db.map_coords`. The editor's `editor.x`/`editor.y` values are canvas pixels on an uneven spacing, and export strips them; the grid below is separate.
 
 **Grid policy (owner, 2026-10-18): a one-step grid by default, worked out from the exits, with deliberate exceptions.** Coordinates aren't typed in. They come from the exits, so they can't drift away from them:
 
@@ -55,10 +55,8 @@ Sent on puppet.
 - **An exit that doesn't match its direction is a warning:** one that crosses more than one step, points the wrong way, or joins a room that can't be reached from the anchor. Fix the exits, or confirm the exception by pinning the room. Warnings don't block export, so a sector being built can still be exported.
 - Treat any change to these rules as a deliberate design decision, the same way the one-connection-per-room-pair rule in `docs/mud-editor-sector-format.md` is.
 
-Tools' work (the editor, export and the build script):
+**Built (Tools, 2026-10-18).** `sector.json` holds a top-level `map_anchor` and an optional `map_pin` per room (`docs/mud-editor-sector-format.md` Section 4). `ops/editor/check.py`'s `map_grid()` works the coordinates out, and check reports `map_overlap` (error), `exit_off_grid`, `off_map` and `no_map_anchor` (warnings). Export writes `map: {x, y, z}` for each placed room, and `world/build_sector.py` sets it as `db.map_coords`. In the editor, each room's panel shows its cell and has **Pin here**, **Unpin** and **Make this the anchor**; the map box shows the cell after the room ID.
 
-1. Work out each room's coordinates from the anchor, exits and pins, in `ops/editor/check.py`/`export.py`, and export them in the manifest as `map: {"x", "y", "z"}`. `sector.json` stores only the anchor and any pins. Showing the worked-out grid in the editor would help with placement but isn't required.
-2. Have `world/build_sector.py` write `map` to each room as `db.map_coords`.
-3. Add the checks above: overlap is an error, a mismatched exit or a room that can't be reached is a warning.
+**Until Elsewhere has an anchor, no room gets coordinates.** `sectors/elsewhere/sector.json` has no `map_anchor` yet, so check only warns `no_map_anchor` and the manifest carries no `map`. Setting the anchor brings up the overlap below as an export error, so set the anchor and fix the overlap in the same editor session, then export.
 
 **Elsewhere has one overlap today.** With the square as the anchor, the Civic Office is west at (-1,0). Old Quarter Street is southwest at (-1,-1), and Daven's Office is north of the street, which puts it on (-1,0) too. The clean fix, in the spirit of the one-step rule, is to make the street to Daven's Office exit `northwest`/`southeast`. That puts Daven's Office at (-2,0), which is also where the editor already draws it. No authored text gives that direction, and the signpost finds Daven's Office by tag, so the change touches only `sector.json`. The other option is to keep `north` and pin Daven's Office. Either way, it's the owner's call in the editor.

@@ -14,8 +14,8 @@ import argparse
 import sys
 from pathlib import Path
 
-from check import ERROR, Issue, check_sector
-from world_model import (FORMAT_VERSION, ROOT, load_kinds, load_sector, manifest_path, parse_content,
+from check import ERROR, Issue, check_sector, map_grid
+from world_model import (FORMAT_VERSION, MAP_AXES, ROOT, load_kinds, load_sector, manifest_path, parse_content,
                          content_path, source_hashes, write_json)
 
 _GAME_DIR = Path(__file__).resolve().parents[2] / 'prospect'
@@ -108,12 +108,15 @@ def build_manifest(root, sector_id):
     room_kind, kinds = load_kinds(root)
     refs = set()
 
+    grid, _issues = map_grid(sector)
     rooms = {}
     for room_id, room in sector['rooms'].items():
         refs.add(room['content'])
         parsed = parse_room_text(room_id, _read(root, room['content']))
         rooms[room_id] = {'title': room['title'], 'typeclass': room_kind['typeclass'],
                           'tag_category': room_kind['tag_category'], 'desc': parsed.desc, 'glance': parsed.glance}
+        if room_id in grid:  # check.py warns about a room the grid can't reach (off_map)
+            rooms[room_id]['map'] = dict(zip(MAP_AXES, grid[room_id]))
 
     exits = []
     for ex in sector['exits']:

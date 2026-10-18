@@ -57,6 +57,21 @@ test('removing a room takes its exits, but not while things are placed there', (
   assert.equal('b' in doc.rooms, false);
 });
 
+test('map anchor and pins: set, clear, and dropped with their room', () => {
+  const doc = sector();
+  assert.throws(() => core.setMapAnchor(doc, 'nope'), /No room/);
+  core.setMapAnchor(doc, 'b');
+  assert.equal(doc.map_anchor, 'b');
+  core.setMapPin(doc, 'b', { x: '-2', y: ' 0 ', z: 1 });
+  assert.deepEqual(doc.rooms.b.map_pin, { x: -2, y: 0, z: 1 });
+  assert.throws(() => core.setMapPin(doc, 'b', { x: '1.5', y: 0, z: 0 }), /whole numbers/);
+  assert.throws(() => core.setMapPin(doc, 'b', { x: '', y: 0, z: 0 }), /whole numbers/);
+  core.setMapPin(doc, 'b', null);
+  assert.equal('map_pin' in doc.rooms.b, false);
+  core.removeRoom(doc, 'b');
+  assert.equal('map_anchor' in doc, false);
+});
+
 test('one connection per pair of rooms, either direction', () => {
   const doc = sector();
   assert.throws(() => core.addExit(doc, { from: 'b', to: 'a', key: 'door' }), /already connected/);

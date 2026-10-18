@@ -115,6 +115,34 @@
     if (here.length) fail(`Move or remove what's placed here first (${here.join(', ')}).`);
     doc.exits = doc.exits.filter((ex) => ex.from !== id && ex.to !== id);
     delete doc.rooms[id];
+    if (doc.map_anchor === id) delete doc.map_anchor;
+    return doc;
+  }
+
+  // ------------------------------------------------------------ map grid
+  // Grid coordinates are worked out from the anchor and exits (check.py's
+  // map_grid); the document holds only the anchor and any pins.
+
+  function setMapAnchor(doc, id) {
+    if (!doc.rooms[id]) fail(`No room "${id}".`);
+    doc.map_anchor = id;
+    return doc;
+  }
+
+  /** Pin a room to {x, y, z} (whole numbers), or unpin it with null. */
+  function setMapPin(doc, id, pin) {
+    const room = doc.rooms[id] || fail(`No room "${id}".`);
+    if (pin === null) {
+      delete room.map_pin;
+      return doc;
+    }
+    const clean = {};
+    for (const axis of ['x', 'y', 'z']) {
+      const value = Number(String(pin[axis] ?? '').trim() || NaN);
+      if (!Number.isInteger(value)) fail(`A pin needs whole numbers for x, y and z (${axis} is "${pin[axis] ?? ''}").`);
+      clean[axis] = value;
+    }
+    room.map_pin = clean;
     return doc;
   }
 
@@ -309,7 +337,7 @@
 
   return {
     ID_RE, opposite, shortAliases, parseAliases, clone, pairIndex, idTaken,
-    addRoom, setRoom, forgetFormerTitle, removeRoom, addExit, setExit, removeExit, exitsOf,
+    addRoom, setRoom, forgetFormerTitle, removeRoom, setMapAnchor, setMapPin, addExit, setExit, removeExit, exitsOf,
     addEntity, setEntity, removeEntity, usedContent, trayItems, groupByRequest, candidateId, placeCandidate, History,
   };
 });

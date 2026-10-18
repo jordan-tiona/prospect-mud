@@ -12,9 +12,9 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from world_model import (DISMISSED_FILE, FORMAT_VERSION, ID_RE, ROOT, DuplicateKeyError, load_content,
-                         load_dismissed, load_kinds, load_required_rooms, load_sector, manifest_path, read_json,
-                         sector_ids, sector_path, source_hashes)
+from world_model import (DISMISSED_FILE, FORMAT_VERSION, ID_RE, MAP_AXES, MAP_STEPS, ROOT, DuplicateKeyError,
+                         load_content, load_dismissed, load_kinds, load_required_rooms, load_sector, manifest_path,
+                         read_json, sector_ids, sector_path, source_hashes, valid_map_pin)
 
 ERROR, WARNING, INFO = 'error', 'warning', 'info'
 
@@ -160,6 +160,91 @@ def _exit_issues(sector, rooms):
     return issues
 
 
+def map_grid(sector):
+    """({room_id: (x, y, z)}, issues): grid coordinates worked out from the
+    sector's map_anchor (0,0,0), one step per compass exit, with each room's
+    map_pin overriding (owner's grid policy, 2026-10-18). A room that no
+    anchor or pin reaches through compass exits gets no coordinates."""
+    rooms = sector.get('rooms', {})
+    issues, coords, pinned = [], {}, set()
+    anchor = sector.get('map_anchor')
+    if anchor is None:
+        if rooms:
+            issues.append(Issue(WARNING, 'no_map_anchor', 'sector',
+                                'no map anchor: choose the room at (0,0,0) so rooms get map coordinates'))
+    elif anchor not in rooms:
+        issues.append(Issue(ERROR, 'bad_map_anchor', 'sector', f'map anchor {anchor!r} is not a room in this sector'))
+        anchor = None
+    else:
+        coords[anchor] = (0, 0, 0)
+    for room_id, room in rooms.items():
+        if 'map_pin' not in room:
+            continue
+        if valid_map_pin(room['map_pin']):
+            coords[room_id] = tuple(room['map_pin'][a] for a in MAP_AXES)
+            pinned.add(room_id)
+        else:
+            issues.append(Issue(ERROR, 'bad_map_pin', f'room {room_id}', 'map pin must be whole numbers x, y and z'))
+
+    moves = defaultdict(list)  # room -> [(other room, step, exit key or None, where)]
+    for i, ex in enumerate(sector.get('exits', [])):
+        src, dst = ex.get('from'), ex.get('to')
+        if src not in rooms or dst not in rooms or src == dst:
+            continue  # reported by _exit_issues
+        where = f'exit[{i}] {src}->{dst}'
+        sides = [(src, dst, ex.get('key'), where)]
+        if ex.get('return'):
+            sides.append((dst, src, ex['return'].get('key'), where + ' (return)'))
+        for a, b, key, side in sides:
+            step = MAP_STEPS.get(str(key or '').strip().lower())
+            if step:
+                moves[a].append((b, step, key, side))
+            # A one-way exit can also place its own start room from its end. That
+            # reverse move has no key, so the mismatch check below skips it.
+            if step and not ex.get('return'):
+                moves[b].append((a, tuple(-d for d in step), None, side))
+
+    queue = [r for r in rooms if r in coords]
+    queue.sort(key=lambda r: (r != anchor, r))
+    while queue:
+        room = queue.pop(0)
+        for other, step, _key, _side in moves[room]:
+            if other not in coords:
+                coords[other] = tuple(c + d for c, d in zip(coords[room], step))
+                queue.append(other)
+
+    for room in rooms:
+        for other, step, key, side in moves[room]:
+            if key is None or room not in coords or other not in coords or {room, other} & pinned:
+                continue  # a pin confirms an exception to the one-step rule
+            actual = tuple(b - a for a, b in zip(coords[room], coords[other]))
+            if actual != step:
+                issues.append(Issue(WARNING, 'exit_off_grid', side,
+                                    f'"{key}" should be one step {key}, but {other} is at '
+                                    f'{_fmt(coords[other])} and {room} at {_fmt(coords[room])}: '
+                                    'fix the exits, or pin a room to confirm the exception'))
+    if anchor is not None or pinned:
+        for room in rooms:
+            if room not in coords:
+                issues.append(Issue(WARNING, 'off_map', f'room {room}',
+                                    "can't be reached from the map anchor by compass exits, so it has no map "
+                                    'coordinates: connect it, or pin it'))
+    cells = defaultdict(list)
+    for room, cell in coords.items():
+        cells[cell].append(room)
+    for cell, here in sorted(cells.items()):
+        for room in sorted(here) if len(here) > 1 else []:
+            others = ', '.join(r for r in sorted(here) if r != room)
+            issues.append(Issue(ERROR, 'map_overlap', f'room {room}',
+                                f"works out to map cell {_fmt(cell)}, the same as {others}: change an exit's "
+                                'direction, or pin one of the rooms elsewhere'))
+    return coords, issues
+
+
+def _fmt(cell):
+    return '(' + ','.join(str(c) for c in cell) + ')'
+
+
 def _mentions(text, title, current_titles):
     """Does `text` mention `title` as a whole phrase, outside any current room
     title that contains it ("Square" inside "Old Quarter Square")?"""
@@ -270,6 +355,7 @@ def check_sector_data(root, sector_id, sector, manifest=True):
             referenced.add(entity['content'])
 
     issues += _exit_issues(sector, rooms)
+    issues += map_grid(sector)[1]
     issues += _former_title_issues(root, rooms)
     if manifest:
         issues += _manifest_issues(root, sector_id, sector, referenced)

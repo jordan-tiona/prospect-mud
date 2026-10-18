@@ -28,7 +28,7 @@ from urllib.parse import unquote, urlsplit
 
 import export
 import store
-from check import ERROR, check_sector, check_sector_data
+from check import ERROR, check_sector, check_sector_data, map_grid
 from world_model import ID_RE, ROOT, load_content, load_dismissed, load_kinds, load_sector, sector_ids
 
 STATIC_DIR = Path(__file__).resolve().parent / 'static'
@@ -122,6 +122,15 @@ def _visible(issues):
     return [vars(i) for i in issues if i.code not in ('not_exported', 'stale_manifest')]
 
 
+def _grid(sector):
+    """{room_id: [x, y, z]} worked out from the anchor, exits and pins, for the
+    map and room panel. Malformed data gives what can be worked out, or nothing."""
+    try:
+        return {room: list(cell) for room, cell in map_grid(sector)[0].items()}
+    except (AttributeError, TypeError):
+        return {}
+
+
 def sector_view(root, sector_id):
     sector = load_sector(root, sector_id)
     issues, _refs = check_sector(root, sector_id)
@@ -136,6 +145,7 @@ def sector_view(root, sector_id):
         'files': files,
         'issues': _visible(issues),
         'manifest': _manifest_state(issues),
+        'grid': _grid(sector),
         'autosave': store.autosave_info(root, sector_id),
         **kinds_view(root),
     }
@@ -235,9 +245,9 @@ class Handler(BaseHTTPRequestHandler):
         sector = body.get('sector')
         problems = store.validate_shape(self.root, sector_id, sector)
         if problems:
-            return self._send(HTTPStatus.OK, {'issues': [], 'problems': problems})
+            return self._send(HTTPStatus.OK, {'issues': [], 'problems': problems, 'grid': {}})
         issues, _refs = check_sector_data(self.root, sector_id, sector, manifest=False)
-        return self._send(HTTPStatus.OK, {'issues': _visible(issues), 'problems': []})
+        return self._send(HTTPStatus.OK, {'issues': _visible(issues), 'problems': [], 'grid': _grid(sector)})
 
     def _save(self, sector_id, body):
         try:

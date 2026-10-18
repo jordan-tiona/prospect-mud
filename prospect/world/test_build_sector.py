@@ -182,6 +182,15 @@ class BuildSectorTests(TestCase):
         self.build()
         self.assertFalse(thing.attributes.has("probe_desc"))
 
+    def test_map_coordinates_are_set_and_removed_with_the_manifest(self):
+        self.manifest["rooms"]["t_room_a"]["map"] = {"x": -2, "y": 0, "z": 1}
+        self.build()
+        room = one("t_room_a", ROOMS)
+        self.assertEqual(room.db.map_coords, {"x": -2, "y": 0, "z": 1})
+        del self.manifest["rooms"]["t_room_a"]["map"]  # off the grid: GMCP then sends no coords
+        self.build()
+        self.assertFalse(room.attributes.has("map_coords"))
+
     def test_values_the_manifest_drops_are_removed(self):
         self.build()
         entity = self.manifest["entities"]["t_thing"]

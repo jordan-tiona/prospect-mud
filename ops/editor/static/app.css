@@ -247,6 +247,7 @@ button.danger:hover { border-color: var(--err); }
 .form label.check { flex-direction: row; align-items: center; gap: 6px; }
 .form label.check input { width: auto; }
 .form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.form .row.three { grid-template-columns: 1fr 1fr 1fr; }
 .form .actions { display: flex; gap: 8px; }
 .list li.editing { display: block; }
 details.add { margin: 8px 0; }

@@ -19,6 +19,7 @@ const state = {
   history: new core.History(),
   issues: [],
   problems: [],
+  grid: {}, // room id -> [x, y, z], worked out by check.py (map_grid); off-map rooms are absent
   unplaced: [], // /api/unplaced: content files no saved sector uses (each with request, dismissed)
   dismissed: [], // every path on the dismiss list
   dismissedMissing: [], // dismissed paths whose file has been deleted
@@ -91,6 +92,12 @@ function issueRoom(issue) {
   m = /^exit\[\d+\] (\S+?)->/.exec(issue.where);
   if (m) return d.rooms[m[1]] ? m[1] : null;
   return null;
+}
+
+/** A room's grid cell as "(x,y,z)", or "off map" (docs/gmcp.md, "Map coordinates"). */
+function gridLabel(id) {
+  const cell = state.grid[id];
+  return cell ? `(${cell.join(',')})` : 'off map';
 }
 
 function issuesFor(roomId) {
@@ -200,6 +207,7 @@ function applyServerView(view) {
   state.baseVersion = view.version;
   state.issues = view.issues;
   state.problems = [];
+  state.grid = view.grid || {};
   state.dirty = false;
   state.conflict = false;
   const sel = state.selected;
@@ -262,6 +270,7 @@ async function liveCheck() {
   if (!res.ok) return;
   state.issues = res.data.issues;
   state.problems = res.data.problems;
+  state.grid = res.data.grid || {};
   render();
 }
 
@@ -466,7 +475,7 @@ function renderMap(resetView) {
     svg('text', { x: 16, y: 38, class: 'title' }, g).textContent = room.title || id;
     const status = !file ? 'awaiting prose' : file.exists ? (file.approval || 'no approval') : 'file missing';
     svg('text', { x: 16, y: 72, class: 'sub' }, g).textContent = `${entitiesIn(id).length} placed · ${status}`;
-    svg('text', { x: 16, y: 102, class: 'sub id' }, g).textContent = id;
+    svg('text', { x: 16, y: 102, class: 'sub id' }, g).textContent = `${id} · ${gridLabel(id)}`;
 
     const roomIssues = issuesFor(id);
     const worst = roomIssues.some((i) => i.level === 'error') ? 'err' : roomIssues.some((i) => i.level === 'warning') ? 'warn' : null;
@@ -617,6 +626,7 @@ function overviewPanel() {
       <dt>Rooms</dt><dd>${Object.keys(d.rooms).length}</dd>
       <dt>Exits</dt><dd>${exits}</dd>
       <dt>Placed entities</dt><dd>${Object.keys(d.entities).length}</dd>
+      <dt>Map anchor</dt><dd>${d.map_anchor && d.rooms[d.map_anchor] ? go('room', d.map_anchor, roomTitle(d.map_anchor)) : 'none (set one in a room’s Map grid)'}</dd>
       <dt>Check</dt><dd>${state.issues.length ? `${errors} error(s), ${state.issues.length - errors} other` : 'clean'}</dd>
       <dt>Manifest</dt><dd>${esc(state.server.manifest.state.replace('_', ' '))}</dd>
     </dl>
@@ -704,6 +714,7 @@ function roomPanel(id) {
     ${room.content ? '<p class="small"><button type="button" class="link" data-action="unlink-prose">Detach prose</button> <span class="muted">(makes this a placeholder again; the file is untouched)</span></p>' : ''}
     ${sections.Glance ? `<h3>Glance</h3><div class="prose">${prose(sections.Glance)}</div>` : ''}
     ${file ? `<h3>Description</h3><div class="prose">${prose(sections.Description)}</div>` : ''}
+    ${mapGridHTML(id, room)}
     <h3>Exits (${rows.length})</h3>
     ${rows.length ? `<ul class="list">${rows.map((row) => (state.editingExit === row.index ? `<li class="editing">${exitForm(id, row)}</li>` : `
       <li><span class="dir">${row.out ? esc(row.out.key) : '<span class="muted">(in only)</span>'}</span>
@@ -728,6 +739,27 @@ function roomPanel(id) {
     <h3>Remove</h3>
     <button type="button" class="danger" data-action="remove-room">Remove this room</button>
     <p class="muted small">Also removes its exits. Refused while anything is placed here. The prose file is never deleted.</p>`;
+}
+
+function mapGridHTML(id, room) {
+  const anchor = state.doc.map_anchor === id;
+  const pin = room.map_pin;
+  const how = pin ? 'pinned' : anchor ? 'the anchor' : state.grid[id] ? 'worked out from the exits' : '';
+  const cell = state.grid[id] || [];
+  return `
+    <h3>Map grid</h3>
+    <p><strong>${esc(gridLabel(id))}</strong>${how ? ` <span class="muted">· ${esc(how)}</span>` : ''}</p>
+    <form class="form" data-form="map-pin">
+      <div class="row three">
+        ${['x', 'y', 'z'].map((axis, i) => `<label>${axis} <input name="${axis}" inputmode="numeric" value="${esc(String(pin ? pin[axis] : cell[i] ?? ''))}"></label>`).join('')}
+      </div>
+      <div class="actions">
+        <button type="submit">${pin ? 'Move pin' : 'Pin here'}</button>
+        ${pin ? '<button type="button" data-action="unpin">Unpin</button>' : ''}
+        ${anchor ? '' : '<button type="button" data-action="make-anchor">Make this the anchor</button>'}
+      </div>
+    </form>
+    <p class="muted small">Each compass exit is one grid step (up/down change z), counted from the anchor at (0,0,0). Pin a room only where that rule doesn't fit; it then counts from the pin.</p>`;
 }
 
 function sectionsHTML(file, kind) {
@@ -888,6 +920,8 @@ function setupPanelInput() {
         break;
       }
       case 'unlink-prose': edit((doc) => core.setRoom(doc, id, { content: '' })); break;
+      case 'make-anchor': edit((doc) => core.setMapAnchor(doc, id)); break;
+      case 'unpin': edit((doc) => core.setMapPin(doc, id, null)); break;
       case 'forget-title': edit((doc) => core.forgetFormerTitle(doc, id, act.dataset.title)); break;
       case 'place-room': placeRoomCandidate(act.dataset.path); break;
       case 'dismiss': setDismissed([act.dataset.path], true); break;
@@ -962,6 +996,9 @@ function setupPanelInput() {
         if (edit((doc) => core.addRoom(doc, { id: newId, title: f.get('title'), content: f.get('content') || undefined, x, y }))) {
           select({ type: 'room', id: newId });
         }
+      } else if (form.dataset.form === 'map-pin') {
+        const f = new FormData(form);
+        edit((doc) => core.setMapPin(doc, id, { x: f.get('x'), y: f.get('y'), z: f.get('z') }));
       } else if (form.dataset.form === 'add-exit') {
         const { out, back, to } = exitFromForm(form);
         if (!out) throw new Error('A new exit needs a way out of this room.');

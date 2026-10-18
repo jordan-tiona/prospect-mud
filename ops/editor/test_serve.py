@@ -322,10 +322,13 @@ class StoreTests(_Fixture):
         bad['exits'].append({'from': 'room_a', 'to': 'room_b', 'key': '', 'return': {'key': 'x', 'bogus': 1}})
         bad['entities']['room_a'] = {'kind': 'ambient_object', 'room': 'room_a', 'params': {'x': 1}}
         bad['rooms']['room_b']['editor'] = {'x': 0, 'y': 0, 'former_titles': 'Room B'}
+        bad['map_anchor'] = 'nowhere'
+        bad['rooms']['room_a']['map_pin'] = {'x': 0, 'y': '1', 'z': 0}
         problems = ' | '.join(store.validate_shape(self.root, 'test', bad))
         for expected in ("unknown top-level field 'extra'", 'room Bad Id: IDs must match', 'title must be text',
                          'key must be text', 'return must be null', 'ID already used by a room',
-                         'params must map names to text', 'former titles must be a list of text'):
+                         'params must map names to text', 'former titles must be a list of text',
+                         'map_anchor must be a room', 'room room_a: map pin must be whole numbers'):
             self.assertIn(expected, problems)
 
     def test_write_json_is_atomic(self):

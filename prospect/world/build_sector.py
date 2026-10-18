@@ -114,6 +114,16 @@ def load_manifest(sector_id):
     return copy.deepcopy(cached[1])
 
 
+def _room_attributes(room):
+    """A room's db.* values. `map` becomes db.map_coords, which GMCP Room.Info
+    sends (docs/gmcp.md); a room the grid can't place has none, and the
+    managed record removes any coordinates it had before."""
+    attributes = {"desc": room["desc"], "glance": room["glance"]}
+    if room.get("map"):
+        attributes["map_coords"] = dict(room["map"])
+    return attributes
+
+
 def _desired_from_manifest(manifest, kinds):
     sector_id = manifest["sector_id"]
     rooms = [
@@ -124,7 +134,7 @@ def _desired_from_manifest(manifest, kinds):
             typeclass=room["typeclass"],
             key=room["title"],
             sector_id=sector_id,
-            attributes={"desc": room["desc"], "glance": room["glance"]},
+            attributes=_room_attributes(room),
         )
         for room_id, room in manifest["rooms"].items()
     ]
