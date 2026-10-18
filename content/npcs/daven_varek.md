@@ -5,7 +5,7 @@ npc_id: daven_varek
 room: Daven's Office
 species: Kell
 pronouns: he/him
-prompt_version: 10
+prompt_version: 11
 status: Provisional
 approval: Approved
 knowledge_scope (bible sections, Established content only):

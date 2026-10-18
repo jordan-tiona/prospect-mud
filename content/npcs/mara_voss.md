@@ -5,7 +5,7 @@ npc_id: mara_voss
 room: Corner Café
 species: Voldren
 pronouns: she/her
-prompt_version: 50
+prompt_version: 51
 status: Provisional
 approval: Approved
 knowledge_scope (bible sections, Established content only):
