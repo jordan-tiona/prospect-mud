@@ -4,6 +4,7 @@ room: lift_concourse
 status: Provisional
 approval: Approved
 bible_refs: 11.2.3, 13.6
+glance: show
 -->
 
 # Arrival directory
