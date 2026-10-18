@@ -44,6 +44,7 @@ def log_turn(
     flagged: bool,
     flag_reason: str = "",
     initial_response: Optional[str] = None,
+    reaction_tools: Optional[list] = None,
     usage: Optional[dict] = None,
     cost_usd: Optional[float] = None,
     latency_ms: Optional[float] = None,
@@ -64,6 +65,12 @@ def log_turn(
     was never logged at all - lost entirely, even though the player
     saw it - leaving `npc_response` holding only the reaction and
     `tool_calls` from a different completion than the text next to it.
+
+    `reaction_tools` is the action names that follow-up call was
+    offered (world/actions.py's REACTION_RETRIES/REACTION_FOLLOW_ONS),
+    `[]` when it had none, and `None` when the turn had no follow-up.
+    Without it the log couldn't say whether a reaction that only talked
+    about an action could have made the call (2026-10-18).
 
     `usage`/`cost_usd`/`latency_ms` (game-plan.md 6.2's structured-
     logging item) cover the *whole turn* as the player experienced it,
@@ -95,6 +102,7 @@ def log_turn(
             "reasoning_effort": settings.LLM_REASONING_EFFORT,
         },
         "initial_response": initial_response,
+        "reaction_tools": reaction_tools,
         "npc_response": npc_response,
         "tool_calls": tool_calls,
         "usage": usage,

@@ -100,6 +100,12 @@ class ConversationLogTests(SimpleTestCase):
         self.assertEqual(record["initial_response"], '*shrugs* "Could use a hand with something."')
         self.assertEqual(record["npc_response"], "Thanks.")
 
+    def test_reaction_tools_are_recorded(self):
+        self._log()
+        self.assertIsNone(self._read_records()[0]["reaction_tools"])
+        self._log(reaction_tools=["ask_for_help"])
+        self.assertEqual(self._read_records()[1]["reaction_tools"], ["ask_for_help"])
+
 
 class ConversationResetLogTests(SimpleTestCase):
     """

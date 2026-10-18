@@ -1080,6 +1080,7 @@ class SayCommandTests(_SayTestBase):
         self.assertEqual(calls[-1]["name"], "ask_for_help")
         self.assertTrue(calls[-1]["applied"])
         self.assertTrue(calls[-1]["in_reaction"])
+        self.assertEqual(self.mock_log_turn.call_args.kwargs["reaction_tools"], ["ask_for_help"])
         history = self.mara.ndb.conversations[self.actor.dbref]
         recorded = [c["function"]["name"] for m in history for c in m.get("tool_calls") or []]
         self.assertIn("ask_for_help", recorded)

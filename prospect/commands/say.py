@@ -528,6 +528,7 @@ def _handle_llm_reply(
         # Usually no tools at all: the reaction only puts the outcome
         # into words. REACTION_RETRIES is the exception.
         reaction_actions = reaction_action_names(reply.tool_calls, tool_results, applied_names)
+        log_context["reaction_tools"] = reaction_actions
         deferred = deferToThread(
             chat, followup_messages, tools=get_tool_schemas(reaction_actions) or None, max_tokens=max_tokens
         )
