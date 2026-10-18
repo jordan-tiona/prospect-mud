@@ -8,13 +8,18 @@ prompt.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from world.content_files import read_content_file, strip_html_comments
 
 _METADATA_COMMENT_RE = re.compile(r"<!--(.*?)-->", re.DOTALL)
 _FIELD_RE = re.compile(r"^\s*(\w+)\s*:\s*(.*)$", re.MULTILINE)
 _KNOWLEDGE_SCOPE_LABEL_RE = re.compile(r"^\s*knowledge_scope\b.*:\s*$", re.MULTILINE)
+# `## Emotes` (LR-LORE-0006): idle lines world/idle_emotes.py sends to
+# the room. Engine output, not persona, so the section is cut from the
+# body before it can reach a prompt - up to the next heading or the end.
+_EMOTES_SECTION_RE = re.compile(r"^##[ \t]+Emotes[ \t]*$(.*?)(?=^#{1,2}[ \t]|\Z)", re.MULTILINE | re.DOTALL)
+_BULLET_RE = re.compile(r"^[ \t]*-[ \t]*(.+?)[ \t]*$", re.MULTILINE)
 
 
 class PersonaParseError(Exception):
@@ -44,6 +49,9 @@ class NPCProfile:
     # metadata-comment rule as `desc` so it never reaches a prompt.
     # Optional - without one, `probe` shows the `look` text.
     probe_desc: str | None = None
+    # The persona's `## Emotes` lines, cut from `body` (see
+    # _EMOTES_SECTION_RE). Empty when the file has none.
+    emotes: list = field(default_factory=list)
 
 
 def _parse_metadata(comment_text: str) -> dict:
@@ -106,6 +114,10 @@ def parse_persona_text(npc_id: str, raw: str) -> NPCProfile:
                 f"{npc_id}.md has a non-numeric max_reply_tokens: '{raw_max_reply_tokens}'"
             )
 
+    body = strip_html_comments(raw)
+    emotes = [line for match in _EMOTES_SECTION_RE.finditer(body) for line in _BULLET_RE.findall(match.group(1))]
+    body = re.sub(r"\n{3,}", "\n\n", _EMOTES_SECTION_RE.sub("", body)).strip()
+
     return NPCProfile(
         npc_id=fields["npc_id"],
         room=fields["room"],
@@ -113,8 +125,9 @@ def parse_persona_text(npc_id: str, raw: str) -> NPCProfile:
         knowledge_scope=knowledge_scope,
         actions=actions,
         pronouns=fields["pronouns"],
-        body=strip_html_comments(raw),
+        body=body,
         max_reply_tokens=max_reply_tokens,
         desc=fields.get("desc") or None,
         probe_desc=fields.get("probe_desc") or None,
+        emotes=emotes,
     )

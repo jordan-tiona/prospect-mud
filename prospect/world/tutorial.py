@@ -209,6 +209,7 @@ def announce_tannoy(character):
 
 def _play_full_tannoy(character, room):
     blocks = tannoy_blocks_for_room(room)
+    character.ndb.tannoy_at = time.time()  # world/idle_emotes.py holds its beats after a block
     if uses_screenreader(character):
         # All at once: a block arriving mid-sentence can cut off the
         # screen reader still reading the one before.
@@ -222,6 +223,7 @@ def _play_full_tannoy(character, room):
 def _send_tannoy_block(character, room, block):
     # Heard only in the room it's playing in.
     if character.location == room:
+        character.ndb.tannoy_at = time.time()
         character.msg("\n" + block)
 
 
@@ -232,6 +234,7 @@ def _play_cycle_block(character, room, token, order):
         utils.delay(TANNOY_QUIET_RETRY, _play_cycle_block, character, room, token, order)
         return
     lead_in, blocks = _tannoy_for(room)
+    character.ndb.tannoy_at = time.time()
     character.msg(f'\n{lead_in} |c"{blocks[order[0]]} {TANNOY_LINE_SINGLE}"|n\n\n{TANNOY_CLOSING}')
     if order[1:]:
         utils.delay(TANNOY_CYCLE_GAP, _play_cycle_block, character, room, token, order[1:])

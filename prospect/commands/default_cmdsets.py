@@ -32,6 +32,7 @@ from commands.describe import CmdDescribe
 from commands.feedback import CmdFeedback
 from commands.get import CmdGet
 from commands.look import CmdLook
+from commands.option import CmdOption
 from commands.playtest import CmdPlaytest
 from commands.probe import CmdProbe
 from commands.restricted import CmdChannel, CmdOOC, CmdQuell
@@ -109,6 +110,8 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         # any commands you add below will overload the default ones.
         #
         self.add(CmdPlaytest())
+        # Evennia's `option`, plus AMBIENCE for idle emotes.
+        self.add(CmdOption())
         # Replaced by commands/tell.py's `tell`, which stays private
         # and online-only.
         self.remove(default_cmds.CmdPage)

@@ -11,6 +11,9 @@ typeclasses.npcs.NPC.set_ambient_poses) and `## Description` (the
 Description` (the room-listing line, typeclasses.objects.RoomObject's
 `room_line`) and `## Description`.
 
+An ambient NPC may also have `## Emotes`: complete sentences that
+world/idle_emotes.py sends to the room now and then (LR-LORE-0006).
+
 Either may also have an optional `## Probe Description`: the longer
 text `probe <thing>` shows (commands/probe.py). Without one, `probe`
 shows the `look` text.
@@ -43,6 +46,7 @@ class AmbientNPCContent:
     desc: str  # full `look` text
     bible_refs: list = field(default_factory=list)
     probe_desc: str | None = None  # optional `## Probe Description`: `probe <npc>` text
+    emotes: list = field(default_factory=list)  # optional `## Emotes`: world/idle_emotes.py lines
 
 
 @dataclass
@@ -139,6 +143,7 @@ def parse_ambient_npc_text(ambient_id: str, raw: str) -> AmbientNPCContent:
         desc=desc,
         bible_refs=bible_refs,
         probe_desc=sections.get("Probe Description") or None,
+        emotes=_parse_bullets(sections.get("Emotes", "")),
     )
 
 

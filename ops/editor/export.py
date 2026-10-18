@@ -47,6 +47,8 @@ def _talk_npc(entity_id, raw):
         attributes['desc'] = profile.desc
     if profile.probe_desc:  # `probe_desc:` metadata line, never the persona body
         attributes['probe_desc'] = profile.probe_desc
+    if profile.emotes:  # `## Emotes`, cut from the persona body (world/idle_emotes.py)
+        attributes['emotes'] = profile.emotes
     return {'key': key, 'aliases': [key.split()[0]], 'attributes': attributes}
 
 
@@ -59,8 +61,10 @@ def _with_probe(attributes, probe_desc):
 
 def _ambient_npc(entity_id, raw):
     content = parse_ambient_npc_text(entity_id, raw)
-    return {'key': content.key, 'aliases': [], 'attributes': _with_probe({'desc': content.desc}, content.probe_desc),
-            'poses': content.poses}
+    attributes = _with_probe({'desc': content.desc}, content.probe_desc)
+    if content.emotes:  # world/idle_emotes.py
+        attributes['emotes'] = content.emotes
+    return {'key': content.key, 'aliases': [], 'attributes': attributes, 'poses': content.poses}
 
 
 def _ambient_object(entity_id, raw):
