@@ -248,6 +248,27 @@ class RoomAppearanceTests(TestCase):
             self.room.get_display_things(self.looker), "    |CThere is a crate here.|n"
         )
 
+    # LR-LORE-0005: `in_glance` False keeps an object's line out of the
+    # arrival glance only; `look` still lists it.
+
+    def test_glance_leaves_out_objects_flagged_off_it(self):
+        create_object("typeclasses.objects.RoomObject", key="a bed", location=self.room,
+                      attributes=[("room_line", "A bed is here."), ("in_glance", False)])
+        create_object("typeclasses.objects.RoomObject", key="a sign", location=self.room,
+                      attributes=[("room_line", "A sign is here."), ("in_glance", True)])
+        create_object("typeclasses.objects.RoomObject", key="a crate", location=self.room,
+                      attributes=[("room_line", "A crate is here.")])
+        self.assertEqual(self.room.get_display_things(self.looker, glance=True),
+                         "    |CA sign is here.|n |CA crate is here.|n")
+        self.assertEqual(self.room.get_display_things(self.looker),
+                         "    |CA bed is here.|n |CA sign is here.|n |CA crate is here.|n")
+
+    def test_glance_flag_never_hides_npcs(self):
+        create_object("typeclasses.npcs.NPC", key="An old man", location=self.room,
+                      attributes=[("in_glance", False)])
+        self.assertEqual(self.room.get_display_things(self.looker, glance=True),
+                         "    |CAn old man is here.|n")
+
     def test_room_object_is_not_pickupable(self):
         obj = create_object("typeclasses.objects.RoomObject", key="a sign", location=self.room)
         self.assertFalse(obj.access(self.looker, "get"))

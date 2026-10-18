@@ -61,6 +61,10 @@ def _content_issues(root, where, relative, kind, object_id):
         if field != 'approval' and str(value).startswith('Draft'):
             issues.append(Issue(ERROR, 'draft_field', where,
                                 f'content/{relative} marks {field} as {value!r}; needs owner approval first'))
+    glance = content.fields.get('glance')
+    if glance is not None and glance.strip().lower() not in ('show', 'hide'):
+        issues.append(Issue(ERROR, 'bad_glance', where,
+                            f"content/{relative} has glance: {glance!r}; use 'show' or 'hide'"))
     for section in kind['required_sections']:
         if not content.sections.get(section):
             issues.append(Issue(ERROR, 'missing_section', where, f'content/{relative} has no "## {section}"'))

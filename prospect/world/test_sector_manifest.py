@@ -34,7 +34,7 @@ if str(_EDITOR_DIR) not in sys.path:
 import export as sector_export  # noqa: E402  (ops/editor/export.py)
 from world_model import ROOT, load_content, load_sector  # noqa: E402
 
-ATTRIBUTES = ("desc", "glance", "room_line", "spoke_lines", "npc_id", "probe_desc")
+ATTRIBUTES = ("desc", "glance", "room_line", "spoke_lines", "npc_id", "probe_desc", "in_glance", "emotes")
 
 
 def _one(tag, category):

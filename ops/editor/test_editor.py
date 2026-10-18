@@ -191,6 +191,8 @@ class CheckTests(unittest.TestCase):
             'missing_section': OBJECT_FILE.format(id='thing', name='a thing').split('## Description')[0],
             'missing_heading': OBJECT_FILE.format(id='thing', name='a thing').replace('# a thing\n', ''),
             'no_metadata': '# a thing\n\n## Short Description\n\nx\n\n## Description\n\ny\n',
+            'bad_glance': OBJECT_FILE.format(id='thing', name='a thing').replace(
+                'approval: Approved', 'approval: Approved\nglance: maybe'),
         }
         for code, text in cases.items():
             with self.subTest(code):
@@ -304,7 +306,7 @@ class ExportTests(CheckTests.__base__):
         self.assertEqual(manifest['entities']['thing'], {
             'kind': 'ambient_object', 'typeclass': 'typeclasses.objects.RoomObject',
             'tag_category': 'phase1_ambient', 'room': 'room_a', 'key': 'a thing', 'aliases': [],
-            'attributes': {'room_line': 'A thing is here.', 'desc': 'It is a thing.'}})
+            'attributes': {'room_line': 'A thing is here.', 'desc': 'It is a thing.', 'in_glance': False}})
         self.assertEqual(sorted(manifest['sources']), [
             'content/ambient/objects/thing.md', 'content/rooms/room_a.md', 'content/rooms/room_b.md',
             'sectors/test/sector.json'])
@@ -334,6 +336,15 @@ class ExportTests(CheckTests.__base__):
         issues, path = self.export()
         self.assertIsNone(path)
         self.assertEqual(codes(issues, check.ERROR), ['parse_error'])
+
+    def test_glance_follows_kind_default_unless_overridden(self):
+        # LR-LORE-0005: ambient_object defaults to hide.
+        _issues, path = self.export()
+        self.assertIs(read_json(path)['entities']['thing']['attributes']['in_glance'], False)
+        self.write('ambient/objects/thing.md', OBJECT_FILE.format(id='thing', name='a thing').replace(
+            'approval: Approved', 'approval: Approved\nglance: Show'))
+        _issues, path = self.export()
+        self.assertIs(read_json(path)['entities']['thing']['attributes']['in_glance'], True)
 
     def test_probe_text_is_carried_when_authored(self):
         # ambient object: `## Probe Description`

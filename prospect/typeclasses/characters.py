@@ -8,6 +8,8 @@ creation commands.
 
 """
 
+import time
+
 from evennia.objects.objects import DefaultCharacter
 
 from world.appearance import identity_phrase, tidy
@@ -115,9 +117,16 @@ class Character(ObjectParent, DefaultCharacter):
     def at_post_move(self, source_location, move_type="move", **kwargs):
         if self.location.access(self, "view"):
             self.msg(text=(self.at_look(self.location, glance=True), {"type": "look"}))
+        from world.idle_emotes import start_room_emotes
         from world.tutorial import maybe_schedule_nudge
 
+        # world/idle_emotes.py holds its beats just after an arrival glance.
+        self.ndb.arrived_at = time.time()
+        # A new visit: ambient NPCs react to being addressed again
+        # (world/ambient_reactions.py).
+        self.ndb.ambient_reacted = None
         maybe_schedule_nudge(self)
+        start_room_emotes(self)
 
         session_id = session_id_for(self)
         if session_id:
@@ -152,6 +161,8 @@ class Character(ObjectParent, DefaultCharacter):
         # anyone is logged in to it, so at_post_move's tannoy goes
         # nowhere; repeat it now that the player is actually here
         # (world/tutorial.py announce_tannoy).
+        from world.idle_emotes import start_room_emotes
         from world.tutorial import announce_tannoy
 
         announce_tannoy(self)
+        start_room_emotes(self)

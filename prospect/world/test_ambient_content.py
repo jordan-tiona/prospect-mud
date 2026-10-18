@@ -102,6 +102,14 @@ class ParseAmbientNPCTests(SimpleTestCase):
         self.assertEqual(content.probe_desc, "The longer probe text.")
         self.assertEqual(content.desc, "The full examine text.")
 
+    def test_emotes_are_optional(self):
+        self.assertEqual(parse_ambient_npc_text("square_elderly_kethari", _VALID_NPC).emotes, [])
+
+    def test_parses_emotes(self):
+        raw = _VALID_NPC + "\n## Emotes\n\n- The elderly Kell yawns.\n- The elderly Kell stretches.\n"
+        content = parse_ambient_npc_text("square_elderly_kethari", raw)
+        self.assertEqual(content.emotes, ["The elderly Kell yawns.", "The elderly Kell stretches."])
+
 
 class ParseAmbientObjectTests(SimpleTestCase):
     def test_parses_valid_file(self):

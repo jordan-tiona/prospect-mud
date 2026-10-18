@@ -66,13 +66,13 @@ def _name_pattern(name, anchored):
     return r"(?<!\w)" + words + r"(?!\w)"
 
 
-def _match_explicit_name(npcs, rest):
+def _match_explicit_name(npcs, rest, names=_candidate_names):
     """Matches the longest present NPC name at the start of `rest`.
 
     Longest-first so "Mara Voss" wins over "Mara" when both are valid
     candidate names for the same NPC.
     """
-    candidates = [(name, npc) for npc in npcs for name in _candidate_names(npc)]
+    candidates = [(name, npc) for npc in npcs for name in names(npc)]
     candidates.sort(key=lambda pair: -len(pair[0].split()))
     for name, npc in candidates:
         match = re.match(_name_pattern(name, anchored=True), rest, re.IGNORECASE)
@@ -103,6 +103,36 @@ def names_a_present_npc(speech, room) -> bool:
     if to_match and _match_explicit_name(npcs, to_match.group(1))[0] is not None:
         return True
     return _match_mentioned_name(npcs, speech) is not None
+
+
+_ARTICLE_RE = re.compile(r"^(?:a|an|the)\s+", re.IGNORECASE)
+
+
+def _ambient_names(npc):
+    """An ambient NPC's key is a sentence-opening phrase ("An elderly
+    Kell"), so a player can name it without the article and by any
+    trailing part: "elderly Kell", "Kell", "the courier"."""
+    names = set(_candidate_names(npc))
+    words = _ARTICLE_RE.sub("", npc.key).split()
+    names.update(" ".join(words[i:]) for i in range(len(words)))
+    return [name for name in names if name]
+
+
+def addressed_ambient_npc(speech, room):
+    """The ambient (non-talking) NPC a `say to <name>, ...` names, or
+    None (LR-LORE-0007). Only the explicit "to" form: a bare mention
+    would fire on ordinary speech ("I'm a Kell too"). Call only when
+    resolve_addressee found no talk-capable NPC."""
+    if room is None:
+        return None
+    to_match = re.match(r"^to\s+(?:the\s+)?(.*)$", speech.strip(), re.IGNORECASE | re.DOTALL)
+    if not to_match:
+        return None
+    npcs = [
+        obj for obj in room.contents
+        if inherits_from(obj, "typeclasses.npcs.NPC") and not inherits_from(obj, "typeclasses.npcs.TalkativeNPC")
+    ]
+    return _match_explicit_name(npcs, to_match.group(1), names=_ambient_names)[0]
 
 
 def resolve_addressee(speech, room, focus=None, speaker=None):

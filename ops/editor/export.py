@@ -47,6 +47,8 @@ def _talk_npc(entity_id, raw):
         attributes['desc'] = profile.desc
     if profile.probe_desc:  # `probe_desc:` metadata line, never the persona body
         attributes['probe_desc'] = profile.probe_desc
+    if profile.emotes:  # `## Emotes`, cut from the persona body (world/idle_emotes.py)
+        attributes['emotes'] = profile.emotes
     return {'key': key, 'aliases': [key.split()[0]], 'attributes': attributes}
 
 
@@ -59,8 +61,10 @@ def _with_probe(attributes, probe_desc):
 
 def _ambient_npc(entity_id, raw):
     content = parse_ambient_npc_text(entity_id, raw)
-    return {'key': content.key, 'aliases': [], 'attributes': _with_probe({'desc': content.desc}, content.probe_desc),
-            'poses': content.poses}
+    attributes = _with_probe({'desc': content.desc}, content.probe_desc)
+    if content.emotes:  # world/idle_emotes.py
+        attributes['emotes'] = content.emotes
+    return {'key': content.key, 'aliases': [], 'attributes': attributes, 'poses': content.poses}
 
 
 def _ambient_object(entity_id, raw):
@@ -84,6 +88,16 @@ def _object(entity_id, raw):
 
 
 _RESOLVERS = {'talk_npc': _talk_npc, 'ambient_npc': _ambient_npc, 'ambient_object': _ambient_object}
+_NPC_KINDS = ('talk_npc', 'ambient_npc')
+GLANCE_VALUES = {'show': True, 'hide': False}
+
+
+def _in_glance(kind, raw):
+    """Whether an object's room line shows in the arrival glance: the content
+    file's `glance: show | hide` metadata line, else the kind's default
+    (world/entity_kinds.py; LR-LORE-0005). check.py rejects any other value."""
+    value = parse_content('', raw).fields.get('glance', '').strip().lower()
+    return GLANCE_VALUES.get(value, kind.get('glance', True))
 
 
 def build_manifest(root, sector_id):
@@ -113,7 +127,10 @@ def build_manifest(root, sector_id):
     for entity_id, entity in sector['entities'].items():
         kind = kinds[entity['kind']]
         refs.add(entity['content'])
-        resolved = _RESOLVERS.get(entity['kind'], _object)(entity_id, _read(root, entity['content']))
+        raw = _read(root, entity['content'])
+        resolved = _RESOLVERS.get(entity['kind'], _object)(entity_id, raw)
+        if entity['kind'] not in _NPC_KINDS:
+            resolved['attributes']['in_glance'] = _in_glance(kind, raw)
         resolved['aliases'] = resolved['aliases'] + [a for a in entity.get('aliases', [])
                                                      if a not in resolved['aliases']]
         resolved.update(kind=entity['kind'], typeclass=kind['typeclass'], tag_category=kind['tag_category'],

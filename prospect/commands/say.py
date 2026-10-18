@@ -58,7 +58,8 @@ from world.llm_budget import (
     record_player_usage,
 )
 from world.llm_client import LLMUnavailableError, chat
-from world.npc_addressing import names_a_present_npc, present_talkative_npcs, resolve_addressee
+from world.ambient_reactions import react_to_address
+from world.npc_addressing import addressed_ambient_npc, names_a_present_npc, present_talkative_npcs, resolve_addressee
 from world.npc_memory import memory_context_for
 from world.reputation import reputation_context_for
 from world.skitters import skitter_record_context_for
@@ -977,6 +978,11 @@ class CmdSay(DefaultCmdSay):
         )
 
         if target is None:
+            # "say to <ambient NPC>, ..." gets a nonverbal reaction
+            # (world/ambient_reactions.py, LR-LORE-0007).
+            ambient = addressed_ambient_npc(self.args, caller.location)
+            if ambient is not None:
+                react_to_address(caller, ambient)
             # With two or more talk-capable NPCs present, an
             # unaddressed line that doesn't name one of them resolves
             # to ambient speech - correct per design-bible 16.5, but

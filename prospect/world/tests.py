@@ -116,6 +116,27 @@ class ParsePersonaTextTests(SimpleTestCase):
         self.assertEqual(profile.probe_desc, "A longer probe text.")
         self.assertNotIn("A longer probe text.", profile.body)
 
+    def test_emotes_default_to_empty(self):
+        self.assertEqual(parse_persona_text("test_npc", VALID_PERSONA_TEXT).emotes, [])
+
+    def test_emotes_parsed_and_cut_from_body(self):
+        # LR-LORE-0006: idle emotes are engine output and never reach a prompt.
+        with_emotes = (
+            VALID_PERSONA_TEXT
+            + "\n## Emotes\n\n- Test NPC taps the counter.\n- Test NPC yawns.\n\n## After\n\nStill persona.\n"
+        )
+        profile = parse_persona_text("test_npc", with_emotes)
+        self.assertEqual(profile.emotes, ["Test NPC taps the counter.", "Test NPC yawns."])
+        self.assertNotIn("Emotes", profile.body)
+        self.assertNotIn("taps the counter", profile.body)
+        self.assertIn("## After\n\nStill persona.", profile.body)
+        self.assertIn("You are a test NPC.", profile.body)
+
+    def test_emotes_section_at_end_of_file(self):
+        profile = parse_persona_text("test_npc", VALID_PERSONA_TEXT + "\n## Emotes\n\n- Test NPC yawns.\n")
+        self.assertEqual(profile.emotes, ["Test NPC yawns."])
+        self.assertNotIn("yawns", profile.body)
+
 
 class RealPersonaFileTests(SimpleTestCase):
     """Parses the actual authored persona files in content/npcs/."""
