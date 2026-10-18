@@ -495,20 +495,20 @@
     },
     {
       "aliases": [
-        "n"
+        "s"
       ],
       "from": "old_quarter_street",
-      "id": "old_quarter_street__north",
-      "key": "north",
+      "id": "old_quarter_street__south",
+      "key": "south",
       "to": "daven_office"
     },
     {
       "aliases": [
-        "s"
+        "n"
       ],
       "from": "daven_office",
-      "id": "daven_office__south",
-      "key": "south",
+      "id": "daven_office__north",
+      "key": "north",
       "to": "old_quarter_street"
     }
   ],
@@ -517,6 +517,11 @@
     "civic_office": {
       "desc": "The office is plainly furnished, with a public counter, several seats for waiting visitors, and notices arranged where they can be read without crowding the staff. Light falls evenly across the room, picking out the worn edges of the counter and the scuffed floor beneath the chairs.\n\nMost conversations are brief and matter-of-fact. Someone asks for information; someone else checks a document or explains where a request should go. Beyond the counter, the work area is busy without being especially noisy.\n\nThere's little ceremony to the place. Elsewhere's government is part of everyday life here, encountered in questions about public services and shared concerns rather than in speeches. Iri Vael volunteers here.",
       "glance": "Quiet voices and the rustle of papers fill a bright public office. A short row of waiting seats faces the service counter, where residents bring the ordinary questions and problems of neighborhood life.",
+      "map": {
+        "x": -1,
+        "y": 0,
+        "z": 0
+      },
       "tag_category": "phase1_neighborhood",
       "title": "Civic Office",
       "typeclass": "typeclasses.rooms.Room"
@@ -524,6 +529,11 @@
     "corner_cafe": {
       "desc": "The Corner Café is small enough that the counter is visible from almost every seat. The tables don't quite match, and the edges of a few chairs have been rubbed smooth by frequent use. Cups and neatly stacked dishes occupy shelves behind the counter.\n\nA window looks out onto Old Quarter Square. People at the tables talk over drinks, read, or simply watch the movement outside. There's a little noise from the equipment behind the counter, but it rarely rises above the conversation.\n\nThe room feels more useful than fashionable: somewhere to sit for a few minutes, meet a neighbor, or stay longer than intended. Mara Voss runs the place.",
       "glance": "The smell of something freshly brewed meets you at the door. Cups clink behind a low counter, and the conversation around a handful of occupied tables settles into a comfortable, uneven murmur.",
+      "map": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
       "tag_category": "phase1_neighborhood",
       "title": "Corner Café",
       "typeclass": "typeclasses.rooms.Room"
@@ -531,6 +541,11 @@
     "daven_office": {
       "desc": "Daven's office is a small room with a desk, a couple of chairs for visitors, and a low shelf crowded with information sheets about the surrounding neighborhood. The furniture is sturdy rather than new. A few corners of the desk have been worn smooth by use.\n\nNotes and service information are arranged within easy reach of the person behind the desk. There's enough space to sit and talk without feeling hurried, though the room has plainly been organized for practical conversations rather than long meetings.\n\nThe doorway opens back toward the street. It feels like an ordinary place to ask for help: somewhere a newcomer can walk in with a question, leave with a suggestion, and return when another question comes up.",
       "glance": "A small desk faces two mismatched visitor chairs. Papers and local information sheets share space along its edge, and the room has the comfortable, slightly busy feel of an office that sees regular visitors.",
+      "map": {
+        "x": -1,
+        "y": -2,
+        "z": 0
+      },
       "tag_category": "phase1_neighborhood",
       "title": "Daven's Office",
       "typeclass": "typeclasses.rooms.Room"
@@ -538,6 +553,11 @@
     "lift_concourse": {
       "desc": "The concourse is a broad, practical space at the foot of the lifts that connect Elsewhere's inhabited surface to the central axis. Its floor is scuffed by years of traffic, and brighter replacement panels interrupt the older wall coverings. A steady hum comes from machinery behind the lift doors.\n\nArrivals pause to check their belongings or consult a directory, while others pass through without slowing. The air carries a faint smell of warm machinery beneath the ordinary scents of a busy public passage.\n\nAn open passage leads toward Old Quarter Square, where the tighter streets and older buildings begin. This is a place people pass through on their way somewhere else, though there's almost always someone waiting.",
       "glance": "A low mechanical hum fills the concourse as passengers emerge from the lifts. Footsteps and rolling cases echo off the hard floor, mingling with voices calling greetings or working out where to go next.",
+      "map": {
+        "x": 1,
+        "y": 1,
+        "z": 0
+      },
       "tag_category": "phase1_neighborhood",
       "title": "Lift Concourse",
       "typeclass": "typeclasses.rooms.Room"
@@ -545,6 +565,11 @@
     "maintenance_workshop": {
       "desc": "Workbenches line the walls, crowded with tools, tagged components, and pieces of equipment in various stages of repair. A few cabinets stand open, their shelves more orderly than the benches. Old scuffs and newer patches mark the floor near the heavier workstations.\n\nThe workshop serves the aging infrastructure of the Old Quarter. Nothing here is arranged for visitors, although a clear strip of floor leaves room to move between the benches. A steady mechanical hum comes from a test unit, interrupted now and then by a brief click or rattle.\n\nTarin Os works here. Most of what fills the room would make immediate sense to him; to anyone else, it takes a closer look to tell which parts belong together.",
       "glance": "A small motor whines on a test bench, rising briefly above the clink of metal tools. The air smells faintly of warm machinery, and most of the available work surfaces are occupied by equipment awaiting attention.",
+      "map": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
       "tag_category": "phase1_neighborhood",
       "title": "Maintenance Workshop",
       "typeclass": "typeclasses.rooms.Room"
@@ -552,6 +577,11 @@
     "medical_bay": {
       "desc": "The medical bay is a practical, softly lit room with recovery couches arranged near a bank of monitoring equipment. A few enclosed cryogenic units stand along one wall, their surfaces marked with small status lights. The air is cool and clean, carrying a faint antiseptic smell.\n\nMost of the equipment operates quietly. A display changes as readings are checked, and a low mechanical hum comes from behind a wall panel. There is space beside the couches for a technician to work without crowding a patient who has just awakened.\n\nA doorway leads out toward the public arrival area. Nothing about the room seems arranged to impress anyone; it is simply a place meant to get people safely back on their feet.",
       "glance": "A soft electronic pulse sounds beside the recovery couches. Muted light falls across clean surfaces and a row of enclosed cryogenic units, while quiet equipment hums somewhere behind the walls.",
+      "map": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
       "tag_category": "phase1_neighborhood",
       "title": "Medical Bay",
       "typeclass": "typeclasses.rooms.Room"
@@ -559,6 +589,11 @@
     "old_quarter_square": {
       "desc": "The square is surrounded by aging storefronts and residential buildings, their facades showing generations of repairs and additions. Newer construction juts above older structures, and the paving beneath your feet has been worn smooth by years of foot traffic.\n\nA small café occupies one of the surrounding storefronts. Other entrances and passages lead into neighboring buildings, while the murmur of conversation and the occasional rattle of a delivery cart carry across the square.\n\nA scatter of weathered benches lines the square's low planting beds, their seats polished smooth by years of use. The beds themselves have been let go, overgrown and showing their neglect as plainly as everything else here shows its age.\n\nAbove the uneven roofline, distant neighborhoods curve upward along the opposite side of Elsewhere's cylindrical interior. The enormous artificial light running along the central axis illuminates the scene, a familiar sight to those who've spent their lives here.",
       "glance": "A modest square opens between the Old Quarter's closely packed buildings. Worn paving, scattered benches, and planted beds fill the space, while Elsewhere's immense cylindrical interior curves into view above the rooftops.",
+      "map": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
       "tag_category": "phase1_neighborhood",
       "title": "Old Quarter Square",
       "typeclass": "typeclasses.rooms.Room"
@@ -566,6 +601,11 @@
     "old_quarter_street": {
       "desc": "The street narrows as it leaves Old Quarter Square, passing buildings whose ground floors have been altered for different uses over the years. Some windows are shaded; others look onto small shops or the entrances to apartments. Repairs of different ages interrupt the wall panels and paving.\n\nThere is less foot traffic here than in the square, though voices occasionally drift from an open doorway. The buildings stand close enough that the axial light is visible only in pieces above the roofs.\n\nOne of the quieter entrances has a simple nameplate for **Daven Varek**. There is nothing grand about it, and the street continues to feel like an ordinary part of the Old Quarter rather than a special route for new arrivals.",
       "glance": "The open noise of the square fades along a narrower street lined with patched storefronts and residential doors. Footsteps carry between the close buildings, and a modest nameplate marks an office farther along.",
+      "map": {
+        "x": -1,
+        "y": -1,
+        "z": 0
+      },
       "tag_category": "phase1_neighborhood",
       "title": "Old Quarter Street",
       "typeclass": "typeclasses.rooms.Room"
@@ -573,6 +613,11 @@
     "residential_courtyard": {
       "desc": "The courtyard is a shared space between closely built residential blocks. A narrow path crosses worn paving, passing low planting beds and a few seats tucked against the walls. Some windows stand open; others are shaded or crowded with small household things.\n\nHere, the Old Quarter feels less hurried. The sounds of the square are still present, but softened by the surrounding buildings. Every so often a door opens onto the courtyard, or voices carry briefly from an upper level before fading again.\n\nRepairs and alterations have left the walls uneven in color and finish. None of it seems arranged to impress visitors. It's simply a place where people live, with a little room between their doors.",
       "glance": "The noise of the square falls away in a courtyard enclosed by apartment walls. Leaves stir above a narrow path, and a faint exchange of voices drifts down from the surrounding windows.",
+      "map": {
+        "x": 0,
+        "y": -1,
+        "z": 0
+      },
       "tag_category": "phase1_neighborhood",
       "title": "Residential Courtyard",
       "typeclass": "typeclasses.rooms.Room"
@@ -609,6 +654,6 @@
     "content/rooms/old_quarter_square.md": "ffe14d1602989346e6e39538427f41b0b66d97451ac1572a41ba78781267b9f4",
     "content/rooms/old_quarter_street.md": "bb124de63b81d54211ce0dc05225d455f99a96e4bd69c552d1865db5966d4efa",
     "content/rooms/residential_courtyard.md": "4836c593f5608ec0735167b5ea988eb93120d906bd93a51d5563266df8145b2e",
-    "sectors/elsewhere/sector.json": "d9224fde53cfdf8080ca674b6a04f30b040ef3a4b007237aaa611348ae1803ca"
+    "sectors/elsewhere/sector.json": "f9b8d290f920180ce5e2417396dba504b3abf177bb6aa1aaba64ecdee477589d"
   }
 }

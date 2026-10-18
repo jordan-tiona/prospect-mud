@@ -57,11 +57,11 @@ class BuildRoomsTests(TestCase):
         self.assertEqual(_exit_keys(lift, medical_bay), ["up"])
         self.assertEqual(_exit_keys(medical_bay, lift), ["down"])
 
-    def test_street_to_davens_office_is_north(self):
+    def test_street_to_davens_office_is_south(self):
         street = self.rooms["old_quarter_street"]
         office = self.rooms["daven_office"]
-        self.assertEqual(_exit_keys(street, office), ["north"])
-        self.assertEqual(_exit_keys(office, street), ["south"])
+        self.assertEqual(_exit_keys(street, office), ["south"])
+        self.assertEqual(_exit_keys(office, street), ["north"])
 
     def test_original_four_cardinal_spokes_unchanged(self):
         square = self.rooms["old_quarter_square"]
@@ -74,4 +74,4 @@ class BuildRoomsTests(TestCase):
         from world.actions import _find_exit_path
 
         path = _find_exit_path(self.rooms["medical_bay"], self.rooms["daven_office"])
-        self.assertEqual(path, ["down", "southwest", "southwest", "north"])
+        self.assertEqual(path, ["down", "southwest", "southwest", "south"])

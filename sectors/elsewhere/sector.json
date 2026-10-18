@@ -222,20 +222,21 @@
     },
     {
       "aliases": [
-        "n"
+        "s"
       ],
       "from": "old_quarter_street",
-      "key": "north",
+      "key": "south",
       "return": {
         "aliases": [
-          "s"
+          "n"
         ],
-        "key": "south"
+        "key": "north"
       },
       "to": "daven_office"
     }
   ],
   "format_version": 1,
+  "map_anchor": "old_quarter_square",
   "notes": "",
   "rooms": {
     "civic_office": {
@@ -257,8 +258,8 @@
     "daven_office": {
       "content": "rooms/daven_office.md",
       "editor": {
-        "x": -960,
-        "y": 0
+        "x": -560,
+        "y": 860
       },
       "title": "Daven's Office"
     },

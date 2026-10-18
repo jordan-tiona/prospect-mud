@@ -40,8 +40,8 @@ class BuildSignpostTests(TestCase):
         signpost = build()
         desc = signpost.get_display_desc(None)
         self.assertIn("Daven's office", desc)
-        # square -> street (southwest) -> office (north), per world.build_rooms
-        self.assertIn("southwest, then north", desc)
+        # square -> street (southwest) -> office (south), per world.build_rooms
+        self.assertIn("southwest, then south", desc)
 
     def test_route_breaks_if_the_real_exits_change(self):
         # Prove the route is computed from live exits, not hardcoded:
