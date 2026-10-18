@@ -10,7 +10,7 @@ Run with:
 
 from django.test import SimpleTestCase
 
-from world.emotes import format_emote, parse_reply
+from world.emotes import first_name, format_emote, parse_reply
 from world.lore_store import LoreNotFoundError, get_lore_chunk, get_scoped_lore
 from world.npc_profile import NPCProfile, PersonaParseError, parse_persona, parse_persona_text
 from world.output_check import is_flagged
@@ -351,3 +351,8 @@ class EmoteSplitTests(SimpleTestCase):
             format_emote("Iri Vael", "adjusts my badge", pronouns="xe/xem"),
             "|xIri Vael adjusts my badge.|n",
         )
+
+    def test_first_name_is_the_first_word_of_the_key(self):
+        # LR-LORE-0009: emotes start with the first name, like idle emotes.
+        self.assertEqual(first_name("Mara Voss"), "Mara")
+        self.assertEqual(first_name("Given"), "Given")

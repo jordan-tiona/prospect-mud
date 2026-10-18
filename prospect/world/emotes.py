@@ -118,9 +118,17 @@ def name_the_listener(emote_text: str, listener_name: str) -> str:
     return _LISTENER_RE.sub(_replace, emote_text)
 
 
+def first_name(npc_key: str) -> str:
+    """'Mara Voss' -> 'Mara': the name an NPC's emotes start with
+    (LR-LORE-0009), the same first word the sector export gives a talk
+    NPC as its alias (ops/editor/export.py)."""
+    return npc_key.split()[0] if npc_key.strip() else npc_key
+
+
 def format_emote(npc_key: str, emote_text: str, pronouns: str = "") -> str:
     """One emote's text as a third-person action line, e.g. 'smiles
-    and nods' -> 'Mara Voss smiles and nods.' Colored bright gray
+    and nods' -> 'Mara smiles and nods.' Callers pass first_name(key),
+    to match the idle emotes (LR-LORE-0009). Colored bright gray
     (Evennia's |x), per the project owner's color scheme for actions.
 
     `pronouns` (e.g. "she/her", from the NPC's persona file) fixes up

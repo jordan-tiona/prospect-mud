@@ -345,7 +345,7 @@ class SayCommandTests(_SayTestBase):
         self._say("to Mara, hello there")
 
         self.assertTrue(any('Mara Voss says to Tester, |c"Afternoon."|n' in m for m in heard))
-        self.assertTrue(any("Mara Voss puts a cold beer in front of Tester." in m for m in heard))
+        self.assertTrue(any("|xMara puts a cold beer in front of Tester." in m for m in heard))
         self.assertFalse(any("says to you" in m for m in heard))
         self.assertTrue(any("Mara Voss says to you" in m for m in self.messages))
 
@@ -683,7 +683,7 @@ class SayCommandTests(_SayTestBase):
         emote_index = next(
             i
             for i, m in enumerate(self.messages)
-            if m.lstrip("\n") == "|xMara Voss smiles and nods.|n"
+            if m.lstrip("\n") == "|xMara smiles and nods.|n"
         )
         dialogue_index = next(i for i, m in enumerate(self.messages) if "Mara Voss says" in m)
         self.assertLess(emote_index, dialogue_index)

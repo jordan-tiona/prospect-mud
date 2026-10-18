@@ -49,7 +49,7 @@ from world.actions import (
 from world.appearance import appearance_context_for
 from world.commitments import commitment_context_for
 from world.conversation_log import log_turn
-from world.emotes import format_emote, name_the_listener, parse_reply
+from world.emotes import first_name, format_emote, name_the_listener, parse_reply
 from world.llm_budget import (
     call_cost_usd,
     global_daily_limit_reached,
@@ -361,13 +361,13 @@ def _render_reply_segments(target, caller, segments, pronouns, lead_blank=False)
         if kind == "dialogue":
             caller.msg(f'{prefix}{target.key} says to you, |c"{content}"|n')
         else:
-            caller.msg(prefix + format_emote(target.key, content, pronouns))
+            caller.msg(prefix + format_emote(first_name(target.key), content, pronouns))
         for obj in bystanders:
             name = caller.get_display_name(obj)
             if kind == "dialogue":
                 text = f'{target.key} says to {name}, |c"{content}"|n'
             else:
-                text = format_emote(target.key, name_the_listener(content, name), pronouns)
+                text = format_emote(first_name(target.key), name_the_listener(content, name), pronouns)
             obj.msg(prefix + text, from_obj=target)
 
 
