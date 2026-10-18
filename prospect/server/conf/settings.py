@@ -31,8 +31,11 @@ from evennia.settings_default import *
 # Evennia base server config
 ######################################################################
 
-# This is the name of your game. Make it catchy!
-SERVERNAME = "prospect"
+# The game is "Prospect"; "Elsewhere" is the initial playtest release's
+# subtitle (LR-LORE-0004). Drop the subtitle once a second release exists.
+# Display-only: feeds the MSSP NAME field, the webclient/website title and
+# the (currently unshown) stock connection screen; nothing keys off it.
+SERVERNAME = "Prospect: Elsewhere"
 
 
 ######################################################################
