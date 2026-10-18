@@ -437,6 +437,24 @@ class ParcelFulfillmentTests(TestCase):
         self.assertFalse(result.ok)
         self.assertEqual(get_state_summary(self.actor, PARCEL_TYPE), "open")
 
+    def test_fulfilled_errand_cannot_be_offered_again(self):
+        # Live 2026-10-18: after `forget veska`, Veska re-offered the
+        # delivered parcel and the engine let it through.
+        propose_commitment(self.actor, PARCEL_TYPE)
+        accept_commitment(self.actor, PARCEL_TYPE)
+        fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER, True)
+        result = propose_commitment(self.actor, PARCEL_TYPE)
+        self.assertFalse(result.ok)
+        self.assertIn("already done this errand", result.reason)
+        self.assertEqual(get_state_summary(self.actor, PARCEL_TYPE), "fulfilled")
+
+    def test_reset_makes_a_fulfilled_errand_offerable_again(self):
+        propose_commitment(self.actor, PARCEL_TYPE)
+        accept_commitment(self.actor, PARCEL_TYPE)
+        fulfill_commitment_with_precondition(self.actor, PARCEL_TYPE, PARCEL_HOLDER, True)
+        reset_commitment(self.actor, PARCEL_TYPE)
+        self.assertTrue(propose_commitment(self.actor, PARCEL_TYPE).ok)
+
     def test_true_precondition_fulfills(self):
         propose_commitment(self.actor, PARCEL_TYPE)
         accept_commitment(self.actor, PARCEL_TYPE)

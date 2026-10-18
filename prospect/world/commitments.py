@@ -505,6 +505,20 @@ def propose_commitment(actor, commitment_type: str) -> LifecycleResult:
         )
     if _find_open_commitment(actor, commitment_type):
         return LifecycleResult(False, reason="an open commitment of this type already exists")
+    if get_fulfilled_commitment(actor, commitment_type) is not None:
+        # Errands are one-time (no scenario is repeatable yet; the
+        # playtest spec leaves that as a future design question). Seen
+        # live 2026-10-18: with its history cleared by `forget`, Veska's
+        # model re-offered the parcel despite "fulfilled" in its engine
+        # state, and the call applied. Only resetcommitment makes an
+        # errand offerable again. Worded as an instruction (guideline #20).
+        return LifecycleResult(
+            False,
+            reason=(
+                "they've already done this errand - don't offer it again or describe it as "
+                "still needing doing; just respond to whatever they actually said"
+            ),
+        )
     offers = _offers(actor)
     if offers.get(commitment_type):
         return LifecycleResult(False, reason="an offer of this type is already pending")
