@@ -5,7 +5,7 @@ npc_id: iri_vael
 room: Civic Office
 species: Revari
 pronouns: she/her
-prompt_version: 26
+prompt_version: 27
 status: Provisional
 approval: Approved
 knowledge_scope (bible sections, Established content only):

@@ -18,6 +18,8 @@ Run with:
     evennia test commands
 """
 
+import json
+import time
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
@@ -38,6 +40,7 @@ from world.emotes import name_the_listener
 from world.llm_budget import call_cost_usd
 from world.llm_client import LLMReply, LLMUnavailableError
 from world.npc_profile import parse_persona
+from world.overheard import OVERHEARD_SECONDS
 
 
 def _reply(text, tool_calls=None):
@@ -334,6 +337,60 @@ class SayCommandTests(_SayTestBase):
         self.assertTrue(any("Mara Voss puts a cold beer in front of Tester." in m for m in heard))
         self.assertFalse(any("says to you" in m for m in heard))
         self.assertTrue(any("Mara Voss says to you" in m for m in self.messages))
+
+    def _system_notes(self, mock_chat):
+        messages = mock_chat.call_args.args[0]
+        return [m["content"] for m in messages if m["role"] == "system"]
+
+    @patch("commands.say.chat")
+    def test_a_bystander_prompt_names_who_the_npc_was_talking_to(self, mock_chat):
+        mock_chat.return_value = _reply('"Afternoon." *taps your shoulder*')
+        other = self._add_other_player()
+        self._say("to Mara, my secret is the password swordfish")
+
+        other.execute_cmd("say to Mara, what did you tell Tester?")
+
+        notes = self._system_notes(mock_chat)
+        overheard = [n for n in notes if "while this person was nearby" in n]
+        self.assertEqual(len(overheard), 1)
+        self.assertIn("talking with Tester", overheard[0])
+        # Names only: nothing either side said reaches another player's prompt.
+        prompt = json.dumps(mock_chat.call_args.args[0])
+        self.assertNotIn("swordfish", prompt)
+        self.assertNotIn("Afternoon", prompt)
+
+    @patch("commands.say.chat")
+    def test_the_speaker_own_prompt_gets_no_overheard_note(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._add_other_player()
+        self._say("to Mara, hello")
+        self._say("to Mara, how's business?")
+
+        self.assertFalse(any("while this person was nearby" in n for n in self._system_notes(mock_chat)))
+
+    @patch("commands.say.chat")
+    def test_someone_who_arrives_later_gets_no_overheard_note(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._add_other_player()
+        self._say("to Mara, hello")
+        latecomer = create_object("typeclasses.characters.Character", key="Late", location=self.cafe)
+        latecomer.msg = lambda text="", **kw: None
+
+        latecomer.execute_cmd("say to Mara, what did you tell Tester?")
+
+        self.assertFalse(any("while this person was nearby" in n for n in self._system_notes(mock_chat)))
+
+    @patch("commands.say.chat")
+    def test_the_overheard_note_expires(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        other = self._add_other_player()
+        self._say("to Mara, hello")
+
+        later = time.time() + OVERHEARD_SECONDS + 1
+        with patch("world.overheard.time.time", return_value=later):
+            other.execute_cmd("say to Mara, what did you tell Tester?")
+
+        self.assertFalse(any("while this person was nearby" in n for n in self._system_notes(mock_chat)))
 
     @patch("commands.say.chat")
     def test_npc_reply_is_preceded_by_a_blank_line(self, mock_chat):

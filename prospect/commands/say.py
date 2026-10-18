@@ -58,6 +58,7 @@ from world.reputation import reputation_context_for
 from world.skitters import skitter_record_context_for
 from world.npc_profile import parse_persona
 from world.output_check import is_flagged
+from world.overheard import overheard_context_for, record_overheard
 from world.prompt_builder import build_system_prompt
 from world.speech_format import normalize_speech
 from world.stealth import reveal_for_speech
@@ -320,6 +321,8 @@ def _render_reply_segments(target, caller, segments, pronouns, lead_blank=False)
         obj for obj in (caller.location.contents if caller.location else [])
         if obj not in (caller, target)
     ]
+    if segments:
+        record_overheard(target, caller, bystanders)
     for i, (kind, content) in enumerate(segments):
         prefix = "\n" if lead_blank and i == 0 else ""
         if kind == "dialogue":
@@ -772,6 +775,9 @@ def engage_npc(target, caller, message):
     skitter_record_context = skitter_record_context_for(profile.actions, caller)
     if skitter_record_context:
         messages.append({"role": "system", "content": skitter_record_context})
+    overheard_context = overheard_context_for(target, caller)
+    if overheard_context:
+        messages.append({"role": "system", "content": overheard_context})
     messages += history + [_player_turn(message)]
 
     log_context = {
