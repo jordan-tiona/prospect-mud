@@ -53,9 +53,19 @@ def hide(character):
     character.locks.add(HIDDEN_LOCKS)
 
 
+# Owner's wording (2026-10-17): announced to the room when staff become
+# visible, in the shape of the movement lines (typeclasses/characters.py).
+REVEAL_ANNOUNCEMENT = "{object} arrives from the ether."
+
+
 def reveal(character):
+    was_hidden = is_hidden(character)
     character.db.stealth = False
     character.locks.add(VISIBLE_LOCKS)
+    if was_hidden and character.location:
+        character.location.msg_contents(
+            REVEAL_ANNOUNCEMENT, exclude=[character], from_obj=character, mapping={"object": character}
+        )
 
 
 def reveal_for_speech(character):
