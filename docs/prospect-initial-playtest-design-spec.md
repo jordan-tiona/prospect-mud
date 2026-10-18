@@ -1,4 +1,4 @@
-# Prospect and the Constellation — Initial Playtest Design Spec
+# Prospect: Elsewhere — Initial Playtest Design Spec
 
 **Status:** Draft for project-owner approval and Claude Code engineering review  
 **Date:** 2026-10-14  
