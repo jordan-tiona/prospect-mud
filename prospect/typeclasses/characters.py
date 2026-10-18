@@ -122,6 +122,9 @@ class Character(ObjectParent, DefaultCharacter):
 
         # world/idle_emotes.py holds its beats just after an arrival glance.
         self.ndb.arrived_at = time.time()
+        # A new visit: ambient NPCs react to being addressed again
+        # (world/ambient_reactions.py).
+        self.ndb.ambient_reacted = None
         maybe_schedule_nudge(self)
         start_room_emotes(self)
 

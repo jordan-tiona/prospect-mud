@@ -198,3 +198,28 @@ def parse_ambient_object_text(object_id: str, raw: str) -> AmbientObjectContent:
         bible_refs=bible_refs,
         probe_desc=sections.get("Probe Description") or None,
     )
+
+
+ADDRESSED_RESPONSES_FILE = "ambient/addressed_responses.md"
+
+
+def parse_addressed_responses_text(raw: str) -> list:
+    """The `## Responses` lines of content/ambient/addressed_responses.md
+    (LR-LORE-0007), each with a `{name}` slot. Empty unless the file is
+    `approval: Approved`: like the sector export, nothing Draft reaches
+    the game."""
+    comment_match = _METADATA_COMMENT_RE.search(raw)
+    fields = _parse_metadata(comment_match.group(1)) if comment_match else {}
+    if fields.get("approval") != "Approved":
+        return []
+    sections = _split_h2_sections(strip_html_comments(raw))
+    return _parse_bullets(sections.get("Responses", ""))
+
+
+def addressed_responses() -> list:
+    """parse_addressed_responses_text() of the real file, or [] if it's missing."""
+    try:
+        raw = read_content_file(ADDRESSED_RESPONSES_FILE)
+    except FileNotFoundError:
+        return []
+    return parse_addressed_responses_text(raw)
