@@ -81,6 +81,9 @@ class Character(ObjectParent, DefaultCharacter):
     into if their next command happens much later, or isn't a move at
     all.
 
+    Also sends GMCP `Room.Info` after each move and on puppet, plus
+    `Char.Status` on puppet (world/gmcp.py, docs/gmcp.md).
+
     Also where staff stealth (world/stealth.py) takes effect on the
     receiving end: `msg` drops anything a hidden character broadcast
     unless this character is staff.
@@ -117,6 +120,7 @@ class Character(ObjectParent, DefaultCharacter):
     def at_post_move(self, source_location, move_type="move", **kwargs):
         if self.location.access(self, "view"):
             self.msg(text=(self.at_look(self.location, glance=True), {"type": "look"}))
+        from world.gmcp import send_room_info
         from world.idle_emotes import start_room_emotes
         from world.tutorial import maybe_schedule_nudge
 
@@ -127,6 +131,7 @@ class Character(ObjectParent, DefaultCharacter):
         self.ndb.ambient_reacted = None
         maybe_schedule_nudge(self)
         start_room_emotes(self)
+        send_room_info(self)
 
         session_id = session_id_for(self)
         if session_id:
@@ -161,8 +166,11 @@ class Character(ObjectParent, DefaultCharacter):
         # anyone is logged in to it, so at_post_move's tannoy goes
         # nowhere; repeat it now that the player is actually here
         # (world/tutorial.py announce_tannoy).
+        from world.gmcp import send_char_status, send_room_info
         from world.idle_emotes import start_room_emotes
         from world.tutorial import announce_tannoy
 
         announce_tannoy(self)
         start_room_emotes(self)
+        send_char_status(self)
+        send_room_info(self)
