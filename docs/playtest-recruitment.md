@@ -76,7 +76,38 @@ Include two or three Mudlet crops *inline in a text post* (not an image post). E
 
 Rules: unedited and typical, not best-ever; player commands visible; 8–15 lines per crop with font bumped for phone legibility; other testers' names hidden unless agreed; plain-text transcript under each image for screen-reader users. For Discord, attach one or two crops to the short pitch.
 
-TODO after the owner's own playtesting: have Claude mine the conversation logs for exchanges fitting slots 1–3, then recreate and screenshot them.
+### 4.1 Candidates from the conversation logs (mined 2026-10-18)
+
+Source: `prospect/server/logs/conversations.jsonl`, 190 conversations and 947 turns, 2026-10-11 to 2026-10-18. Times are UTC. The log holds only the NPC exchanges, not room text, engine action lines or the player's command echo, so **every shot is a recreation in the client**, not a crop of a transcript. Anything before 2026-10-16 uses the old people names and the old errand owners, so only the wording is reusable from those.
+
+**Slot 1: off-script question, in character**
+
+- **Veska, 2026-10-17 08:00.** After one-line answers to "Who are you?" and "What do you do?", the player says "You're a woman of few words aren't you." Veska: *"Procedures don't usually call for verbosity."* \*adjusts her glasses\* *"Efficiency is the point."* The best single character line in the logs; the terse set-up lines make the crop. Recreate: `say` the three questions in that order.
+- **Daven, 2026-10-15 01:34.** "Is it Earth?" → *"I've never heard anyone call it Earth around here. People mostly just say the planet when they need to."* Then "I think I heard someone call it Prospect" → he confirms. Admits ignorance of a word outside the setting without inventing. Caveat: one turn earlier he claimed not to know the planet's name at all, which the common-knowledge sheet contradicts; recapture and see whether he names Prospect straight away.
+- **Given Marr, 2026-10-17 07:47.** Wake-up sequence: "Where is... Here?" / "Elsewhere?" / "Really, orbital? Orbiting what?", three escalating answers ending at the Constellation orbiting Prospect. Reads as the first minute of play. About eight lines.
+- **Iri, 2026-10-17 07:55 to 07:57.** "What is a generation ship?" → "who are these peoples?" → "Engineered peoples? What does that mean?" → "Which of the seven peoples are you?" → *"I'm a Revari..."* Backs the claim that each NPC knows what someone in their position would know. Too long for one crop; take the last two. Caveat: §5 deliberately omits the people names, so decide whether a crop may show them.
+- Second tier: Mara on Veska, 2026-10-17 08:06 ("Veska is an odd duck." → *"Yeah, Veska can be a bit... particular about her files. But she knows her stuff..."*), cross-NPC awareness. Given Marr to a tester, 2026-10-15 20:32 ("What is my role." → he says he has no information about why they were in cryosleep and points them to Daven).
+
+**Slot 2: validated action with the engine's own line**
+
+- **Mara, 2026-10-17 05:00.** "Can I have the module?" → *"Here you go."* \*hands over the faulty module\* *"And something hot while you're at it."* Two validated actions in one turn; the engine prints the hand-over and the drink as separate lines under her speech. Follow with `inventory` so the module shows in the crop.
+- **Tarin, 2026-10-15 05:31.** "Here's the module." → *"Swapped it out. This one should keep the temperature steady now."* with the engine line that he inspects it and hands over a working replacement. `inventory` before and after shows the swap.
+- **Tarin, 2026-10-16 17:04.** Parcel in one turn: "Hey Tarin, Mara got this package by mistake, it's addressed to you." → *"Thanks for bringing this over."* \*takes the parcel\*. Now Veska's errand, so recreate from the Civic Office.
+
+**Slot 3: a claim checked against real state**
+
+Nobody in the logs has tried a flat lie such as "I already fixed it", so this slot has no exemplar and must be captured deliberately. Nearest real cases:
+
+- **Tarin, 2026-10-17 17:20.** "Got 'em." → *"Thanks for letting me know. The count isn't up to target yet, so if you see any more, feel free to keep at it."* Later, "Is that enough skitters now?" → *"Looks like that's enough."* He did not take the player's word; the count comes from the engine's required-kills check. Caveat: in between he said there was "no fixed number", smoothing over the target he had just cited. Crop the two report turns only.
+- **Tarin, 2026-10-18 04:37 (also 2026-10-17 04:59).** Player arrives without the module: "Mara's heating unit is out, she thinks it's this module." → *"I don't have the module here to inspect yet. You might want to bring it over when you have it on hand."* Reproducible: accept Mara's errand, leave the module behind, go to Tarin.
+- **Mara, 2026-10-17 05:36.** After the errand is done, "I wouldn't mind taking it to him." → *"Thanks, but someone already took care of that."* \*smiles\* State persists after completion, but it needs context to read well.
+- To capture: with Mara's faulty module in hand and no visit to Tarin, tell Mara "Tarin swapped it, here's the new one." The outcome is not in any log, which is exactly why it should be tried before posting.
+
+**Slot 4: two players, one NPC**
+
+- **Mara, 2026-10-18 04:37.** A second player asks "What were you talking to Guruth about?" → *"Guruth and I were just chatting about something that doesn't really concern you."* Pressed ("That's kind of rude"): *"Look, this is my café and I run it how I like. I'm not going to share private bits from another conversation. Let's keep it civil, alright?"* Shows per-player conversations staying private. Caveat: two earlier tries in the same session went worse (once she invented a topic, once she misgendered the other player), so it is not reliable; if used, say so in the post or leave it out.
+
+**Not a listed slot, worth considering:** Tarin, 2026-10-17 16:58, in a fresh conversation: "Hey Tarin, what race am I? I forgot." → *"You're Drask, like me."* \*nods briefly\* *"At least, that's what I remember you telling me."* Backs persistent characters and shows him attributing the fact to the player rather than asserting it. Caveat: the stored fact came from PF-0004 (he recorded it from a question, not a statement), so fix that first, then recapture.
 
 ## 5. Pitch drafts
 
