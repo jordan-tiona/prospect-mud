@@ -16,6 +16,38 @@ from world.stealth import is_hidden, is_staff, suppressed_for
 
 from .objects import ObjectParent, indent_paragraphs
 
+# Movement lines (owner, 2026-10-17), instead of Evennia's "X is leaving
+# <room>, heading for <room>." Keyed by the exit's direction: the one
+# taken when leaving, the one leading back when arriving.
+_COMPASS = {"north", "south", "east", "west", "northeast", "northwest", "southeast", "southwest"}
+_LEAVE_OTHER = {"up": "heads up", "down": "heads down", "in": "heads inside", "out": "heads outside"}
+_ARRIVE_OTHER = {"up": "from above", "down": "from below", "in": "from inside", "out": "from outside"}
+
+
+def leave_message(direction: str) -> str:
+    if direction in _COMPASS:
+        return f"{{object}} leaves to the {direction}."
+    if direction in _LEAVE_OTHER:
+        return f"{{object}} {_LEAVE_OTHER[direction]}."
+    return "{object} leaves."
+
+
+def arrive_message(direction_back: str) -> str:
+    if direction_back in _COMPASS:
+        return f"{{object}} arrives from the {direction_back}."
+    if direction_back in _ARRIVE_OTHER:
+        return f"{{object}} arrives {_ARRIVE_OTHER[direction_back]}."
+    return "{object} arrives."
+
+
+def _exit_key_between(room, destination) -> str:
+    if room is None or destination is None:
+        return ""
+    for obj in room.contents:
+        if obj.destination is destination:
+            return obj.key.lower()
+    return ""
+
 
 class Character(ObjectParent, DefaultCharacter):
     """
@@ -69,6 +101,16 @@ class Character(ObjectParent, DefaultCharacter):
         if looker is not None and looker is not self and looker.location and is_hidden(self) and is_staff(looker):
             name += " |x(hidden)|n"
         return name
+
+    def announce_move_from(self, destination, msg=None, mapping=None, move_type="move", **kwargs):
+        if msg is None:
+            msg = leave_message(_exit_key_between(self.location, destination))
+        super().announce_move_from(destination, msg=msg, mapping=mapping, move_type=move_type, **kwargs)
+
+    def announce_move_to(self, source_location, msg=None, mapping=None, move_type="move", **kwargs):
+        if msg is None and source_location is not None:
+            msg = arrive_message(_exit_key_between(self.location, source_location))
+        super().announce_move_to(source_location, msg=msg, mapping=mapping, move_type=move_type, **kwargs)
 
     def at_post_move(self, source_location, move_type="move", **kwargs):
         if self.location.access(self, "view"):
