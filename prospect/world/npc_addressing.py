@@ -91,6 +91,19 @@ def _match_mentioned_name(npcs, speech):
     return best[1] if best else None
 
 
+def names_a_present_npc(speech, room) -> bool:
+    """True if `speech` names a present talk-capable NPC, by "to <name>"
+    or a mention - the two ways resolve_addressee lets a player choose
+    who they mean, as opposed to the lone-NPC rule or `focus`."""
+    npcs = _present_talkative_npcs(room)
+    if not npcs:
+        return False
+    to_match = re.match(r"^to\s+(.*)$", speech.strip(), re.IGNORECASE | re.DOTALL)
+    if to_match and _match_explicit_name(npcs, to_match.group(1))[0] is not None:
+        return True
+    return _match_mentioned_name(npcs, speech) is not None
+
+
 def resolve_addressee(speech, room, focus=None, speaker=None):
     """
     `room` is the room the `say` happened in, used to find present

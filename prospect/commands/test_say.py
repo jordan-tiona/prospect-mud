@@ -214,6 +214,43 @@ class SayCommandTests(_SayTestBase):
         self.assertEqual(len(hints), 2)
         self.assertIn("say to Tarin", hints[1])
 
+    @patch("commands.say.chat")
+    def test_two_npc_hint_names_someone_present_once_per_visit(self, mock_chat):
+        self.actor.location = build_rooms()["civic_office"]
+        self._say("hello")
+        self._say("anyone?")
+        hints = [m for m in self.messages if "More than one person" in m]
+        self.assertEqual(len(hints), 1)
+        self.assertTrue("say to Iri" in hints[0] or "say to Veska" in hints[0])
+        mock_chat.assert_not_called()
+
+    @patch("commands.say.chat")
+    def test_hints_stop_once_the_player_names_an_npc(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._add_other_player()
+        self._add_other_player(location=self.workshop)
+        self._say("to Mara, hello")
+        self.actor.location = self.workshop
+        self._say("hello")
+        self.assertTrue(self.actor.db.say_hint_learned)
+        self.assertFalse(any("won't assume you mean them" in m for m in self.messages))
+
+    @patch("commands.say.chat")
+    def test_implicit_addressing_does_not_count_as_naming(self, mock_chat):
+        mock_chat.return_value = _reply("Afternoon.")
+        self._say("hello")  # alone with Mara: implicit, no name used
+        self.assertFalse(self.actor.db.say_hint_learned)
+
+    @patch("commands.say.chat")
+    def test_hints_stop_after_the_limit(self, mock_chat):
+        self._add_other_player()
+        self._add_other_player(location=self.workshop)
+        for room in (self.cafe, self.workshop, self.cafe, self.workshop, self.cafe):
+            self.actor.location = room
+            self._say("hello")
+        hints = [m for m in self.messages if "won't assume you mean them" in m]
+        self.assertEqual(len(hints), 3)
+
     # -- addressing: lone player, lone NPC -----------------------------
 
     @patch("commands.say.chat")

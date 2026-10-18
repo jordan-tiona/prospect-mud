@@ -52,7 +52,7 @@ from world.llm_budget import (
     record_player_usage,
 )
 from world.llm_client import LLMUnavailableError, chat
-from world.npc_addressing import present_talkative_npcs, resolve_addressee
+from world.npc_addressing import names_a_present_npc, present_talkative_npcs, resolve_addressee
 from world.npc_memory import memory_context_for
 from world.reputation import reputation_context_for
 from world.skitters import skitter_record_context_for
@@ -779,6 +779,28 @@ def engage_npc(target, caller, message):
     deferred.addErrback(_handle_llm_error, target, caller, log_context, pending, call_started)
 
 
+# The addressing hints teach one thing: name who you mean. They stop
+# for good once a player has named an NPC (db.say_hint_learned, set in
+# CmdSay), or after this many showings, and show at most once per room
+# visit, since players chatting with each other would otherwise get one
+# on every line.
+SAY_HINT_LIMIT = 3
+
+
+def _should_show_say_hint(caller) -> bool:
+    if caller.db.say_hint_learned:
+        return False
+    if (caller.db.say_hints_shown or 0) >= SAY_HINT_LIMIT:
+        return False
+    return caller.ndb.say_hint_room != caller.location
+
+
+def _show_say_hint(caller, text):
+    caller.ndb.say_hint_room = caller.location
+    caller.db.say_hints_shown = (caller.db.say_hints_shown or 0) + 1
+    caller.msg(text)
+
+
 class CmdSay(DefaultCmdSay):
     """
     Speak as your character.
@@ -813,6 +835,10 @@ class CmdSay(DefaultCmdSay):
         target, message = resolve_addressee(self.args, caller.location, focus=focus, speaker=caller)
         if target is not None:
             caller.ndb.addressing_focus = (caller.location, target)
+            if names_a_present_npc(self.args, caller.location):
+                # They know to name who they mean - what both
+                # addressing hints below teach.
+                caller.db.say_hint_learned = True
         # An explicit "to <name>" prefix is addressing syntax, not
         # something the character actually says aloud - strip it from
         # what the room hears too, not just what the NPC hears. A bare
@@ -857,24 +883,24 @@ class CmdSay(DefaultCmdSay):
             # perfectly natural thing to do in real conversation).
             # This nudge is sent only to the speaker, not broadcast.
             npcs = present_talkative_npcs(caller.location)
-            if len(npcs) > 1:
-                caller.msg(
-                    "(More than one person here might answer that - say who you mean, "
-                    "e.g. 'say to Veska, ...', or just use their name.)"
-                )
-            elif npcs and caller.ndb.other_players_hint_room != caller.location:
-                # One NPC, but other players here too, so the lone-
-                # player rule didn't apply and the line went to the
-                # room (found before the 5-8 player playtest: everyone
-                # starts in the Medical Bay with Given). Once per room
-                # visit, since players chatting with each other would
-                # otherwise get it on every line.
-                caller.ndb.other_players_hint_room = caller.location
+            if npcs and _should_show_say_hint(caller):
                 first_name = npcs[0].key.split()[0]
-                caller.msg(
-                    f"(With other people here, {first_name} won't assume you mean them - "
-                    f"use their name, e.g. 'say to {first_name}, ...', to talk to them.)"
-                )
+                if len(npcs) > 1:
+                    _show_say_hint(
+                        caller,
+                        "(More than one person here might answer that - say who you mean, "
+                        f"e.g. 'say to {first_name}, ...', or just use their name.)",
+                    )
+                else:
+                    # One NPC, but other players here too, so the lone-
+                    # player rule didn't apply and the line went to the
+                    # room (found before the 5-8 player playtest:
+                    # everyone starts in the Medical Bay with Given).
+                    _show_say_hint(
+                        caller,
+                        f"(With other people here, {first_name} won't assume you mean them - "
+                        f"use their name, e.g. 'say to {first_name}, ...', to talk to them.)",
+                    )
             return
         if not message:
             caller.msg(f"Say what to {target.key}?")
