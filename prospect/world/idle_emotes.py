@@ -126,5 +126,5 @@ def emote_once(room, players, npcs):
     room.ndb.last_emoter = npc
     for player in players:
         if hears_ambience(player):
-            player.msg("\n" + line)
+            player.msg(f"\n|x{line}|n")  # NPC-action gray, like format_emote
     return line

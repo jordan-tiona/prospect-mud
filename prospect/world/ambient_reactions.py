@@ -42,5 +42,5 @@ def react_to_address(caller, npc):
         return None
     reacted.add(npc.dbref)
     line = random.choice(lines).replace("{name}", reaction_name(npc))
-    caller.msg(line)
+    caller.msg(f"|x{line}|n")  # NPC-action gray, like format_emote
     return line

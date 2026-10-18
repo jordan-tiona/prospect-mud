@@ -67,7 +67,7 @@ class AmbientReactionTests(TestCase):
         self.actor.execute_cmd(f"say {message}")
 
     def _reactions(self, messages=None):
-        return [m for m in (self.messages if messages is None else messages) if m.endswith(" nods.")]
+        return [m for m in (self.messages if messages is None else messages) if m.endswith(" nods.|n")]
 
     # -- matching ----------------------------------------------------------
 
@@ -91,9 +91,9 @@ class AmbientReactionTests(TestCase):
 
     def test_first_address_gets_a_reaction_after_the_speech(self):
         self._say("to the Kell, nice day")
-        self.assertEqual(self._reactions(), ["The elderly Kell nods."])
+        self.assertEqual(self._reactions(), ["|xThe elderly Kell nods.|n"])
         self.assertLess(next(i for i, m in enumerate(self.messages) if "nice day" in m),
-                        self.messages.index("The elderly Kell nods."))
+                        self.messages.index("|xThe elderly Kell nods.|n"))
 
     def test_only_the_speaker_sees_the_reaction(self):
         self._say("to the Kell, nice day")
@@ -104,7 +104,7 @@ class AmbientReactionTests(TestCase):
         self._say("to the Kell, nice day")
         self._say("to the Kell, I said nice day")
         self._say("to the courier, hello")
-        self.assertEqual(self._reactions(), ["The elderly Kell nods.", "The Astrel courier nods."])
+        self.assertEqual(self._reactions(), ["|xThe elderly Kell nods.|n", "|xThe Astrel courier nods.|n"])
 
     def test_leaving_and_coming_back_resets_it(self):
         self._say("to the Kell, hello")

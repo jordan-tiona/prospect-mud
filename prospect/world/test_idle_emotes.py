@@ -144,7 +144,7 @@ class IdleEmoteTests(TestCase):
     def test_ambience_on_by_default(self):
         self.assertTrue(hears_ambience(self.player))
         emote_once(self.room, [self.player], [self.kell])
-        self.assertEqual(self.sent, ["\nThe elderly Kell yawns."])
+        self.assertEqual(self.sent, ["\n|xThe elderly Kell yawns.|n"])
 
     def test_emotes_never_reach_npc_conversation_history(self):
         self.mara.ndb.conversations = None
