@@ -8,8 +8,10 @@ body so it never reaches a prompt). Engine output, no LLM call.
 
 How it plays, modelled on the Medical Bay tannoy (world/tutorial.py):
 nothing on entry; the first line EMOTE_FIRST_DELAY seconds after a
-player arrives in a quiet room, then one every EMOTE_GAP seconds, for
-as long as any player is there. One timer per room, not per NPC, so
+player arrives in a quiet room, then one every EMOTE_GAP seconds. Each
+player hears at most EMOTE_LIMIT_PER_VISIT of them per visit (owner,
+2026-10-18), then nothing until they leave and come back or log in
+again; the timer stops once nobody present is still listening. One timer per room, not per NPC, so
 two NPCs sharing a room never emote back to back; each beat prefers a
 different NPC from the last one and never repeats an NPC's last line.
 
@@ -42,6 +44,7 @@ EMOTE_FIRST_DELAY = (10, 30)  # seconds after a player arrives in a room with no
 EMOTE_GAP = (60, 120)  # seconds between beats
 EMOTE_QUIET_AFTER = 15  # seconds since an arrival, speech, NPC reply or tannoy block
 EMOTE_QUIET_RETRY = 5  # seconds to wait before trying a held beat again
+EMOTE_LIMIT_PER_VISIT = 2  # emotes a player hears per visit to a room
 
 AMBIENCE_FLAG = "AMBIENCE"  # session protocol flag; absent means on
 
@@ -62,6 +65,11 @@ def _players(room):
 
 def _emoting_npcs(room):
     return [obj for obj in room.contents if inherits_from(obj, "typeclasses.npcs.NPC") and obj.db.emotes]
+
+
+def _listening(character):
+    """Ambience on and still under this visit's limit."""
+    return hears_ambience(character) and (character.ndb.emotes_heard or 0) < EMOTE_LIMIT_PER_VISIT
 
 
 def _quiet(character):
@@ -85,7 +93,9 @@ def _showing_hint(npc, players):
 def start_room_emotes(character):
     """Start the character's room's emote timer if it isn't running.
     Called on every room entry and when a player takes control of a
-    character (typeclasses/characters.py)."""
+    character (typeclasses/characters.py), which is also where a visit,
+    and its EMOTE_LIMIT_PER_VISIT count, starts."""
+    character.ndb.emotes_heard = 0
     room = character.location
     if not room or not character.sessions.count() or room.ndb.emote_timer is not None:
         return
@@ -101,19 +111,21 @@ def _beat(room, token):
         return
     players = _players(room)
     npcs = _emoting_npcs(room)
-    if not players or not npcs:
+    listeners = [player for player in players if _listening(player)]
+    if not listeners or not npcs:
         room.ndb.emote_timer = None
         return
     if not all(_quiet(player) for player in players):
         utils.delay(EMOTE_QUIET_RETRY, _beat, room, token)
         return
-    emote_once(room, players, npcs)
+    emote_once(room, players, npcs, listeners=listeners)
     utils.delay(random.uniform(*EMOTE_GAP), _beat, room, token)
 
 
-def emote_once(room, players, npcs):
-    """Send one emote to the room's listening players. Returns the line,
-    or None if no NPC was eligible."""
+def emote_once(room, players, npcs, listeners=None):
+    """Send one emote to `listeners` (default: every player present).
+    `players` is everyone present, for the hint-pose check. Returns the
+    line, or None if no NPC was eligible."""
     eligible = [npc for npc in npcs if not _showing_hint(npc, players)]
     if not eligible:
         return None
@@ -124,7 +136,8 @@ def emote_once(room, players, npcs):
     line = random.choice(fresh or lines)
     npc.ndb.last_emote = line
     room.ndb.last_emoter = npc
-    for player in players:
+    for player in players if listeners is None else listeners:
         if hears_ambience(player):
             player.msg(f"\n|x{line}|n")  # NPC-action gray, like format_emote
+            player.ndb.emotes_heard = (player.ndb.emotes_heard or 0) + 1
     return line

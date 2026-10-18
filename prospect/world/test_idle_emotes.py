@@ -22,6 +22,7 @@ from world.idle_emotes import (
     AMBIENCE_FLAG,
     EMOTE_FIRST_DELAY,
     EMOTE_GAP,
+    EMOTE_LIMIT_PER_VISIT,
     EMOTE_QUIET_RETRY,
     emote_once,
     hears_ambience,
@@ -145,6 +146,40 @@ class IdleEmoteTests(TestCase):
         self.assertTrue(hears_ambience(self.player))
         emote_once(self.room, [self.player], [self.kell])
         self.assertEqual(self.sent, ["\n|xThe elderly Kell yawns.|n"])
+
+    def _hear_the_limit(self):
+        start_room_emotes(self.player)
+        for _ in range(EMOTE_LIMIT_PER_VISIT):
+            self._run_next()
+        self.assertEqual(len(self.sent), EMOTE_LIMIT_PER_VISIT)
+
+    def test_limit_per_visit_then_the_timer_stops(self):
+        self._hear_the_limit()
+        self._run_next()
+        self.assertEqual(len(self.sent), EMOTE_LIMIT_PER_VISIT)
+        self.assertEqual(self.delays, [])
+        self.assertIsNone(self.room.ndb.emote_timer)
+
+    def test_coming_back_starts_a_new_visit(self):
+        self._hear_the_limit()
+        self._run_next()  # stops the timer
+        start_room_emotes(self.player)  # walks back in, or logs in
+        self._run_next()
+        self.assertEqual(len(self.sent), EMOTE_LIMIT_PER_VISIT + 1)
+
+    def test_limit_is_per_player(self):
+        self._hear_the_limit()
+        newcomer = create_object("typeclasses.characters.Character", key="Newcomer", home=self.room)
+        newcomer.location = self.room
+        for name in ("arrived_at", "last_spoke_at", "npc_reply_at", "tannoy_at"):
+            setattr(newcomer.ndb, name, None)
+        heard = []
+        newcomer.msg = lambda text="", **kw: heard.append(text)
+        newcomer.ndb.emotes_heard = 0
+        self._run_next()
+        self.assertEqual(len(heard), 1)
+        self.assertEqual(len(self.sent), EMOTE_LIMIT_PER_VISIT)
+        self.assertEqual(len(self.delays), 1)  # still someone listening
 
     def test_emotes_never_reach_npc_conversation_history(self):
         self.mara.ndb.conversations = None
