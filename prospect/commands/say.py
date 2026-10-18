@@ -43,7 +43,7 @@ from world.actions import get_tool_schemas, quest_context_for, validate_and_appl
 from world.appearance import appearance_context_for
 from world.commitments import commitment_context_for
 from world.conversation_log import log_turn
-from world.emotes import format_emote, parse_reply
+from world.emotes import format_emote, name_the_listener, parse_reply
 from world.llm_budget import (
     call_cost_usd,
     global_daily_limit_reached,
@@ -307,15 +307,32 @@ def _render_reply_segments(target, caller, segments, pronouns, lead_blank=False)
     `lead_blank` puts a blank line ahead of the first message sent -
     see _msg_with_lead_blank for why that's embedded in the message's
     own text rather than sent as a separate caller.msg("").
+
+    Everyone else in the room sees the reply too, addressed to the
+    player by name (project owner, 2026-10-17): the player's own line
+    already reaches the room, and hearing only one side of every
+    conversation read oddly. Engine narration, fallbacks and tutorial
+    lines stay private to the player.
     """
     # world/tutorial.py's tannoy holds its announcements just after a reply.
     caller.ndb.npc_reply_at = time.time()
+    bystanders = [
+        obj for obj in (caller.location.contents if caller.location else [])
+        if obj not in (caller, target)
+    ]
     for i, (kind, content) in enumerate(segments):
         prefix = "\n" if lead_blank and i == 0 else ""
         if kind == "dialogue":
             caller.msg(f'{prefix}{target.key} says to you, |c"{content}"|n')
         else:
             caller.msg(prefix + format_emote(target.key, content, pronouns))
+        for obj in bystanders:
+            name = caller.get_display_name(obj)
+            if kind == "dialogue":
+                text = f'{target.key} says to {name}, |c"{content}"|n'
+            else:
+                text = format_emote(target.key, name_the_listener(content, name), pronouns)
+            obj.msg(prefix + text, from_obj=target)
 
 
 def _handle_llm_reply(

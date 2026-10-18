@@ -81,6 +81,37 @@ def parse_reply(text: str) -> list:
     return segments
 
 
+# NPC actions are written to the player they're talking to ("*puts a
+# cold beer in front of you*"). Others in the room see the same action
+# with that player's name in place of "you" - a word-level swap, so a
+# rare "you" as the subject of a verb ("as you leave") comes out
+# ungrammatical ("as Alice leave") rather than wrong.
+_LISTENER_RE = re.compile(r"\b(you['’](?:re|ve|ll|d)|yourself|yours|your|you)\b", re.IGNORECASE)
+_LISTENER_FORMS = {
+    "re": "{name} is",
+    "ve": "{name} has",
+    "ll": "{name} will",
+    "d": "{name} would",
+    "yourself": "{name}",
+    "yours": "{name}'s",
+    "your": "{name}'s",
+    "you": "{name}",
+}
+
+
+def name_the_listener(emote_text: str, listener_name: str) -> str:
+    """`emote_text` with its second-person references to the player
+    being spoken to replaced by `listener_name`, for everyone else in
+    the room."""
+
+    def _replace(match):
+        word = match.group(0).lower()
+        key = word[4:] if word[3:4] in ("'", "’") else word
+        return _LISTENER_FORMS[key].format(name=listener_name)
+
+    return _LISTENER_RE.sub(_replace, emote_text)
+
+
 def format_emote(npc_key: str, emote_text: str, pronouns: str = "") -> str:
     """One emote's text as a third-person action line, e.g. 'smiles
     and nods' -> 'Mara Voss smiles and nods.' Colored bright gray

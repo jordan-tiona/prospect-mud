@@ -34,6 +34,7 @@ from commands.say import (
 from world.actions import get_quest_state
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
+from world.emotes import name_the_listener
 from world.llm_budget import call_cost_usd
 from world.llm_client import LLMReply, LLMUnavailableError
 from world.npc_profile import parse_persona
@@ -101,6 +102,25 @@ class BuildFollowupMessagesTests(TestCase):
 
         self.assertEqual(shown, {"role": "system", "content": FIRST_PASS_SHOWN_NOTE})
         self.assertEqual(hidden, {"role": "system", "content": FIRST_PASS_HIDDEN_NOTE})
+
+
+class NameTheListenerTests(TestCase):
+    """What others in the room see of an NPC action written to the
+    player it's talking to."""
+
+    def test_replaces_each_second_person_form(self):
+        cases = {
+            "slides a mug toward you": "slides a mug toward Alice",
+            "taps your shoulder": "taps Alice's shoulder",
+            "nods, as if you're right": "nods, as if Alice is right",
+            "smiles, glad you’ve come": "smiles, glad Alice has come",
+            "You get a nod": "Alice get a nod",
+        }
+        for emote, expected in cases.items():
+            self.assertEqual(name_the_listener(emote, "Alice"), expected)
+
+    def test_leaves_words_that_only_contain_you_alone(self):
+        self.assertEqual(name_the_listener("looks youthful", "Alice"), "looks youthful")
 
 
 class TrimHistoryTests(TestCase):
@@ -297,6 +317,22 @@ class SayCommandTests(_SayTestBase):
         mock_chat.return_value = _reply("Afternoon.")
         self._say("hello there")
 
+        self.assertTrue(any("Mara Voss says to you" in m for m in self.messages))
+
+    @patch("commands.say.chat")
+    def test_others_in_the_room_see_the_npc_reply_addressed_by_name(self, mock_chat):
+        # Owner, 2026-10-17: bystanders used to hear only the player's
+        # half of the conversation.
+        mock_chat.return_value = _reply('"Afternoon." *puts a cold beer in front of you*')
+        other = self._add_other_player()
+        heard = []
+        other.msg = lambda text="", **kw: heard.append(_record_text(text, **kw))
+
+        self._say("to Mara, hello there")
+
+        self.assertTrue(any('Mara Voss says to Tester, |c"Afternoon."|n' in m for m in heard))
+        self.assertTrue(any("Mara Voss puts a cold beer in front of Tester." in m for m in heard))
+        self.assertFalse(any("says to you" in m for m in heard))
         self.assertTrue(any("Mara Voss says to you" in m for m in self.messages))
 
     @patch("commands.say.chat")
