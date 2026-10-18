@@ -16,6 +16,7 @@ Run with:
     evennia test world
 """
 
+import time
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -25,6 +26,9 @@ from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
 from world.tutorial import (
     TANNOY_BLOCK_PAUSE,
+    TANNOY_CYCLE_GAP,
+    TANNOY_FIRST_BLOCK_DELAY,
+    TANNOY_QUIET_RETRY,
     _fire_delayed_nudge,
     announce_tannoy,
     maybe_schedule_nudge,
@@ -49,7 +53,13 @@ class TannoyTests(TestCase):
         # reset above even ran, and get wiped out by it.
         self.character = create_object("typeclasses.characters.Character", key="Tester")
         self.character.location = self.rooms["medical_bay"]
+        self.character.ndb.last_spoke_at = None
+        self.character.ndb.npc_reply_at = None
         self.sent = []
+        # The tannoy only plays to a logged-in character (announce_tannoy).
+        sessions = patch.object(type(self.character.sessions), "count", return_value=1)
+        sessions.start()
+        self.addCleanup(sessions.stop)
         self.character.msg = lambda text="", **kw: self.sent.append(text)
 
     def test_tannoy_text_for_room_matches_medical_bay(self):
@@ -103,11 +113,80 @@ class TannoyTests(TestCase):
         maybe_schedule_nudge(self.character)
         self.assertTrue(any("SAY" in text for text in self.sent))
 
-    def test_tannoy_fires_every_time_not_just_once(self):
-        maybe_schedule_nudge(self.character)
-        sent_before = len(self.sent)
-        maybe_schedule_nudge(self.character)
-        self.assertEqual(len(self.sent), sent_before + 1)
+    # -- later visits: single blocks, cycled once -----------------------
+
+    def _second_visit(self):
+        self.character.db.heard_full_tannoy = True
+        with patch("world.tutorial.utils.delay") as mock_delay:
+            announce_tannoy(self.character)
+        return mock_delay
+
+    def _run(self, call):
+        with patch("world.tutorial.utils.delay") as mock_delay:
+            call.args[1](*call.args[2:])
+        return mock_delay
+
+    def test_first_visit_marks_the_full_announcement_heard(self):
+        with patch("world.tutorial.utils.delay"):
+            announce_tannoy(self.character)
+        self.assertTrue(self.character.db.heard_full_tannoy)
+
+    def test_no_session_plays_nothing_and_keeps_the_first_visit(self):
+        # Chargen moves the character in before the player is logged in.
+        with patch.object(type(self.character.sessions), "count", return_value=0):
+            announce_tannoy(self.character)
+        self.assertEqual(self.sent, [])
+        self.assertFalse(self.character.db.heard_full_tannoy)
+
+    def test_later_visit_plays_nothing_on_entry(self):
+        mock_delay = self._second_visit()
+        self.assertEqual(self.sent, [])
+        first_wait = mock_delay.call_args.args[0]
+        self.assertTrue(TANNOY_FIRST_BLOCK_DELAY[0] <= first_wait <= TANNOY_FIRST_BLOCK_DELAY[1])
+
+    def test_later_visit_plays_each_block_once_then_stops(self):
+        call = self._second_visit().call_args
+        gaps = []
+        while call is not None:
+            mock_delay = self._run(call)
+            call = mock_delay.call_args
+            if call is not None:
+                gaps.append(call.args[0])
+        self.assertEqual(len(self.sent), 3)
+        self.assertEqual(gaps, [TANNOY_CYCLE_GAP, TANNOY_CYCLE_GAP])
+        for text in self.sent:
+            self.assertIn("A tannoy near the ceiling crackles to life:", text)
+            self.assertIn("type TANNOY.", text)
+        joined = "\n".join(self.sent)
+        for command in ("SAY", "TELL", "PLAYTEST"):
+            self.assertIn(command, joined)
+        self.assertIsNone(self.character.ndb.tannoy_cycle)
+
+    def test_cycle_stops_when_the_player_leaves(self):
+        call = self._second_visit().call_args
+        self.character.location = self.rooms["old_quarter_square"]
+        self.assertIsNone(self._run(call).call_args)
+        self.assertEqual(self.sent, [])
+
+    def test_reentering_replaces_the_old_cycle(self):
+        old_call = self._second_visit().call_args
+        self._second_visit()
+        self.assertIsNone(self._run(old_call).call_args)
+        self.assertEqual(self.sent, [])
+
+    def test_block_waits_while_the_player_is_talking(self):
+        call = self._second_visit().call_args
+        self.character.ndb.last_spoke_at = time.time()
+        retry = self._run(call).call_args
+        self.assertEqual(self.sent, [])
+        self.assertEqual(retry.args[0], TANNOY_QUIET_RETRY)
+
+    def test_block_waits_for_a_pending_npc_reply(self):
+        call = self._second_visit().call_args
+        self.given.ndb.pending = {self.character.dbref}
+        self.addCleanup(setattr, self.given.ndb, "pending", None)
+        self._run(call)
+        self.assertEqual(self.sent, [])
 
     def test_tannoy_fires_when_a_player_takes_control_in_the_room(self):
         # Chargen places a new character before login, so at_post_move's

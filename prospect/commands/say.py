@@ -308,6 +308,8 @@ def _render_reply_segments(target, caller, segments, pronouns, lead_blank=False)
     see _msg_with_lead_blank for why that's embedded in the message's
     own text rather than sent as a separate caller.msg("").
     """
+    # world/tutorial.py's tannoy holds its announcements just after a reply.
+    caller.ndb.npc_reply_at = time.time()
     for i, (kind, content) in enumerate(segments):
         prefix = "\n" if lead_blank and i == 0 else ""
         if kind == "dialogue":
@@ -824,6 +826,8 @@ class CmdSay(DefaultCmdSay):
             return
 
         reveal_for_speech(caller)
+        # world/tutorial.py's tannoy holds its announcements just after speech.
+        caller.ndb.last_spoke_at = time.time()
 
         # The NPC this player was last addressing in this same room,
         # if any - cleared implicitly by the room check below the

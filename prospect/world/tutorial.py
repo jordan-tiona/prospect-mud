@@ -49,6 +49,9 @@ later ("didn't you just say something?"), it has the line in context
 rather than being blindsided by something it doesn't remember saying.
 """
 
+import random
+import time
+
 from evennia.utils import utils
 
 from world.accessibility import uses_screenreader
@@ -82,8 +85,14 @@ _ROOM_NUDGES = {
 # player enters the room (see module docstring), via a room
 # announcement rather than an NPC line. (lead-in, spoken blocks): each
 # block is shown in bright cyan with its quotes, like any other dialogue
-# (owner, 2026-10-16), with a blank line between blocks and, on arrival,
-# TANNOY_BLOCK_PAUSE seconds between them (owner, 2026-10-17).
+# (owner, 2026-10-16).
+#
+# How it plays (owner, 2026-10-17): a character's first time there, the
+# whole announcement, TANNOY_BLOCK_PAUSE seconds between blocks. After
+# that, nothing on entry: a random block 5-10 seconds in, then each of
+# the others once, TANNOY_CYCLE_GAP seconds apart, then quiet until the
+# next visit. A block never lands while the player is mid-conversation
+# (TANNOY_QUIET_AFTER_TALK).
 _ROOM_TANNOYS = {
     "medical_bay": (
         "A tannoy near the ceiling crackles to life:",
@@ -99,12 +108,22 @@ _ROOM_TANNOYS = {
             "playtest, type PLAYTEST, or PT, and then your message; to stop "
             "hearing that channel, type PLAYTEST OFF. If you use a screen "
             "reader, type OPTION/SAVE SCREENREADER=ON once and it stays on "
-            "for every later visit. To hear this again, type TANNOY.",
+            "for every later visit.",
         ),
     ),
 }
 
-TANNOY_BLOCK_PAUSE = 3  # seconds between blocks on arrival
+# Ends the full announcement, and each single block.
+TANNOY_LINE_FULL = "To hear this again, type TANNOY."
+# TODO(lore): LR-DEV-0009 - after a single block, "this" reads as just
+# that block; until Lore's wording lands, the approved line stands in.
+TANNOY_LINE_SINGLE = TANNOY_LINE_FULL
+
+TANNOY_BLOCK_PAUSE = 3  # seconds between blocks, first visit
+TANNOY_FIRST_BLOCK_DELAY = (5, 10)  # seconds after entry, later visits
+TANNOY_CYCLE_GAP = 45  # seconds between single blocks
+TANNOY_QUIET_AFTER_TALK = 15  # seconds since the player spoke or an NPC replied
+TANNOY_QUIET_RETRY = 5  # seconds to wait before trying a held block again
 
 
 def _room_has_tag(room, tag):
@@ -134,11 +153,21 @@ def tannoy_blocks_for_room(room):
     the first, or None if it has no tannoy."""
     if not room:
         return None
-    for room_tag, (lead_in, blocks) in _ROOM_TANNOYS.items():
+    tannoy = _tannoy_for(room)
+    if not tannoy:
+        return None
+    lead_in, blocks = tannoy
+    blocks = list(blocks)
+    blocks[-1] = f"{blocks[-1]} {TANNOY_LINE_FULL}"
+    spoken = [f'|c"{block}"|n' for block in blocks]
+    spoken[0] = f"{lead_in} {spoken[0]}"
+    return spoken
+
+
+def _tannoy_for(room):
+    for room_tag, tannoy in _ROOM_TANNOYS.items():
         if _room_has_tag(room, room_tag):
-            spoken = [f'|c"{block}"|n' for block in blocks]
-            spoken[0] = f"{lead_in} {spoken[0]}"
-            return spoken
+            return tannoy
     return None
 
 
@@ -151,17 +180,34 @@ def tannoy_text_for_room(room):
 
 
 def announce_tannoy(character):
-    """Send the character's current room's tannoy text, if it has one.
-    Called on every room entry (maybe_schedule_nudge) and again when a
-    player takes control of the character (typeclasses/characters.py's
-    at_post_puppet): character creation moves a brand-new character into
-    the Medical Bay before the player is logged in to it, so the arrival
-    announcement reaches nobody - the puppet call is what a new player
-    actually sees (found live, 2026-10-16)."""
+    """Start this room's tannoy for the character, if it has one: the
+    whole announcement on their first visit, the single-block cycle on
+    later ones (see _ROOM_TANNOYS). Called on every room entry
+    (maybe_schedule_nudge) and again when a player takes control of the
+    character (typeclasses/characters.py's at_post_puppet): character
+    creation moves a brand-new character into the Medical Bay before the
+    player is logged in to it, so the arrival announcement reaches nobody
+    - the puppet call is what a new player actually sees (found live,
+    2026-10-16). That's also why nothing happens without a session:
+    otherwise chargen's move would use up the first visit."""
+    # A new room, or a fresh puppet, ends any cycle already running.
+    character.ndb.tannoy_cycle = None
     room = character.location
-    blocks = tannoy_blocks_for_room(room)
-    if not blocks:
+    if not _tannoy_for(room) or not character.sessions.count():
         return
+    if not character.db.heard_full_tannoy:
+        character.db.heard_full_tannoy = True
+        _play_full_tannoy(character, room)
+        return
+    token = object()
+    character.ndb.tannoy_cycle = token
+    order = list(range(len(_tannoy_for(room)[1])))
+    random.shuffle(order)
+    utils.delay(random.uniform(*TANNOY_FIRST_BLOCK_DELAY), _play_cycle_block, character, room, token, order)
+
+
+def _play_full_tannoy(character, room):
+    blocks = tannoy_blocks_for_room(room)
     if uses_screenreader(character):
         # All at once: a block arriving mid-sentence can cut off the
         # screen reader still reading the one before.
@@ -176,6 +222,35 @@ def _send_tannoy_block(character, room, block):
     # Heard only in the room it's playing in.
     if character.location == room:
         character.msg("\n" + block)
+
+
+def _play_cycle_block(character, room, token, order):
+    if character.ndb.tannoy_cycle is not token or character.location != room:
+        return
+    if not _conversation_quiet(character):
+        utils.delay(TANNOY_QUIET_RETRY, _play_cycle_block, character, room, token, order)
+        return
+    lead_in, blocks = _tannoy_for(room)
+    character.msg(f'\n{lead_in} |c"{blocks[order[0]]} {TANNOY_LINE_SINGLE}"|n')
+    if order[1:]:
+        utils.delay(TANNOY_CYCLE_GAP, _play_cycle_block, character, room, token, order[1:])
+    else:
+        character.ndb.tannoy_cycle = None
+
+
+def _conversation_quiet(character):
+    """False while the player is waiting on an NPC's reply, or spoke or
+    was answered in the last TANNOY_QUIET_AFTER_TALK seconds
+    (commands/say.py records both times)."""
+    now = time.time()
+    for moment in (character.ndb.last_spoke_at, character.ndb.npc_reply_at):
+        if moment and now - moment < TANNOY_QUIET_AFTER_TALK:
+            return False
+    for obj in character.location.contents:
+        pending = obj.ndb.pending
+        if pending and character.dbref in pending:
+            return False
+    return True
 
 
 def maybe_schedule_nudge(character):
