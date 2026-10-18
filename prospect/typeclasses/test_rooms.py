@@ -106,6 +106,15 @@ class RoomAppearanceTests(TestCase):
             self.room.get_display_things(self.looker), "    |cTarin Os is here.|n"
         )
 
+    def test_objects_then_ambient_npcs_then_talking_npcs(self):
+        create_object("typeclasses.npcs.TalkativeNPC", key="Talker", location=self.room)
+        create_object("typeclasses.npcs.NPC", key="Passerby", location=self.room)
+        thing = create_object("typeclasses.objects.Object", key="crate", location=self.room)
+        thing.db.room_line = "A crate sits here."
+        output = self.room.get_display_things(self.looker)
+        self.assertLess(output.index("A crate"), output.index("Passerby"))
+        self.assertLess(output.index("Passerby"), output.index("Talker"))
+
     # -- screen readers ------------------------------------------------------
     # Bright vs dark cyan is the only cue to who talks, so a looker in
     # screen-reader mode gets it in words (world/accessibility.py).

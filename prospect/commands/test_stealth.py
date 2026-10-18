@@ -105,6 +105,17 @@ class StealthTests(TestCase):
         self.assertIn("waves", self._seen_by(self.player))
         self.assertIn("Admin", self.room.return_appearance(self.player))
 
+    def test_emote_adds_a_missing_period(self):
+        self.admin.execute_cmd("emote smiles")
+        self.assertIn("Admin smiles.", self._seen_by(self.player))
+
+    def test_emote_keeps_existing_punctuation(self):
+        from commands.stealth import punctuate_pose
+
+        for text in ("waves!", 'says, "hi"', "shrugs...", "grins (barely)", "nods?"):
+            self.assertEqual(punctuate_pose(text), text)
+        self.assertEqual(punctuate_pose("smiles  "), "smiles.")
+
     def test_ambient_say_reveals_and_goes_through(self):
         hide(self.admin)
         self.admin.execute_cmd("say hello all")

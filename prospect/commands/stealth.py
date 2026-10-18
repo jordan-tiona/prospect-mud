@@ -54,4 +54,15 @@ class CmdPose(default_cmds.CmdPose):
     def func(self):
         if self.args:
             reveal_for_speech(self.caller)
+            self.args = punctuate_pose(self.args)
         super().func()
+
+
+def punctuate_pose(text):
+    """Ends a pose with a period when the player left it off ("emote
+    smiles" -> "Ravis smiles."), like say does for speech. Anything
+    already ending in punctuation, a quote or a bracket is left alone."""
+    text = text.rstrip()
+    if text and text[-1].isalnum():
+        return text + "."
+    return text

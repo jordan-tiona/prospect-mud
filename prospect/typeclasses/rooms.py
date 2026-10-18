@@ -116,8 +116,15 @@ class Room(ObjectParent, DefaultRoom):
     def get_display_things(self, looker, **kwargs):
         things = self.filter_visible(self.contents_get(content_type="object"), looker, **kwargs)
 
+        # Objects first, then ambient NPCs, then the NPCs who talk
+        # (owner, 2026-10-17), each group in its own creation order.
+        def _group(thing):
+            if inherits_from(thing, "typeclasses.npcs.TalkativeNPC"):
+                return 2
+            return 1 if inherits_from(thing, "typeclasses.npcs.NPC") else 0
+
         lines = []
-        for thing in things:
+        for thing in sorted(things, key=_group):
             name = thing.get_display_name(looker, **kwargs)
             if inherits_from(thing, "typeclasses.npcs.TalkativeNPC"):
                 # Bright vs dark cyan is the only cue to who talks;
