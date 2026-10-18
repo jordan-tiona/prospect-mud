@@ -96,13 +96,15 @@ The neighborhood offers three modest, independently discoverable activities: Mar
 
 The initial playable test does **not** require professions, appearance customization, a complete economy, a large world, complex combat, or unrestricted autonomous NPCs. Keep the actual playtest specifications and approved local content authoritative for exact room links, command handling, quest states, creature visibility and all implementation details.
 
-### 13.9 Room listing density when the map is built out
+### 13.9 Room listing density and ambient life when the map is built out
 
-**Status:** Project-owner design direction (2026-10-18), recorded for the Elsewhere build-out beyond the playtest neighborhood. It describes how room listings should read, not setting lore. Implementation is tracked as LR-LORE-0005 in `docs/lore-requests.md`.
+**Status:** Project-owner design direction (2026-10-18), recorded for the Elsewhere build-out beyond the playtest neighborhood. It describes how room listings should read, not setting lore. Implementation is tracked as LR-LORE-0005 and LR-LORE-0006 in `docs/lore-requests.md`.
 
 A room shows two listings: a short **glance** on arrival and the full description on an explicit `look`. Objects placed in a room each contribute a one-line sentence to the listing. To keep the glance readable as the map grows (and audible for screen-reader players, who hear every line per move), each object carries a flag saying whether its line appears in the glance; everything still appears on `look`. Defaults follow the object's kind: quest cues, signposts, information displays and other things a newcomer must notice show in the glance; purely atmospheric objects are hidden from it.
 
 **Rule for rooms without a hook:** a room that holds no quest cue and no information object should let one or two of its otherwise glance-hidden objects show in the glance instead. The intended arrival glance everywhere is the room blurb, the people present, one or two things worth noticing, and the exits. A room with a quest prop fills those slots with the quest prop; a room without one fills them with its best atmospheric objects, so that quiet residential streets and back passages still read as populated and fleshed out rather than empty. Authors choose which objects to promote per room, with the per-object override, rather than leaving every hook-less room with nothing after its prose.
+
+**Rule for NPCs, from the build-out onward (owner direction, 2026-10-18):** every NPC placed in the world, ambient or talk-capable, carries a short list of idle emotes alongside its pose, four to six complete sentences the room shows now and then while a player is present, a little while after arrival and never on entry. The lines must agree with the NPC's poses and description, use the pronouns its file already uses, and imply what the NPC is doing or reacting to without stating facts about the world: an elderly Kell may grumble at something on a tablet, but naming the article would be new lore. Emotes are room flavour only; they never reach an LLM NPC's prompt. Authoring an NPC without its emote list is incomplete work, the same as leaving out its description.
 
 ## 14. LLM-driven NPC design
 

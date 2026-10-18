@@ -3,6 +3,7 @@ ambient_id: courtyard_selk_neighbor
 room: residential_courtyard
 status: Provisional
 approval: Approved
+emotes: Draft (LR-LORE-0006, drafted by Lore 2026-10-18, awaiting owner approval)
 bible_refs: 5.7, 11.2.6, 13.6
 -->
 
@@ -13,6 +14,14 @@ bible_refs: 5.7, 11.2.6, 13.6
 - checking the soil around a row of small plants
 - gathering a few fallen leaves from the path
 - tending one of the courtyard's planting beds
+
+## Emotes
+
+- The Selk neighbor pulls a weed, shakes the soil from its roots and drops it into the cloth bag.
+- The Selk neighbor straightens a labelled stake that has leaned over.
+- The Selk neighbor glances up at a sound from one of the homes above, then goes back to the plants.
+- The Selk neighbor presses the soil firm around a stem with the back of the hand fork.
+- The Selk neighbor sits back on their heels and brushes the soil from their knees.
 
 ## Description
 

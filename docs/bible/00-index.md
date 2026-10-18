@@ -4,7 +4,7 @@
 
 | Field | Value |
 |---|---|
-| Document version | 0.4.15 |
+| Document version | 0.4.16 |
 | Last organized | 2026-10-18 |
 | Development stage | Early development |
 | Project | Text-based multiplayer science-fiction MUD |

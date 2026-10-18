@@ -3,6 +3,7 @@ ambient_id: square_elderly_kell
 room: old_quarter_square
 status: Provisional
 approval: Approved
+emotes: Draft (LR-LORE-0006, drafted by Lore 2026-10-18, awaiting owner approval)
 bible_refs: 5.1, 11.2.6, 13.5
 -->
 
@@ -13,6 +14,14 @@ bible_refs: 5.1, 11.2.6, 13.5
 - reading quietly from a tablet resting in their lap
 - glancing up from their tablet at people crossing the square
 - turning an ear toward the sounds of the square
+
+## Emotes
+
+- The elderly Kell grumbles at something on the tablet and flicks to the next page.
+- The elderly Kell's ears swing toward a rattling cart, then settle back toward the tablet.
+- The elderly Kell shifts the walking stick against the bench and settles in more comfortably.
+- The elderly Kell reads a line twice, lips moving, and gives a short huff of amusement.
+- The elderly Kell glances up at the light along the axis, then back down at the page.
 
 ## Description
 

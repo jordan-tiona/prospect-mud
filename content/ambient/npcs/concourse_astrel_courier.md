@@ -3,6 +3,7 @@ ambient_id: concourse_astrel_courier
 room: lift_concourse
 status: Provisional
 approval: Approved
+emotes: Draft (LR-LORE-0006, drafted by Lore 2026-10-18, awaiting owner approval)
 bible_refs: 5.5, 11.2.6, 13.6
 -->
 
@@ -13,6 +14,14 @@ bible_refs: 5.5, 11.2.6, 13.6
 - checking the labels on a stack of delivery containers
 - comparing a handheld display with the containers beside them
 - adjusting a worn carrying strap across their shoulder
+
+## Emotes
+
+- The Astrel courier frowns at a line on the handheld and checks the nearest container's tag again.
+- The Astrel courier shifts the carrying strap from one shoulder to the other.
+- The Astrel courier leans a hip against a container and works a thumb down the handheld's list.
+- The Astrel courier crosses out a routing tag and writes over it by hand.
+- The Astrel courier spreads their long toes on the floor and rolls their shoulders, the way a long shift at full gravity asks for.
 
 ## Description
 
