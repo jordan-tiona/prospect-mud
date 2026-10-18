@@ -49,13 +49,20 @@ def is_hidden(obj):
 
 
 def hide(character):
+    # Sent while still visible: once hidden, players' copies are suppressed.
+    if not is_hidden(character) and character.location:
+        character.location.msg_contents(
+            HIDE_ANNOUNCEMENT, exclude=[character], from_obj=character, mapping={"object": character}
+        )
     character.db.stealth = True
     character.locks.add(HIDDEN_LOCKS)
 
 
 # Owner's wording (2026-10-17): announced to the room when staff become
-# visible, in the shape of the movement lines (typeclasses/characters.py).
+# visible or hidden, in the shape of the movement lines
+# (typeclasses/characters.py).
 REVEAL_ANNOUNCEMENT = "{object} arrives from the ether."
+HIDE_ANNOUNCEMENT = "{object} leaves for nowhere."
 
 
 def reveal(character):

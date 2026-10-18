@@ -83,6 +83,7 @@ class StealthTests(TestCase):
 
     def test_movement_not_announced_to_players(self):
         hide(self.admin)
+        self.received.clear()  # hiding itself is announced
         self.admin.move_to(self.elsewhere)
         self.admin.move_to(self.room)
         self.assertNotIn("Admin", self._seen_by(self.player))
@@ -116,6 +117,17 @@ class StealthTests(TestCase):
         self.admin.execute_cmd("say hello all")
         seen = self._seen_by(self.player)
         self.assertLess(seen.index("arrives from the ether"), seen.index("Hello all"))
+
+    def test_hiding_is_announced_to_the_room(self):
+        self.admin.execute_cmd("stealth on")
+        self.assertIn("Admin leaves for nowhere.", self._seen_by(self.player))
+        self.assertNotIn("leaves for nowhere", self._seen_by(self.admin))
+
+    def test_turning_stealth_on_while_hidden_announces_nothing(self):
+        hide(self.admin)
+        self.received.clear()
+        self.admin.execute_cmd("stealth on")
+        self.assertNotIn("leaves for nowhere", self._seen_by(self.player))
 
     def test_turning_stealth_off_while_visible_announces_nothing(self):
         self.admin.execute_cmd("stealth off")
