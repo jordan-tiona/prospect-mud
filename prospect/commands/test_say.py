@@ -1034,6 +1034,83 @@ class SayCommandTests(_SayTestBase):
         self.assertEqual([c["applied"] for c in calls], [True, False])
         self.assertIn("haven't answered yet", calls[1]["reason"])
 
+    @patch("commands.say.chat")
+    def test_an_unrecorded_ask_is_recorded_by_the_reaction_and_the_next_yes_lands(self, mock_chat):
+        # Live 2026-10-18 (Mara prompt_version 52): she asked only in
+        # words, so "Sure." was dropped at 'not_started'; her reaction
+        # asked again, but with no tools that ask wasn't recorded either,
+        # so "Yes." was dropped too.
+        accept_and_hand_over = [
+            {"name": "accept_help", "arguments": {"confirmed": True}},
+            {"name": "give_faulty_module", "arguments": {"confirmed": True}},
+        ]
+        mock_chat.side_effect = [
+            _reply("Glad to hear it.", tool_calls=accept_and_hand_over),
+            # A reaction that calls a tool comes back with no words
+            # (live-prompt replay, 8/8), so one more call voices it.
+            _reply("", tool_calls=[{"name": "ask_for_help", "arguments": {"confirmed": True}}]),
+            _reply("Would you be up for taking it to Tarin?"),
+            _reply("Here's the module.", tool_calls=accept_and_hand_over),
+            _reply("Tarin's at the workshop."),
+        ]
+        self._say("Sure.")
+
+        reaction_kwargs = mock_chat.call_args_list[1].kwargs
+        self.assertEqual([t["function"]["name"] for t in reaction_kwargs["tools"]], ["ask_for_help"])
+        self.assertNotIn("tools", mock_chat.call_args_list[2].kwargs)
+        self.assertTrue(any("Would you be up for taking it to Tarin?" in m for m in self.messages))
+        self.assertFalse(any("Glad to hear it." in m for m in self.messages))
+        self.mock_log_turn.assert_called_once()
+        self.assertEqual(
+            self.mock_log_turn.call_args.kwargs["npc_response"], "Would you be up for taking it to Tarin?"
+        )
+        self.assertEqual(get_quest_state(self.actor), "offered")
+        calls = self.mock_log_turn.call_args.kwargs["tool_calls"]
+        self.assertEqual(calls[-1]["name"], "ask_for_help")
+        self.assertTrue(calls[-1]["applied"])
+        self.assertTrue(calls[-1]["in_reaction"])
+        history = self.mara.ndb.conversations[self.actor.dbref]
+        recorded = [c["function"]["name"] for m in history for c in m.get("tool_calls") or []]
+        self.assertIn("ask_for_help", recorded)
+        ask_outcome = next(
+            m["content"] for m in history if m["role"] == "tool" and "asks Tester" in m["content"]
+        )
+        self.assertIn("The action happened", ask_outcome)
+
+        self._say("Yes.")
+
+        self.assertEqual(get_quest_state(self.actor), "has_faulty_module")
+        self.assertTrue(any("Tarin's at the workshop." in m for m in self.messages))
+
+    @patch("commands.say.chat")
+    def test_the_reaction_gets_no_tools_when_nothing_needs_retrying(self, mock_chat):
+        mock_chat.side_effect = [
+            _reply(
+                "Would you take it to Tarin?",
+                tool_calls=[{"name": "ask_for_help", "arguments": {"confirmed": True}}],
+            ),
+            _reply("No rush, think it over."),
+        ]
+        self._say("Man it's cold in here.")
+
+        self.assertIsNone(mock_chat.call_args_list[1].kwargs["tools"])
+
+    @patch("commands.say.chat")
+    def test_a_reaction_call_it_wasnt_offered_is_dropped(self, mock_chat):
+        mock_chat.side_effect = [
+            _reply("Glad to hear it.", tool_calls=[{"name": "accept_help", "arguments": {"confirmed": True}}]),
+            _reply(
+                "Here, take it.",
+                tool_calls=[{"name": "give_faulty_module", "arguments": {"confirmed": True}}],
+            ),
+        ]
+        self._say("Sure.")
+
+        self.assertEqual(get_quest_state(self.actor), "not_started")
+        calls = self.mock_log_turn.call_args.kwargs["tool_calls"]
+        self.assertFalse(calls[-1]["applied"])
+        self.assertIn("wasn't available", calls[-1]["reason"])
+
     # -- reaction-triggering turns (FORCE_REACTION_ACTIONS) ---------------
 
     @patch("commands.say.chat")

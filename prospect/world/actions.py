@@ -68,6 +68,25 @@ class ActionResult:
 # quests haven't been asked to pay.
 SAME_REPLY_EXCLUSIONS = {"accept_help": "ask_for_help"}
 
+# A yes dropped because the question was only ever asked in words, never
+# recorded: the follow-up reaction (commands/say.py) re-asks, and gets
+# the asking action as its one tool so that re-ask is recorded too.
+# Without it the reaction had no tools, so every later yes was dropped
+# the same way - seen live 2026-10-18, Mara prompt_version 52, the trap
+# guideline #24 (b) describes. The engine still validates the call.
+REACTION_RETRIES = {"accept_help": "ask_for_help"}
+
+
+def reaction_action_names(calls, results, applied_earlier=()) -> list:
+    """The actions the follow-up reaction may call, given this reply's
+    `calls` and their results (commands/say.py's tool_results dicts)."""
+    names = []
+    for call, result in zip(calls, results):
+        retry = REACTION_RETRIES.get(call["name"])
+        if retry and not result["applied"] and retry not in applied_earlier and retry not in names:
+            names.append(retry)
+    return names
+
 
 def validate_and_apply(
     npc, actor, action_name: str, arguments: dict, player_message: str | None = None, applied_earlier=()
@@ -193,7 +212,8 @@ def _validate_accept_help(npc, actor, arguments: dict) -> ActionResult:
             "",
             reason=(
                 "you haven't asked them to take the module yet, so there's nothing for them to have "
-                "agreed to - don't hand anything over or thank them for agreeing"
+                "agreed to - don't hand anything over or thank them for agreeing. Ask them now, "
+                "with ask_for_help, and wait for their answer"
             ),
         )
     return _validate_quest_step(

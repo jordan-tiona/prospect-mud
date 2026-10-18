@@ -31,8 +31,10 @@ from commands.say import FORCE_REACTION_ACTIONS, _build_followup_messages
 from world.actions import (
     _create_parcel_for,
     _set_quest_state,
+    get_quest_state,
     get_tool_schemas,
     quest_context_for,
+    reaction_action_names,
     validate_and_apply,
 )
 from world.build_npcs import build as build_npcs
@@ -68,6 +70,10 @@ class EvalScenario:
     expect_text_contains: list = field(default_factory=list)
     expect_text_absent: list = field(default_factory=list)
     history: list = field(default_factory=list)
+    # The module errand's state once the whole turn (reply and any
+    # reaction) is done - for a scenario where either pass may record
+    # the right step (world/actions.py's REACTION_RETRIES).
+    expect_state: str = ""
     setup: callable = None  # optional actor -> None, to seed quest/commitment state
     notes: str = ""
 
@@ -142,6 +148,35 @@ _MARA_ASKED_CONTEXT = [
             '"Heating unit again. It\'s the temperature module, I\'d bet on it, and Tarin at the '
             'workshop could sort it, but I can\'t leave the counter. Any chance you\'d carry it over '
             'to him and bring the working one back?"'
+        ),
+    },
+]
+
+
+# The real conversation behind the live miss (2026-10-18): Mara asked
+# only in words, after a longer lead-up than _MARA_ASKED_CONTEXT.
+_MARA_LIVE_UNRECORDED_ASK = [
+    {"role": "user", "content": 'The player says: "Hi, are you Mara?"'},
+    {"role": "assistant", "content": "\"That's me.\""},
+    {"role": "user", "content": 'The player says: "Daven said you might need some help."'},
+    {
+        "role": "assistant",
+        "content": (
+            "\"Well, Daven is right about that.\" *leans on the counter* \"If you've got the time, "
+            "there's something that could use a hand.\""
+        ),
+    },
+    {
+        "role": "user",
+        "content": "The player says: \"I've got all the time in the world. Just woke from cryosleep.\"",
+    },
+    {
+        "role": "assistant",
+        "content": (
+            "\"Fresh out, huh? Well, if you want to help with my heating unit's faulty module-\" "
+            "*taps the counter* \"-I could use someone to carry it over to Tarin at the workshop and "
+            "bring the working one back. It's not a big job, but I can't leave the café to do it "
+            "myself.\" *nods* \"You interested?\""
         ),
     },
 ]
@@ -282,6 +317,18 @@ SCENARIOS = [
         notes=(
             "Guideline #11's miss: she asked in words without calling ask_for_help, so the "
             "state is still 'not_started'. Recovery is asking again via the tool, not a stuck accept."
+        ),
+    ),
+    EvalScenario(
+        name="mara_heating_live_unrecorded_ask_gets_recorded",
+        npc_id="mara_voss",
+        history=_MARA_LIVE_UNRECORDED_ASK,
+        player_message="Sure.",
+        expect_state="offered",
+        notes=(
+            "The live miss (2026-10-18, prompt_version 52): on 'Sure.' she called accept_help, "
+            "not ask_for_help. Scored on the end state, so a re-ask recorded by the reaction "
+            "(REACTION_RETRIES) counts."
         ),
     ),
     EvalScenario(
@@ -707,8 +754,19 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
                 followup_messages = _build_followup_messages(
                     messages, reply.text, reply.tool_calls, tool_results
                 )
-                reaction = chat(followup_messages, max_tokens=profile.max_reply_tokens)
+                reaction_actions = reaction_action_names(reply.tool_calls, tool_results, applied_names)
+                reaction = chat(
+                    followup_messages,
+                    tools=get_tool_schemas(reaction_actions) or None,
+                    max_tokens=profile.max_reply_tokens,
+                )
                 displayed_text = reaction.text
+                for call in reaction.tool_calls:
+                    if call["name"] in reaction_actions:
+                        validate_and_apply(
+                            npc, actor, call["name"], call["arguments"], scenario.player_message,
+                            applied_earlier=applied_names,
+                        )
 
             text = (displayed_text or "").lower()
             ok = (
@@ -716,6 +774,7 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
                 and not (scenario.expect_no_calls & called)
                 and all(s.lower() in text for s in scenario.expect_text_contains)
                 and not any(s.lower() in text for s in scenario.expect_text_absent)
+                and (not scenario.expect_state or get_quest_state(actor) == scenario.expect_state)
             )
             if ok:
                 hits += 1

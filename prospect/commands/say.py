@@ -39,7 +39,13 @@ from evennia.commands.default.general import CmdSay as DefaultCmdSay
 from evennia.utils import logger
 from twisted.internet.threads import deferToThread
 
-from world.actions import get_tool_schemas, quest_context_for, validate_and_apply
+from world.actions import (
+    ActionResult,
+    get_tool_schemas,
+    quest_context_for,
+    reaction_action_names,
+    validate_and_apply,
+)
 from world.appearance import appearance_context_for
 from world.commitments import commitment_context_for
 from world.conversation_log import log_turn
@@ -511,10 +517,16 @@ def _handle_llm_reply(
         followup_messages = _build_followup_messages(
             messages, raw_text, reply.tool_calls, tool_results, first_pass_shown=first_pass_shown
         )
-        deferred = deferToThread(chat, followup_messages, max_tokens=max_tokens)
+        # Usually no tools at all: the reaction only puts the outcome
+        # into words. REACTION_RETRIES is the exception.
+        reaction_actions = reaction_action_names(reply.tool_calls, tool_results, applied_names)
+        deferred = deferToThread(
+            chat, followup_messages, tools=get_tool_schemas(reaction_actions) or None, max_tokens=max_tokens
+        )
         deferred.addCallback(
             _handle_action_reaction, target, caller, history, player_message, log_context, pending,
             tool_call_records, pronouns, raw_text, reply.tool_calls, tool_results, reply.usage, call_started,
+            reaction_actions, followup_messages, max_tokens,
         )
         deferred.addErrback(
             _handle_action_reaction_error, target, caller, history, player_message, log_context, pending,
@@ -549,6 +561,7 @@ def _handle_llm_reply(
 def _handle_action_reaction(
     reply, target, caller, history, player_message, log_context, pending, tool_call_records,
     pronouns, original_raw_text, original_calls, tool_results, original_usage, call_started,
+    reaction_actions=(), followup_messages=None, max_tokens=None,
 ):
     """
     Runs once the follow-up call (asking the model to react to its own
@@ -560,6 +573,14 @@ def _handle_action_reaction(
     can record the real tool-call turn (see _assistant_turn_messages),
     not just this follow-up reaction, which on its own would once again
     look like plain prose with no action behind it.
+
+    `reaction_actions` are the actions this reaction was offered
+    (world/actions.py's REACTION_RETRIES); its calls to them are
+    validated like any other, and anything else it calls is dropped.
+    A reaction that makes a call comes back with no words, the same as
+    the first pass (confirmed live-prompt replay, 2026-10-18: 8/8), so
+    one more text-only call voices it; that call comes back here with
+    every call so far as `original_calls` and no tools.
     """
     pending.discard(caller.dbref)
     # This follow-up call is a second real request with its own usage,
@@ -594,14 +615,60 @@ def _handle_action_reaction(
     segments = parse_reply(raw_text)
     _render_reply_segments(target, caller, segments, pronouns, lead_blank=bool(segments))
 
+    reaction_results = []
+    applied_names = [call["name"] for call, result in zip(original_calls, tool_results) if result["applied"]]
+    for call in reply.tool_calls:
+        if call["name"] in reaction_actions:
+            result = validate_and_apply(
+                target, caller, call["name"], call["arguments"], player_message, applied_earlier=applied_names
+            )
+        else:
+            result = ActionResult(False, "", reason=f"'{call['name']}' wasn't available in this reply")
+        if result.applied:
+            applied_names.append(call["name"])
+            if result.narration:
+                _msg_with_lead_blank(caller, result.narration)
+        tool_call_records.append(
+            {
+                "name": call["name"],
+                "arguments": call["arguments"],
+                "applied": result.applied,
+                "reason": result.reason,
+                "in_reaction": True,
+            }
+        )
+        reaction_results.append(
+            {"applied": result.applied, "reason": result.reason, "narration": result.narration}
+        )
+
+    if reply.tool_calls and not segments and followup_messages is not None:
+        pending.add(caller.dbref)
+        voice_messages = (
+            followup_messages
+            + _assistant_turn_messages(raw_text, reply.tool_calls, reaction_results)
+            + [{"role": "system", "content": FIRST_PASS_HIDDEN_NOTE}]
+        )
+        all_calls = list(original_calls) + list(reply.tool_calls)
+        all_results = list(tool_results) + reaction_results
+        deferred = deferToThread(chat, voice_messages, max_tokens=max_tokens)
+        deferred.addCallback(
+            _handle_action_reaction, target, caller, history, player_message, log_context, pending,
+            tool_call_records, pronouns, original_raw_text, all_calls, all_results, combined_usage, call_started,
+        )
+        deferred.addErrback(
+            _handle_action_reaction_error, target, caller, history, player_message, log_context, pending,
+            tool_call_records, original_raw_text, all_calls, all_results, combined_usage, call_started,
+        )
+        return
+
     # The action turn itself (with its tool_calls) is recorded
     # regardless of whether the model went on to say anything about
     # it - the engine's own record of what happened shouldn't depend
     # on the model's follow-up reply.
     history.append(_player_turn(player_message))
     history.extend(_assistant_turn_messages(original_raw_text, original_calls, tool_results))
-    if segments:
-        history.append({"role": "assistant", "content": raw_text})
+    if segments or reply.tool_calls:
+        history.extend(_assistant_turn_messages(raw_text, reply.tool_calls, reaction_results))
     _trim_history(history)
 
     log_turn(
