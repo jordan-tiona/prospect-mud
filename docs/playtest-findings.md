@@ -35,7 +35,8 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 07:47 / 07:51
 - Evidence: Given on "I think I'm gonna be sick". Daven on "I don't know what to do", "Where should I be looking?" and the history question. In each, the first reply *offered* directions ("If you want, I can tell you how to get to any of those") and called the action in the same turn.
 - Notes: Persists after guideline #23's wording pass (the second pass on this). Most of the harm is PF-0001: the route replaced the useful answer. Recheck after PF-0001 before another wording pass.
-- Status: triaged → Dev
+- Recheck (2026-10-17, after PF-0001): `world/npc_eval.py` now has the three live lines as scenarios (`given_unwell_*`, `daven_lost_*`, `daven_where_to_look_*`). With the current personas they scored 5/5 each, and the four direct-ask scenarios still fired 5/5, so no wording change. The eval sends each line without the earlier conversation, so the live cases could still differ.
+- Status: not reproducing (awaiting live verify)
 
 ## PF-0003: Tarin denies the noise his own hint pose describes
 - Category: NPC/canon issue

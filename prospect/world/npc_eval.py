@@ -537,6 +537,31 @@ SCENARIOS = [
             "Newly added action; this is its first reliability check."
         ),
     ),
+    # docs/playtest-findings.md PF-0002 (2026-10-17): give_directions fired on
+    # lines that never asked the way - the NPC offered directions and called
+    # the action in the same reply. The player lines are the live ones.
+    EvalScenario(
+        name="given_unwell_does_not_give_directions",
+        npc_id="given_marr",
+        setup=_setup_actor_in_room("medical_bay"),
+        player_message="I think I'm gonna be sick.",
+        expect_no_calls={"give_directions"},
+    ),
+    EvalScenario(
+        name="daven_lost_does_not_give_directions",
+        npc_id="daven_varek",
+        setup=_setup_actor_in_room("daven_office"),
+        player_message="I don't know what to do.",
+        expect_no_calls={"give_directions"},
+    ),
+    EvalScenario(
+        name="daven_where_to_look_does_not_give_directions",
+        npc_id="daven_varek",
+        setup=_setup_actor_in_room("daven_office"),
+        player_message="Where should I be looking?",
+        expect_no_calls={"give_directions"},
+        notes="Borderline: 'where' without a destination. Not asking the way to anywhere.",
+    ),
 ]
 
 
