@@ -69,12 +69,14 @@ class TannoyTests(TestCase):
         # The spoken part is bright cyan, like other dialogue; the lead-in isn't.
         self.assertTrue(text.startswith("A tannoy near the ceiling crackles to life: "))
         self.assertIn(' |c"Attention, new arrivals.', text)
-        self.assertTrue(text.endswith('type TANNOY."|n'))
+        self.assertIn('To hear this again, type TANNOY."|n', text)
+        self.assertTrue(text.endswith("The tannoy clicks off."))
 
     def test_tannoy_is_three_blocks_with_a_blank_line_between(self):
         text = tannoy_text_for_room(self.rooms["medical_bay"])
         self.assertEqual(text.count('|c"'), 3)
-        self.assertEqual(text.count("|n\n\n"), 2)
+        # Two between the blocks, one before "The tannoy clicks off."
+        self.assertEqual(text.count("|n\n\n"), 3)
 
     def test_tannoy_blocks_arrive_paced_on_arrival(self):
         with patch("world.tutorial.utils.delay") as mock_delay:
@@ -156,7 +158,8 @@ class TannoyTests(TestCase):
         self.assertEqual(gaps, [TANNOY_CYCLE_GAP, TANNOY_CYCLE_GAP])
         for text in self.sent:
             self.assertIn("A tannoy near the ceiling crackles to life:", text)
-            self.assertIn("type TANNOY.", text)
+            self.assertIn("To hear the whole announcement, type TANNOY.", text)
+            self.assertTrue(text.endswith("The tannoy clicks off."))
         joined = "\n".join(self.sent)
         for command in ("SAY", "TELL", "PLAYTEST"):
             self.assertIn(command, joined)

@@ -115,9 +115,9 @@ _ROOM_TANNOYS = {
 
 # Ends the full announcement, and each single block.
 TANNOY_LINE_FULL = "To hear this again, type TANNOY."
-# TODO(lore): LR-DEV-0009 - after a single block, "this" reads as just
-# that block; until Lore's wording lands, the approved line stands in.
-TANNOY_LINE_SINGLE = TANNOY_LINE_FULL
+TANNOY_LINE_SINGLE = "To hear the whole announcement, type TANNOY."
+# Narration after the last block, and after each single block (LR-DEV-0009).
+TANNOY_CLOSING = "The tannoy clicks off."
 
 TANNOY_BLOCK_PAUSE = 3  # seconds between blocks, first visit
 TANNOY_FIRST_BLOCK_DELAY = (5, 10)  # seconds after entry, later visits
@@ -161,6 +161,7 @@ def tannoy_blocks_for_room(room):
     blocks[-1] = f"{blocks[-1]} {TANNOY_LINE_FULL}"
     spoken = [f'|c"{block}"|n' for block in blocks]
     spoken[0] = f"{lead_in} {spoken[0]}"
+    spoken[-1] = f"{spoken[-1]}\n\n{TANNOY_CLOSING}"
     return spoken
 
 
@@ -231,7 +232,7 @@ def _play_cycle_block(character, room, token, order):
         utils.delay(TANNOY_QUIET_RETRY, _play_cycle_block, character, room, token, order)
         return
     lead_in, blocks = _tannoy_for(room)
-    character.msg(f'\n{lead_in} |c"{blocks[order[0]]} {TANNOY_LINE_SINGLE}"|n')
+    character.msg(f'\n{lead_in} |c"{blocks[order[0]]} {TANNOY_LINE_SINGLE}"|n\n\n{TANNOY_CLOSING}')
     if order[1:]:
         utils.delay(TANNOY_CYCLE_GAP, _play_cycle_block, character, room, token, order[1:])
     else:
