@@ -259,6 +259,20 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Needed for: the tannoy is now three blocks (`_ROOM_TANNOYS["medical_bay"]` in `prospect/world/tutorial.py`, a Dev-lane file: write the text in Resolution and Dev applies it). A character's first visit plays all three, three seconds apart. Later visits play nothing on entry; instead one random block plays 5-10 seconds in, then each of the other two once, 45 seconds apart, each block with the lead-in "A tannoy near the ceiling crackles to life:" and the TANNOY line at its end, then it goes quiet until the next visit. With pauses, nothing tells a player when the full announcement has finished.
 - What's needed: (1) One short line of narration after the last block, the counterpart of the opener "A tannoy near the ceiling crackles to life:", saying the tannoy has gone quiet (it clicks off, falls silent, or similar). Narration, not speech, so it isn't in quotes. Keep it brief: the announcement plays on every Medical Bay entry, and screen-reader users hear all of it each time. Dev recommends just this closing line, with no extra narration between the blocks; if Lore thinks a between-blocks line earns its length, propose it, but it should stay optional. Say whether it should also follow each single block on later visits; Dev suggests only if it's short enough to repeat. (2) Wording for the TANNOY sentence that ends each single block (`TANNOY_LINE_SINGLE`). "To hear this again, type TANNOY." (owner, 2026-10-17) is ambiguous there: it reads as replaying just that block, but TANNOY plays the whole announcement. It's standing in, marked `TODO(lore)`, until this lands. The full announcement keeps "To hear this again, type TANNOY." The block text itself is the approved LR-DEV-0006/0008 wording, split without rewording: (1) SAY, moving, LOOK, PROBE; (2) DESCRIBE, TELL; (3) PLAYTEST, screen-reader mode; the TANNOY sentence is now appended separately.
 - Blocking: no
-- Status: open
-- Approved by:
-- Resolution:
+- Status: drafted (2026-10-17; Lore-approved, no new canon: narration for an object the announcement already establishes, plus out-of-character command instruction. **Dev:** apply both to `prospect/world/tutorial.py` and mark approved)
+- Approved by: lore
+- Resolution: Both for `prospect/world/tutorial.py` (Dev-lane file; Dev applies).
+
+  (1) **Closing line**, narration after the last block, not in quotes and not cyan:
+
+  > The tannoy clicks off.
+
+  Four words, the counterpart of "crackles to life". Yes, it should also follow each single block on later visits: each of those opens with its own "crackles to life", so without a close the player can't tell whether more is coming in the same crackle, and at this length the repeat costs a screen-reader user about a second. Same line in all three places: after the third block on a first visit, after each single block in the cycle, and after the `tannoy` command's output, which is the full announcement and should end the same way. No between-blocks line: on a first visit the blocks are three seconds apart, and anything between them only delays the next one. If Dev wants a variant for the cycle so three identical closes in a row read less mechanically, "The tannoy falls silent." is the alternative; both are fine, but I'd keep one line everywhere. For screen-reader users, who get the whole announcement at once, the closing line goes on as its own paragraph after the joined blocks.
+
+  (2) **TANNOY sentence for single blocks** (`TANNOY_LINE_SINGLE`):
+
+  > To hear the whole announcement, type TANNOY.
+
+  "The whole announcement" says outright that TANNOY plays everything, not this block again, and it holds for whichever block the shuffle puts first. The full announcement keeps "To hear this again, type TANNOY." as requested.
+
+  Note, unasked: on later visits the shuffle can put the SAY block, which opens "Attention, new arrivals.", second or third in the cycle. That reads fine for a public-address loop, so no change proposed.
