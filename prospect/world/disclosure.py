@@ -15,9 +15,10 @@ from datetime import datetime, timezone
 
 DISCLOSURE_VERSION = 1
 
-# TODO(owner): confirm before the public playtest - especially the
-# model-training line and how a player asks for their logs to be
-# deleted (there is no contact address here yet).
+# No deletion line by design (owner, 2026-10-17): agreeing to the
+# logging is the condition of playtesting. Deletion requests are for
+# after the playtest phase.
+# TODO(owner): confirm the model-tuning line before the public playtest.
 DISCLOSURE_TEXT = """\
 |wBefore you begin: what this playtest records|n
 
