@@ -61,6 +61,7 @@ from evennia.commands.cmdhandler import CMD_LOGINSTART
 from evennia.utils import class_from_module, utils
 
 from world.accessibility import SCREENREADER_HINT, uses_screenreader
+from world.chargen import login_username
 
 COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
 
@@ -150,6 +151,8 @@ class CmdScriptedLogin(COMMAND_DEFAULT_CLASS):
 
             old_style = _parse_old_style_connect(raw_answer)
             name, password = old_style if old_style else (raw_answer, None)
+            # "Jordan Tiona" logs in as Jordan_Tiona (world/chargen.py).
+            name = login_username(name)
 
             if password is None:
                 password = yield "Password:"

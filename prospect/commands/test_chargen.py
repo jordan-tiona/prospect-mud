@@ -22,6 +22,7 @@ import itertools
 from unittest.mock import Mock, patch
 
 from django.test import TestCase, override_settings
+from evennia import create_object
 
 from commands.chargen import CmdScriptedCreate, species_menu
 from typeclasses.objects import indent_paragraphs
@@ -96,7 +97,7 @@ class ScriptedCreateTests(TestCase):
             _drive(
                 gen,
                 [
-                    "Tester1",
+                    "Testera",
                     "female",
                     "Kell",
                     "yes",
@@ -111,10 +112,44 @@ class ScriptedCreateTests(TestCase):
         self.session.sessionhandler.login.assert_called_once()
         account = self.session.sessionhandler.login.call_args[0][1]
         character = _character_from(account)
-        self.assertEqual(character.key, "Tester1")
+        self.assertEqual(character.key, "Testera")
         self.assertEqual(character.db.sex, "female")
         self.assertEqual(character.db.species, "Kell")
         self.assertEqual(character.location, self.rooms["medical_bay"])
+
+    def _create(self, responses):
+        try:
+            _drive(self.cmd.func(), responses)
+        except StopIteration:
+            pass
+
+    def test_name_with_a_space_makes_an_underscore_account_and_a_spaced_character(self):
+        self._create(["jordan tiona", "female", "Kell", "yes", "confirm", "ScriptedPass123!", "ScriptedPass123!"])
+        account = self.session.sessionhandler.login.call_args[0][1]
+        self.assertEqual(account.username, "Jordan_Tiona")
+        self.assertEqual(_character_from(account).key, "Jordan Tiona")
+        self.assertIn("(Your account will be created as Jordan_Tiona. Use that name to log in.)", self.session.msgs)
+
+    def test_single_name_shows_no_account_notice(self):
+        self._create(["Jordan", "female", "Kell", "yes", "confirm", "ScriptedPass123!", "ScriptedPass123!"])
+        self.assertFalse(any("account will be created" in m for m in self.session.msgs))
+
+    def test_digits_and_symbols_reprompt_for_the_name(self):
+        self._create(["Jordan2", "J@ck", "Jordan", "female", "Kell", "yes", "confirm",
+                      "ScriptedPass123!", "ScriptedPass123!"])
+        rejections = [m for m in self.session.msgs if "letters only" in m]
+        self.assertEqual(len(rejections), 2)
+        account = self.session.sessionhandler.login.call_args[0][1]
+        self.assertEqual(_character_from(account).key, "Jordan")
+
+    def test_a_taken_character_name_reprompts(self):
+        create_object("typeclasses.characters.Character", key="Jordan Tiona",
+                      location=self.rooms["medical_bay"], home=self.rooms["medical_bay"])
+        self._create(["Jordan Tiona", "Jordan", "female", "Kell", "yes", "confirm",
+                      "ScriptedPass123!", "ScriptedPass123!"])
+        self.assertTrue(any("already a character with that name" in m for m in self.session.msgs))
+        account = self.session.sessionhandler.login.call_args[0][1]
+        self.assertEqual(_character_from(account).key, "Jordan")
 
     def test_password_never_appears_in_any_displayed_line(self):
         gen = self.cmd.func()
@@ -122,7 +157,7 @@ class ScriptedCreateTests(TestCase):
             _drive(
                 gen,
                 [
-                    "Tester2",
+                    "Testerb",
                     "male",
                     "Drask",
                     "yes",
@@ -142,7 +177,7 @@ class ScriptedCreateTests(TestCase):
             _drive(
                 gen,
                 [
-                    "Tester3",
+                    "Testerc",
                     "male",
                     "Drask",
                     "yes",
@@ -162,7 +197,7 @@ class ScriptedCreateTests(TestCase):
         character = _character_from(account)
         # Name and sex from the first pass survived unchanged - only
         # the field the player chose to correct was redone.
-        self.assertEqual(character.key, "Tester3")
+        self.assertEqual(character.key, "Testerc")
         self.assertEqual(character.db.sex, "male")
         self.assertEqual(character.db.species, "Voldren")
 
@@ -172,7 +207,7 @@ class ScriptedCreateTests(TestCase):
             _drive(
                 gen,
                 [
-                    "Tester4",
+                    "Testerd",
                     "female",
                     "Not A Species",  # invalid - reprompted
                     "Revari",
@@ -199,7 +234,7 @@ class ScriptedCreateTests(TestCase):
             pass
 
     def test_declining_an_entry_returns_to_the_list(self):
-        self._run(["Tester7", "male", "Drask", "no", "3", "yes", "confirm", "SomePass123!", "SomePass123!"])
+        self._run(["Testerg", "male", "Drask", "no", "3", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
         account = self.session.sessionhandler.login.call_args[0][1]
         self.assertEqual(_character_from(account).db.species, "Lirra")
@@ -209,13 +244,13 @@ class ScriptedCreateTests(TestCase):
 
     def test_entry_is_laid_out_like_a_room(self):
         _preface, entries = load_species_entries()
-        self._run(["Tester8", "male", "Kell", "yes", "confirm", "SomePass123!", "SomePass123!"])
+        self._run(["Testerh", "male", "Kell", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
         expected = f"|YKell|n\n\n|W{indent_paragraphs(entries['Kell'])}|n\n"
         self.assertIn(expected, self.session.msgs)
 
     def test_unclear_answer_to_select_reprompts(self):
-        self._run(["Tester9", "male", "Kell", "maybe", "yes", "confirm", "SomePass123!", "SomePass123!"])
+        self._run(["Testeri", "male", "Kell", "maybe", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
         self.assertIn("Please answer 'yes' or 'no'", self.session.transcript)
         account = self.session.sessionhandler.login.call_args[0][1]
@@ -224,7 +259,7 @@ class ScriptedCreateTests(TestCase):
     def test_preface_is_shown_once_even_after_a_species_correction(self):
         preface, _entries = load_species_entries()
         self._run([
-            "Tester10", "male", "Drask", "yes",
+            "Testerj", "male", "Drask", "yes",
             "correct", "species", "Voldren", "yes",
             "confirm", "SomePass123!", "SomePass123!",
         ])
@@ -234,7 +269,7 @@ class ScriptedCreateTests(TestCase):
 
     def test_no_comment_text_reaches_the_player(self):
         # species.md's HTML comments hold Provisional anatomy notes.
-        self._run(["Tester11", "male", "Selk", "yes", "confirm", "SomePass123!", "SomePass123!"])
+        self._run(["Testerk", "male", "Selk", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
         self.assertNotIn("<!--", self.session.transcript)
         self.assertNotIn("Provisional", self.session.transcript)
@@ -242,7 +277,7 @@ class ScriptedCreateTests(TestCase):
 
     def test_creation_still_works_without_species_entries(self):
         with patch("commands.chargen.load_species_entries", return_value=("", {})):
-            self._run(["Tester12", "male", "Astrel", "yes", "confirm", "SomePass123!", "SomePass123!"])
+            self._run(["Testerl", "male", "Astrel", "yes", "confirm", "SomePass123!", "SomePass123!"])
 
         account = self.session.sessionhandler.login.call_args[0][1]
         self.assertEqual(_character_from(account).db.species, "Astrel")
@@ -273,7 +308,7 @@ class ScriptedCreateTests(TestCase):
     def test_group_notes_show_on_the_first_menu_only(self):
         groups = load_species_groups()
         menus = self._menus_shown(
-            ["Tester13", "male", "Drask", "no", "Revari", "yes", "confirm", "SomePass123!", "SomePass123!"]
+            ["Testerm", "male", "Drask", "no", "Revari", "yes", "confirm", "SomePass123!", "SomePass123!"]
         )
         self.assertEqual(len(menus), 2)
         self.assertEqual(menus[0], species_menu(groups, with_notes=True))
@@ -285,7 +320,7 @@ class ScriptedCreateTests(TestCase):
 
     def test_ungrouped_content_gives_the_flat_list(self):
         with patch("commands.chargen.load_species_groups", return_value=[]):
-            menus = self._menus_shown(["Tester14", "male", "1", "yes", "confirm", "SomePass123!", "SomePass123!"])
+            menus = self._menus_shown(["Testern", "male", "1", "yes", "confirm", "SomePass123!", "SomePass123!"])
         self.assertEqual(menus[0], "\n".join(f"  {i}. {name}" for i, name in enumerate(SPECIES_CHOICES, start=1)))
 
 
@@ -317,7 +352,7 @@ class InviteGateTests(TestCase):
         self.cmd = CmdScriptedCreate()
         self.cmd.caller = self.session
 
-    def _finish_with(self, *, invite_code, name="Tester5"):
+    def _finish_with(self, *, invite_code, name="Testere"):
         gen = self.cmd.func()
         try:
             _drive(
@@ -356,7 +391,7 @@ class InviteGateTests(TestCase):
 
     def test_code_is_single_use(self):
         code = generate_codes(1)[0]
-        self._finish_with(invite_code=code, name="Tester6")
+        self._finish_with(invite_code=code, name="Testerf")
 
         second_cmd = CmdScriptedCreate()
         second_cmd.caller = _FakeSession()
@@ -414,7 +449,7 @@ class DisclosureTests(TestCase):
         gen = self._to_disclosure()
         value = gen.send("AGREE")
         try:
-            responses = ["Tester20", "female", "Kell", "yes", "confirm", "ScriptedPass123!", "ScriptedPass123!"]
+            responses = ["Testert", "female", "Kell", "yes", "confirm", "ScriptedPass123!", "ScriptedPass123!"]
             while True:
                 if isinstance(value, (int, float)):
                     value = gen.send(None)

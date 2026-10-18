@@ -16,12 +16,16 @@ from evennia import create_object
 from world.build_rooms import build as build_rooms
 from world.chargen import (
     SPECIES_CHOICES,
+    account_name_for,
     apply_identity,
+    character_name_taken,
     load_species_entries,
     load_species_groups,
     parse_species_groups,
     parse_species_text,
+    login_username,
     place_in_medical_bay,
+    validate_character_name,
     validate_sex,
     validate_species,
 )
@@ -170,6 +174,46 @@ class ValidateSexTests(TestCase):
         self.assertIsNone(validate_sex("other"))
         self.assertIsNone(validate_sex(""))
         self.assertIsNone(validate_sex(None))
+
+
+class CharacterNameTests(TestCase):
+    # Owner, 2026-10-18: letters only, at most one space.
+    def test_accepts_one_or_two_parts_and_capitalizes(self):
+        self.assertEqual(validate_character_name("Jordan"), "Jordan")
+        self.assertEqual(validate_character_name("jordan tiona"), "Jordan Tiona")
+        self.assertEqual(validate_character_name("  Jordan  "), "Jordan")
+
+    def test_leaves_the_rest_of_each_part_as_typed(self):
+        self.assertEqual(validate_character_name("deVries"), "DeVries")
+
+    def test_rejects_digits_symbols_and_extra_spaces(self):
+        for bad in ("Jordan2", "J@ck", "O'Brien", "Jordan_Tiona", "Jordan-Tiona",
+                    "Jordan  Tiona", "Ann Marie Tiona", "Jördan", "", None):
+            self.assertIsNone(validate_character_name(bad), bad)
+
+    def test_account_name_swaps_the_space_for_an_underscore(self):
+        self.assertEqual(account_name_for("Jordan Tiona"), "Jordan_Tiona")
+        self.assertEqual(account_name_for("Jordan"), "Jordan")
+
+    def test_character_name_taken_ignores_case(self):
+        room = create_object("typeclasses.rooms.Room", key="Room")
+        create_object("typeclasses.characters.Character", key="Jordan Tiona", location=room, home=room)
+        self.assertTrue(character_name_taken("jordan tiona"))
+        self.assertFalse(character_name_taken("Jordan"))
+
+
+class LoginUsernameTests(TestCase):
+    def test_a_space_finds_the_underscore_account(self):
+        self.assertEqual(login_username("Jordan Tiona"), "Jordan_Tiona")
+
+    def test_no_space_is_unchanged(self):
+        self.assertEqual(login_username("Jordan"), "Jordan")
+
+    def test_an_old_account_with_a_real_space_still_matches(self):
+        from evennia.utils.create import create_account
+
+        create_account("Ravis Vardur", None, "SomePass123!")
+        self.assertEqual(login_username("ravis vardur"), "ravis vardur")
 
 
 class ApplyIdentityTests(TestCase):

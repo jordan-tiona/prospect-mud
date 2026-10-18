@@ -139,6 +139,52 @@ def load_species_groups() -> list[tuple[str, str, list[str]]]:
     return parse_species_groups(raw)
 
 
+# Character names (owner, 2026-10-18): letters only, with at most one
+# space ("Jordan" or "Jordan Tiona") - digits and symbols break
+# immersion. Apostrophes were considered and left out for now.
+_NAME_RE = re.compile(r"[A-Za-z]+(?: [A-Za-z]+)?")
+
+
+def validate_character_name(raw: str) -> str | None:
+    """The character name for free input, or None if it isn't letters
+    with at most one single space. Capitalizes the first letter of each
+    part and leaves the rest as typed ("jordan" -> "Jordan", "DeVries"
+    stays)."""
+    raw = (raw or "").strip()
+    if not _NAME_RE.fullmatch(raw):
+        return None
+    return " ".join(part[0].upper() + part[1:] for part in raw.split(" "))
+
+
+def account_name_for(character_name: str) -> str:
+    """The account username for a character name. Evennia usernames
+    can't hold a space, so "Jordan Tiona" logs in as Jordan_Tiona."""
+    return character_name.replace(" ", "_")
+
+
+def character_name_taken(character_name: str) -> bool:
+    """True if any character already has this name (case-insensitive).
+    The account check only sees the underscore form, so it can't catch
+    a character named with a space."""
+    from typeclasses.characters import Character
+
+    return Character.objects.filter_family(db_key__iexact=character_name).exists()
+
+
+def login_username(typed: str) -> str:
+    """The account name to log in with for what a player typed at the
+    login prompt: "Jordan Tiona" finds Jordan_Tiona. An account whose
+    username really has the space (made before the name rule) still
+    matches as typed."""
+    if " " not in typed:
+        return typed
+    from evennia.accounts.models import AccountDB
+
+    if AccountDB.objects.filter(username__iexact=typed).exists():
+        return typed
+    return typed.replace(" ", "_")
+
+
 def validate_sex(raw: str) -> str | None:
     """Match free input against male/female, accepting the first
     letter as a shorthand. Returns "male"/"female", or None."""

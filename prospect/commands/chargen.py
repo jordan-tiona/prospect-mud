@@ -67,10 +67,13 @@ from evennia.utils import class_from_module, utils
 from typeclasses.objects import indent_paragraphs
 from world.chargen import (
     SPECIES_CHOICES,
+    account_name_for,
     apply_identity,
+    character_name_taken,
     load_species_entries,
     load_species_groups,
     place_in_medical_bay,
+    validate_character_name,
     validate_sex,
     validate_species,
 )
@@ -224,7 +227,7 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
 
         Account = class_from_module(settings.BASE_ACCOUNT_TYPECLASS)
         account, errors = Account.create(
-            username=name, password=password, ip=session.address, session=session
+            username=account_name_for(name), password=password, ip=session.address, session=session
         )
         if not account:
             session.msg("|R%s|n" % "\n".join(errors))
@@ -234,6 +237,10 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
         if character is None and account.characters:
             character = account.characters.all()[0]
         account.db.disclosure_agreed = agreed
+        if character is not None and character.key != name:
+            # Evennia names the character after the account; players
+            # see the name as given, space and all.
+            character.key = name
         if character is not None:
             try:
                 apply_identity(character, sex=sex, species=species)
@@ -373,15 +380,24 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
         Account = class_from_module(settings.BASE_ACCOUNT_TYPECLASS)
         while True:
             raw = yield _voice("What is your name?")
-            name = Account.normalize_username((raw or "").strip())
-            if not name:
+            raw = Account.normalize_username((raw or "").strip())
+            if not raw:
                 session.msg(_voice("I didn't catch that. What is your name?"))
                 continue
-            valid, errors = Account.validate_username(name)
+            name = validate_character_name(raw)
+            if name is None:
+                session.msg(_voice("Please give your name in letters only, with at most one space."))
+                continue
+            username = account_name_for(name)
+            valid, errors = Account.validate_username(username)
+            if valid and character_name_taken(name):
+                valid, errors = False, ["Sorry, there is already a character with that name."]
             if not valid:
                 session.msg("|R%s|n" % "\n".join(errors))
                 continue
             session.msg(_voice(f"Thank you, {name}. I've recorded that."))
+            if username != name:
+                session.msg(f"(Your account will be created as {username}. Use that name to log in.)")
             yield 2.7
             return name
 
@@ -511,7 +527,7 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
 
         while True:
             password = yield _voice("Password:")
-            valid, error = Account.validate_password(password, account=Account(username=name))
+            valid, error = Account.validate_password(password, account=Account(username=account_name_for(name)))
             if not valid:
                 session.msg(
                     "|R%s|n" % "\n".join(error.messages if error else ["That password isn't valid."])

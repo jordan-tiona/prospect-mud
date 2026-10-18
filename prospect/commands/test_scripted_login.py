@@ -141,7 +141,7 @@ class ScriptedLoginTests(TestCase):
                     "",  # blank -> hands off into character creation
                     code,
                     "agree",  # the data disclosure (world/disclosure.py)
-                    "NewPlayer1",
+                    "NewPlayer",
                     "female",
                     "Kell",
                     "yes",
@@ -155,7 +155,7 @@ class ScriptedLoginTests(TestCase):
 
         self.session.sessionhandler.login.assert_called_once()
         account = self.session.sessionhandler.login.call_args[0][1]
-        self.assertEqual(account.db._last_puppet.key, "NewPlayer1")
+        self.assertEqual(account.db._last_puppet.key, "NewPlayer")
 
     @override_settings(NEW_ACCOUNT_REGISTRATION_ENABLED=False)
     def test_blank_name_with_registration_disabled_reprompts_instead_of_creating(self):
@@ -175,6 +175,22 @@ class ScriptedLoginTests(TestCase):
         gen = self.cmd.func()
         try:
             _drive(gen, ["Returning1", "CorrectPass123!"])
+        except StopIteration:
+            pass
+
+        self.session.sessionhandler.login.assert_called_once_with(self.session, account)
+
+    def test_name_typed_with_a_space_logs_in_to_the_underscore_account(self):
+        # world/chargen.py: "Jordan Tiona" is created as Jordan_Tiona.
+        Account = class_from_module(settings.BASE_ACCOUNT_TYPECLASS)
+        account, errors = Account.create(
+            username="Jordan_Tiona", password="CorrectPass123!", ip=self.session.address
+        )
+        self.assertTrue(account, errors)
+
+        gen = self.cmd.func()
+        try:
+            _drive(gen, ["Jordan Tiona", "CorrectPass123!"])
         except StopIteration:
             pass
 
