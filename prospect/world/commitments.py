@@ -155,14 +155,16 @@ class ScenarioConfig:
     # Narration templates for world/actions.py's validators to render
     # (ActionResult.narration - design-bible 16.5 step 4's "shown to
     # the player together with the narrated outcome"). Formatted with
-    # .format(npc=npc.key, actor=actor.key). Authored per scenario so
+    # .format(npc=npc.key, actor=actor.key). Written to the player as
+    # "you" (LR-LORE-0008); commands/say.py gives the model and the log
+    # world.emotes.name_the_listener's named form. Authored per scenario so
     # this doesn't read as one identical mechanical line regardless of
     # what's actually happening; the defaults below are a generic
     # fallback for a scenario that hasn't been given its own wording.
-    propose_narration: str = "{npc} brings the matter up and offers it to {actor}."
-    accept_narration: str = "{npc} takes {actor} up on the offer to help."
-    decline_narration: str = "{npc} accepts that {actor} isn't able to help with this."
-    ack_narration: str = "{npc} records {actor}'s report."
+    propose_narration: str = "{npc} asks you for a hand with it."
+    accept_narration: str = "{npc} takes you up on it."
+    decline_narration: str = "{npc} lets it go for now."
+    ack_narration: str = "{npc} records your report."
     fulfill_narration: str = "{npc} confirms the matter is settled."
     # Phase 2E (docs/phase2e-word-gets-around-design.md): lets a
     # scenario keep its proposer from automatically learning its own
@@ -223,10 +225,10 @@ SCENARIOS = {
         commitment_type="deliver_parcel",
         holder_npc_id="tarin_os",
         proposer_npc_id="veska_renn",
-        propose_narration="{npc} explains the mixed-up parcel and asks {actor} to help get it where it belongs.",
-        accept_narration="{npc} hands {actor} the parcel.",
-        decline_narration="{npc} accepts that {actor} can't help with the parcel right now.",
-        fulfill_narration="{npc} takes the parcel from {actor} and sees it's properly accounted for.",
+        propose_narration="{npc} asks you to get the misdelivered parcel to Tarin Os.",
+        accept_narration="{npc} hands you the parcel.",
+        decline_narration="{npc} sets the parcel aside for now.",
+        fulfill_narration="{npc} takes the parcel from you.",
         # Phase 2E: wired below, after import, to avoid a circular
         # import (world/rumors.py imports from this module).
     ),
@@ -244,10 +246,10 @@ SCENARIOS = {
         clerk_npc_id="iri_vael",
         # Authored by Lore, LR-DEV-0003 item 3.
         holder_hint_pose="glancing at the civic information display on the wall",
-        propose_narration="{npc} asks {actor} to confirm the display is showing the current revision.",
-        accept_narration="{npc} is glad {actor} is willing to check the number with the Civic Office.",
-        ack_narration="{npc} confirms the revision {actor} reported matches the record.",
-        fulfill_narration="{npc} is glad to hear the display's revision checked out.",
+        propose_narration="{npc} asks you to check the display's revision number with the Civic Office.",
+        accept_narration="{npc} notes you'll check the number with the Civic Office.",
+        ack_narration="{npc} confirms the revision you reported matches the record.",
+        fulfill_narration="{npc} marks the display check as done.",
     ),
     # docs/prospect-initial-playtest-design-spec.md §6, Quest 2 ("A
     # Little Community Work"): Iri proposes/accepts/declines and also
@@ -262,10 +264,10 @@ SCENARIOS = {
         commitment_type="tend_planting_bed",
         holder_npc_id="iri_vael",
         holder_hint_pose="frowning over a note about the square's neglected planting beds",
-        propose_narration="{npc} mentions the neglected planting bed and asks {actor} to help tend it.",
-        accept_narration="{npc} is glad {actor} is willing to help with the bed.",
-        decline_narration="{npc} accepts that {actor} can't help with the planting bed right now.",
-        fulfill_narration="{npc} is glad to see the planting bed properly tended.",
+        propose_narration="{npc} asks you to help tend the square's neglected planting bed.",
+        accept_narration="{npc} notes you'll see to the planting bed.",
+        decline_narration="{npc} lets the planting bed go for now.",
+        fulfill_narration="{npc} marks the planting bed as tended.",
         # One of the three tutorial quests (project owner, 2026-10-16) -
         # see ScenarioConfig.mandatory's docstring. No other scenario
         # currently competes with Iri for priority, so this has no
@@ -301,10 +303,10 @@ SCENARIOS = {
         # release a lower-priority scenario sharing this NPC - this
         # keeps outranking one by hint_priority until actually fulfilled.
         mandatory=True,
-        propose_narration="{npc} brings up the skitter problem and asks {actor} to help clear some out.",
-        accept_narration="{npc} is glad {actor} is willing to help, and lends over the shock baton for the job.",
-        decline_narration="{npc} accepts that {actor} can't help with the skitters right now.",
-        fulfill_narration="{npc} is glad to hear the skitters have been thinned out.",
+        propose_narration="{npc} asks you to help clear some skitters out.",
+        accept_narration="{npc} lends you the shock baton.",
+        decline_narration="{npc} lets the skitter job go for now.",
+        fulfill_narration="{npc} marks the skitter job as done.",
     ),
 }
 

@@ -308,6 +308,26 @@ def _msg_with_lead_blank(caller, text):
     caller.msg("\n" + text)
 
 
+def _tool_result(result, caller):
+    """A tool_results entry. Narration is written to the player as "you"
+    (LR-LORE-0008); the model sees it as the tool result and the log
+    keeps it, where "you" would read as the NPC, so they get it with the
+    player named (world.emotes.name_the_listener). `shown` is the
+    player's own wording."""
+    return {
+        "applied": result.applied,
+        "reason": result.reason,
+        "narration": name_the_listener(result.narration, caller.key),
+        "shown": result.narration,
+    }
+
+
+def _show_narration(caller, text, lead_blank=True):
+    """An engine action line, in the same gray as NPC emotes
+    (format_emote): the same kind of event, so the same look."""
+    caller.msg(("\n" if lead_blank else "") + f"|x{text}|n")
+
+
 def _render_reply_segments(target, caller, segments, pronouns, lead_blank=False):
     """Show an NPC's parsed reply (world.emotes.parse_reply) in the
     order its dialogue and actions actually appear - content/npc-
@@ -480,9 +500,7 @@ def _handle_llm_reply(
                 "reason": result.reason,
             }
         )
-        tool_results.append(
-            {"applied": result.applied, "reason": result.reason, "narration": result.narration}
-        )
+        tool_results.append(_tool_result(result, caller))
 
     # Only the forced-reaction calls decide this: a dropped remember_fact
     # says nothing about whether the text claims a false outcome.
@@ -515,7 +533,7 @@ def _handle_llm_reply(
             # Voss agrees to help" easy to miss right under her own
             # dialogue). Also separates multiple narrations from each
             # other, for a turn with more than one applied tool call.
-            _msg_with_lead_blank(caller, result["narration"])
+            _show_narration(caller, result["shown"])
 
     if needs_reaction:
         # Ask the model to react now that it's seen the outcome,
@@ -637,7 +655,7 @@ def _handle_action_reaction(
         if result.applied:
             applied_names.append(call["name"])
             if result.narration and call["name"] not in SUPPRESS_IMMEDIATE_NARRATION:
-                _msg_with_lead_blank(caller, result.narration)
+                _show_narration(caller, result.narration)
         tool_call_records.append(
             {
                 "name": call["name"],
@@ -647,9 +665,7 @@ def _handle_action_reaction(
                 "in_reaction": True,
             }
         )
-        reaction_results.append(
-            {"applied": result.applied, "reason": result.reason, "narration": result.narration}
-        )
+        reaction_results.append(_tool_result(result, caller))
 
     if reply.tool_calls and not segments and followup_messages is not None:
         pending.add(caller.dbref)
@@ -712,7 +728,7 @@ def _handle_action_reaction_error(
     # leaving the player with no response at all.
     for call, result in zip(original_calls, tool_results):
         if result["applied"] and call["name"] in SUPPRESS_IMMEDIATE_NARRATION:
-            caller.msg(result["narration"])
+            _show_narration(caller, result.get("shown", result["narration"]), lead_blank=False)
     # Still record the action turn in history, same as the non-error
     # path, so a failed reaction call doesn't also erase the action
     # from the model's own memory of the conversation.

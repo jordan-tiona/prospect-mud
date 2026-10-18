@@ -146,7 +146,7 @@ def _validate_serve_drink(npc, actor, arguments: dict) -> ActionResult:
     drink_type = arguments.get("drink_type")
     if drink_type not in ("hot", "cold"):
         return ActionResult(False, "", reason=f"invalid drink_type: {drink_type!r}")
-    return ActionResult(True, f"{npc.key} serves {actor.key} a {drink_type} drink.")
+    return ActionResult(True, f"{npc.key} serves you a {drink_type} drink.")
 
 
 # Phase 2's first quest (design-bible 13.5; docs/phase2-quest-prototype-
@@ -210,7 +210,7 @@ def _validate_ask_for_help(npc, actor, arguments: dict) -> ActionResult:
         )
     _set_quest_state(actor, "offered")
     return ActionResult(
-        True, f"{npc.key} explains the heating unit and asks {actor.key} to take the module to Tarin."
+        True, f"{npc.key} asks you to take the heating unit's faulty module to Tarin Os."
     )
 
 
@@ -226,7 +226,7 @@ def _validate_accept_help(npc, actor, arguments: dict) -> ActionResult:
             ),
         )
     return _validate_quest_step(
-        actor, "offered", "accepted", f"{npc.key} agrees to let {actor.key} help with the heating unit."
+        actor, "offered", "accepted", f"{npc.key} agrees to let you help with the heating unit."
     )
 
 
@@ -235,7 +235,7 @@ def _validate_decline_help(npc, actor, arguments: dict) -> ActionResult:
         actor,
         "offered",
         "not_started",
-        f"{npc.key} accepts that {actor.key} can't help with the heating unit right now.",
+        f"{npc.key} lets the heating unit go for now.",
     )
 
 
@@ -244,7 +244,7 @@ def _validate_give_faulty_module(npc, actor, arguments: dict) -> ActionResult:
         actor,
         "accepted",
         "has_faulty_module",
-        f"{npc.key} hands {actor.key} the faulty temperature-control module.",
+        f"{npc.key} hands you the faulty temperature-control module.",
     )
 
 
@@ -253,7 +253,7 @@ def _validate_exchange_module(npc, actor, arguments: dict) -> ActionResult:
         actor,
         "has_faulty_module",
         "has_replacement_module",
-        f"{npc.key} inspects the module and hands {actor.key} a working replacement.",
+        f"{npc.key} inspects the module and hands you a working replacement.",
     )
 
 
@@ -262,7 +262,7 @@ def _validate_accept_replacement(npc, actor, arguments: dict) -> ActionResult:
         actor,
         "has_replacement_module",
         "completed",
-        f"{npc.key} takes the replacement module from {actor.key} and thanks them.",
+        f"{npc.key} takes the replacement module from you.",
     )
 
 
@@ -622,7 +622,7 @@ def _validate_log_dead_skitters_with_iri(npc, actor, arguments: dict) -> ActionR
     plural = "" if newly_logged == 1 else "s"
     return ActionResult(
         True,
-        f"{npc.key} logs {newly_logged} more skitter{plural} for {actor.key}. "
+        f"{npc.key} logs {newly_logged} more skitter{plural} for you. "
         f"Total on record: {banked_kills_for(actor)}.",
     )
 
@@ -737,7 +737,7 @@ def _validate_report_parcel_delivery(npc, actor, arguments: dict) -> ActionResul
         _mark_reputation_credited(actor)
         _adjust_reputation(actor, giver_npc_id, 1)
 
-    return ActionResult(True, f"{npc.key} is glad to hear the parcel reached Tarin.")
+    return ActionResult(True, f"{npc.key} notes that the parcel reached Tarin Os.")
 
 
 # docs/prospect-initial-playtest-design-spec.md §6, Quest 2 ("A Little
@@ -852,8 +852,8 @@ def _validate_give_directions(npc, actor, arguments: dict) -> ActionResult:
     if not path:
         return ActionResult(True, f"{npc.key} says you're already there.")
 
-    route_text = ", then ".join(f'take "{step}"' for step in path)
-    return ActionResult(True, f"{npc.key} explains the way: {route_text}.")
+    route_text = ", then ".join(path)
+    return ActionResult(True, f"{npc.key} points the way: {route_text}.")
 
 
 # Validators that also take the player's message this turn.

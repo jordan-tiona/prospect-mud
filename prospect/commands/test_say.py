@@ -718,6 +718,22 @@ class SayCommandTests(_SayTestBase):
         self.assertTrue(any("Here you go" in m for m in self.messages))
 
     @patch("commands.say.chat")
+    def test_narration_says_you_to_the_player_and_names_them_to_the_model(self, mock_chat):
+        # LR-LORE-0008: the player reads "you", in emote gray; the
+        # model's tool result keeps the player named, since "you" there
+        # would read as the NPC.
+        mock_chat.side_effect = [
+            _reply("", tool_calls=[{"id": "call_1", "name": "serve_drink", "arguments": {"drink_type": "hot"}}]),
+            _reply("Here you go."),
+        ]
+        self._say("hot drink please")
+
+        self.assertIn("\n|xMara Voss serves you a hot drink.|n", self.messages)
+        followup_messages = mock_chat.call_args_list[1].args[0]
+        tool_message = next(m for m in followup_messages if m["role"] == "tool")
+        self.assertEqual(tool_message["content"], "(The action happened: Mara Voss serves Tester a hot drink.)")
+
+    @patch("commands.say.chat")
     def test_followup_call_reports_the_real_outcome(self, mock_chat):
         # drink_type outside the enum: the validator drops it. The
         # follow-up call must be told it failed, not that it succeeded.
