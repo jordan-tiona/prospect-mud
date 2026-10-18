@@ -36,7 +36,7 @@ from commands.say import (
 from world.actions import get_quest_state
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
-from world.emotes import name_the_listener
+from world.emotes import name_the_listener, parse_reply
 from world.llm_budget import call_cost_usd
 from world.llm_client import LLMReply, LLMUnavailableError
 from world.npc_profile import parse_persona
@@ -124,6 +124,17 @@ class NameTheListenerTests(TestCase):
 
     def test_leaves_words_that_only_contain_you_alone(self):
         self.assertEqual(name_the_listener("looks youthful", "Alice"), "looks youthful")
+
+
+class ParseReplyTests(TestCase):
+    def test_an_action_naming_a_tool_is_dropped(self):
+        # Live 2026-10-18: Mara's reaction wrote *calls give_faulty_module*.
+        segments = parse_reply('"I\'ll get the module ready." *calls give_faulty_module*')
+        self.assertEqual(segments, [("dialogue", "I'll get the module ready.")])
+
+    def test_ordinary_actions_are_kept(self):
+        segments = parse_reply('*wipes down the counter* "Morning."')
+        self.assertEqual(segments, [("emote", "wipes down the counter"), ("dialogue", "Morning.")])
 
 
 class TrimHistoryTests(TestCase):

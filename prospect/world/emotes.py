@@ -44,6 +44,12 @@ def _fix_self_pronouns(text: str, pronouns: str) -> str:
     return _SELF_PRONOUN_RE.sub(_replace, text)
 
 
+# An *action* naming one of the NPC's own tools ("*calls
+# give_faulty_module*") instead of calling it - seen live 2026-10-18
+# from Mara's reaction pass. No in-world action has a snake_case word in
+# it, so such a segment is dropped rather than shown.
+_TOOL_NAME_RE = re.compile(r"\b[a-z]+_[a-z_]+\b")
+
 _ESCAPED_QUOTE_RE = re.compile(r'\\(["\'])')
 
 
@@ -72,7 +78,7 @@ def parse_reply(text: str) -> list:
         if dialogue:
             segments.append(("dialogue", dialogue))
         emote = match.group(1).strip()
-        if emote:
+        if emote and not _TOOL_NAME_RE.search(emote):
             segments.append(("emote", emote))
         pos = match.end()
     tail = _clean_dialogue(text[pos:])
