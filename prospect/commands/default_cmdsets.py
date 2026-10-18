@@ -39,6 +39,7 @@ from commands.say import CmdSay
 from commands.scripted_login import CmdScriptedLogin
 from commands.stealth import CmdPose, CmdStealth
 from commands.tannoy import CmdTannoy
+from commands.socials import CmdSocial
 from commands.tell import CmdTell
 from commands.use import CmdUse
 
@@ -80,6 +81,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdFeedback())
         self.add(CmdStealth())
         self.add(CmdTell())
+        self.add(CmdSocial())
         # Stock pose, but revealing a hidden speaker first.
         self.add(CmdPose())
         # Nothing to do with the game for a player (commands/restricted.py).
