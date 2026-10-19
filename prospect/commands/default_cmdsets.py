@@ -35,6 +35,7 @@ from commands.look import CmdLook
 from commands.option import CmdOption
 from commands.playtest import CmdPlaytest
 from commands.probe import CmdProbe
+from commands.quit import CmdQuit
 from commands.restricted import CmdChannel, CmdOOC, CmdQuell
 from commands.say import CmdSay
 from commands.scripted_login import CmdScriptedLogin
@@ -123,6 +124,8 @@ class AccountCmdSet(default_cmds.AccountCmdSet):
         self.add(CmdChannel())
         self.add(CmdOOC())
         self.add(CmdQuell())
+        # Stock quit, with stasis and a short delay (commands/quit.py).
+        self.add(CmdQuit())
 
 
 class UnloggedinCmdSet(default_cmds.UnloggedinCmdSet):

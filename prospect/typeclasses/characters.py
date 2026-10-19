@@ -167,7 +167,20 @@ class Character(ObjectParent, DefaultCharacter):
         return super().get_display_desc(looker, **kwargs)
 
     def at_post_puppet(self, **kwargs):
-        super().at_post_puppet(**kwargs)
+        # Instead of DefaultCharacter's "You become ..." and "... has
+        # entered the game" (world/stasis.py). A brand-new character
+        # (no prelogout_location yet) hasn't been in stasis, and a
+        # takeover from another client never left, so neither gets
+        # the lines.
+        from world.stasis import announce_returning, tell_returning
+
+        takeover = bool(self.account and self.account.ndb.stasis_takeover)
+        returning = self.db.prelogout_location is not None and not takeover
+        if returning:
+            tell_returning(self)
+        self.msg((self.at_look(self.location), {"type": "look"}), options=None)
+        if returning:
+            announce_returning(self)
         # A new character is moved into the Medical Bay by chargen before
         # anyone is logged in to it, so at_post_move's tannoy goes
         # nowhere; repeat it now that the player is actually here
@@ -180,3 +193,18 @@ class Character(ObjectParent, DefaultCharacter):
         start_room_emotes(self)
         send_char_status(self)
         send_room_info(self)
+
+    def at_post_unpuppet(self, account=None, session=None, **kwargs):
+        # DefaultCharacter's, with world/stasis.py's line in place of
+        # "... has left the game". QUIT announces it before its delay
+        # (commands/quit.py), so it isn't repeated here.
+        from world.stasis import announce_going
+
+        if not self.sessions.count() and self.location:
+            takeover = bool(account and account.ndb.stasis_takeover)
+            if not takeover and not self.ndb.stasis_announced:
+                announce_going(self)
+            self.db.prelogout_location = self.location
+            self.location = None
+        self.ndb.stasis_announced = False
+        self.ndb.quitting = False

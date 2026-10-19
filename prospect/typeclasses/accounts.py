@@ -142,8 +142,17 @@ class Account(DefaultAccount):
 
     """
 
+    def at_pre_login(self, **kwargs):
+        # Evennia disconnects this account's older session right after
+        # this hook (MULTISESSION_MODE 0) and then puppets the character
+        # again: a takeover from another client, not a logout, so
+        # world/stasis.py's lines stay quiet both ways.
+        self.ndb.stasis_takeover = bool(self.sessions.count())
+        super().at_pre_login(**kwargs)
+
     def at_post_login(self, session=None, **kwargs):
         super().at_post_login(session=session, **kwargs)
+        self.ndb.stasis_takeover = False
         # A fresh session_id per login (not per command) - see
         # world/session_log.py, including why it isn't on ndb.
         session_id = uuid.uuid4().hex
