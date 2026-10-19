@@ -42,7 +42,7 @@ This bible is organized as a set of topic files under `docs/bible/`, grouped fro
 | 4 | [`s04-home-system-origins.md`](s04-home-system-origins.md) | Home system and historical foundations: pre-interstellar civilization, the AI crisis, the Genetic Revolution and Three Commissions |
 | 5 | [`s05-peoples.md`](s05-peoples.md) | The seven peoples |
 | 6–10 | [`s06-10-exodus-and-haven.md`](s06-10-exodus-and-haven.md) | The Nine generation ships, Prospect, the founding of Haven, Haven's architecture and historical geography, the Bloom and the ruined city |
-| 11–12 | [`s11-12-constellation-and-factions.md`](s11-12-constellation-and-factions.md) | The Constellation and its habitats (Elsewhere, Freehold, Meridian; a Draft roster of five more in §11.7, pending the owner), factions and institutions |
+| 11–12 | [`s11-12-constellation-and-factions.md`](s11-12-constellation-and-factions.md) | The Constellation and its habitats (Elsewhere, Freehold, Meridian; a Draft roster of five more in §§11.7–11.12, pending the owner), factions and institutions |
 | 13–14 | [`s13-14-gameplay-and-npc-design.md`](s13-14-gameplay-and-npc-design.md) | Gameplay concepts and prototype scope, LLM-driven NPC design - CLAUDE.md's engineering callouts (13.5–13.7, 14.2/14.4/14.6/14.7) live here |
 | 15 | [`s15-dynamicism-fieldworks.md`](s15-dynamicism-fieldworks.md) | Venn–Saye dynamics, Fieldworks, and Dynamicism |
 | 16 | [`s16-tech-and-implementation.md`](s16-tech-and-implementation.md) | Technology and implementation boundaries - stack, request flow, lore store, safety, roadmap (CLAUDE.md's 16.4–16.8) |
