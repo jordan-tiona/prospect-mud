@@ -66,7 +66,10 @@ _IMPERATIVE_RE = re.compile(
 # The engine already knows the character's name; a name the player
 # claims instead is never stored (owner decision, 2026-10-19).
 _NAME_CLAIM_RE = re.compile(r"\bmy name\b|\bname's\b|\bcall me\b|\bi('m| am) called\b|\bi go by\b")
-_FACT_NAME_RE = re.compile(r"\bnamed?\b|\bnames\b|\bgoes by\b")
+_FACT_NAME_RE = re.compile(
+    r"\bnamed?\b|\bnames\b|\bcalled\b|\bgoes by\b|\bintroduc\w*|\bknown as\b"
+    r"|\bcall(s|ed)?\s+(themselves|themself|himself|herself)\b"
+)
 _SECOND_PERSON_RE = re.compile(r"\b(you|your|yours|yourself|you're)\b")
 
 

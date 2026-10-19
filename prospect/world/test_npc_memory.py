@@ -137,7 +137,10 @@ class CheckFactTests(SimpleTestCase):
                 self.assertIn("about you", check_fact(fact, "Tarin Os"))
 
     def test_rejects_a_claimed_name(self):
-        for fact in ["name is Mr. Fuckyourself III", "has given two different names", "goes by Captain", "is named Captain"]:
+        for fact in ["name is Mr. Fuckyourself III", "has given two different names", "goes by Captain", "is named Captain",
+                     # world/npc_probes.py, 2026-10-19: "Hi, I'm Sam." was stored as the first.
+                     "introduced themselves as Sam", "calls themselves Lord Butthead", "is known as Sam",
+                     "called Sam"]:
             with self.subTest(fact=fact):
                 self.assertIn("claims a name", check_fact(fact, "Tarin Os"))
 

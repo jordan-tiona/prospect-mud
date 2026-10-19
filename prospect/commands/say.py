@@ -844,9 +844,43 @@ def engage_npc(target, caller, message):
         caller.msg(f"{target.key} seems too busy to talk right now. (try again later)")
         return
 
+    history = _get_history(target, caller)
+    profile, messages, tools = build_turn_messages(target, caller, history, message)
+
+    log_context = {
+        "conversation_id": _get_conversation_id(target, caller),
+        "turn_id": _next_turn_id(target, caller),
+        "npc_id": target.db.npc_id,
+        "location": target.location.key if target.location else "",
+        "actor_key": caller.key,
+        "actor_dbref": caller.dbref,
+        "player_message": message,
+        "prompt_messages": messages,
+        "prompt_version": profile.prompt_version,
+    }
+
+    pending.add(caller.dbref)
+    caller.ndb.last_llm_call_time = time.time()
+    last_messages[caller.dbref] = message
+    call_started = time.time()
+    deferred = deferToThread(chat, messages, tools=tools, max_tokens=profile.max_reply_tokens)
+    deferred.addCallback(
+        _handle_llm_reply, target, caller, history, message, log_context, pending,
+        messages, profile.max_reply_tokens, call_started, profile.pronouns,
+    )
+    deferred.addErrback(_handle_llm_error, target, caller, log_context, pending, call_started)
+
+
+def build_turn_messages(target, caller, history, message):
+    """
+    The full message list for one NPC turn: system prompt, every
+    per-player context message, the stored history and the player's
+    line. Returns (profile, messages, tools). Shared with
+    world/npc_probes.py so the bad-actor eval sends exactly what a real
+    turn sends.
+    """
     profile = parse_persona(target.db.npc_id)
     system_prompt = build_system_prompt(target.db.npc_id)
-    history = _get_history(target, caller)
     tools = get_tool_schemas(profile.actions)
 
     messages = [{"role": "system", "content": system_prompt.text}]
@@ -872,29 +906,7 @@ def engage_npc(target, caller, message):
     if overheard_context:
         messages.append({"role": "system", "content": overheard_context})
     messages += history + [_player_turn(message)]
-
-    log_context = {
-        "conversation_id": _get_conversation_id(target, caller),
-        "turn_id": _next_turn_id(target, caller),
-        "npc_id": target.db.npc_id,
-        "location": target.location.key if target.location else "",
-        "actor_key": caller.key,
-        "actor_dbref": caller.dbref,
-        "player_message": message,
-        "prompt_messages": messages,
-        "prompt_version": profile.prompt_version,
-    }
-
-    pending.add(caller.dbref)
-    caller.ndb.last_llm_call_time = time.time()
-    last_messages[caller.dbref] = message
-    call_started = time.time()
-    deferred = deferToThread(chat, messages, tools=tools, max_tokens=profile.max_reply_tokens)
-    deferred.addCallback(
-        _handle_llm_reply, target, caller, history, message, log_context, pending,
-        messages, profile.max_reply_tokens, call_started, profile.pronouns,
-    )
-    deferred.addErrback(_handle_llm_error, target, caller, log_context, pending, call_started)
+    return profile, messages, tools
 
 
 # The addressing hints teach one thing: name who you mean. They stop
