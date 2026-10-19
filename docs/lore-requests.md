@@ -402,3 +402,32 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Approved by: owner
 - Resolution: bible §§11.3, 11.4, 11.6 (owner decision), 11.7–11.11; `content/common-knowledge.md`; `content/lore/11.3.md`, `11.4.md`, `11.7.md`–`11.11.md`; persona scopes per the owner's corrected split: Tarin 11.3, Daven 11.4, Iri 11.8–11.11, Mara/Veska/Given nothing beyond the common-knowledge roster; Iri's `## The older habitats` section and the "People you know" redirects in all six personas
 - Handoff: none
+
+## LR-DEV-0010: A playtest welcome paragraph before the data agreement, pointing testers at BUG and FEEDBACK
+- Requested by: dev (on the owner's behalf, 2026-10-19)
+- Needed for: the first external playtest. Testers currently learn about `bug`/`feedback` only from `help`. The owner wants a short welcome shown before the AGREE prompt that says what this playtest is, what testers should look for or try, and how to report what they find.
+- What's needed: Out-of-character text for `prospect/world/disclosure.py` (a Dev-lane file: write the text in Resolution and Dev applies it). Today, after a valid invite code, a new player sees `DISCLOSURE_TEXT` (what's recorded, that NPC replies come from an AI model via OpenRouter, that TELLs aren't logged) and then the AGREE/QUIT prompt; the full current text is in that file. Write one paragraph, or a few short lines, covering:
+  1. **What the playtest is:** an early test of a small part of the game. Keep it to what's true now: one neighbourhood, a handful of characters to talk to, a few things to do. No promises about the finished game.
+  2. **What to look for or try**, drawn from `docs/prospect-initial-playtest-design-spec.md` section 11: finding your way without outside help, talking to characters naturally in your own words, typing commands the way that feels natural and noticing which ones fail, and whether they want to stay and explore afterwards. **Don't name the quests or say how many there are:** section 11 question 3 is whether players discover them through conversation, and naming them spoils the test.
+  3. **How to report:** `BUG` and then what went wrong, `FEEDBACK` and then what they think, typed any time in the game. Both reach staff only. Say a short note at the moment is better than a long one later.
+  Leave PLAYTEST/PT out: the Medical Bay tannoy already teaches it (LR-DEV-0006/0008/0009).
+- Notes for Lore:
+  - **Placement:** Dev suggests a separate welcome block shown just before `DISCLOSURE_TEXT`, so the agreement text and its `DISCLOSURE_VERSION` stay unchanged. If the owner would rather fold it into the agreement text, Dev bumps the version.
+  - **Screen readers:** plain text, no art or boxes, commands in capitals like the tannoy (LR-DEV-0008's notes). Short: this is read before play starts.
+  - **Owner's call, please flag it:** whether to invite testers to try to break the characters. The bad-actor eval (`docs/playtest-readiness.md`) says the engine holds, but some NPCs can still be made to sound silly, so an open invitation sets expectations. Offer wording both ways if it helps.
+  - Out-of-character interface text with no setting content, so Lore can approve its own wording, but the owner should see the final text because it's the first thing testers read.
+- Blocking: yes for the first external playtest
+- Status: open
+- Approved by:
+- Resolution:
+- Handoff: dev: apply the approved text in `prospect/world/disclosure.py`
+
+## LR-DEV-0011: Stasis flavour text when a character logs out or back in
+- Requested by: dev (on the owner's behalf, 2026-10-19)
+- Needed for: `docs/prospect-initial-playtest-design-spec.md` section 8, "Login, logout, and stasis", which hasn't been built. Today Evennia's stock lines show on logout and login. The spec: a character who logs out enters a network-mediated stasis, so nearby players briefly see "a restrained message that the character becomes still or unresponsive" before they disappear from the room and `who`, and they return where they left off with no implied trip to a cryo pod. The physics of stasis needn't be explained.
+- What's needed: Room-visible lines for (1) a character going into stasis on logout or disconnect, and (2) a character coming out of it on login, each in the third person, as other players in the room see it. Possibly also (3) the line the returning player sees themselves. One line each is enough; a couple of variants to rotate are optional. Keep them restrained (the spec's word) and short, since they show on every login and logout. If saying what stasis looks like adds anything new about the world, that part is new canon and needs the owner.
+- Blocking: no (owner, 2026-10-19: "make a note of that for later"; not needed for the first playtest)
+- Status: open
+- Approved by:
+- Resolution:
+- Handoff: dev: wire the lines into the logout/login hooks (`at_post_unpuppet`/`at_post_puppet`), checking the spec's edge cases: a dropped connection, a duplicate login, and someone in combat
