@@ -25,6 +25,11 @@ SOCIALS = {
     "cheer": ("cheers", "for"),
 }
 
+# Third-person forms work too: "nods" was typed live (2026-10-18) and
+# fell through to an unknown command.
+VERB_FOR_ALIAS = {verb: verb for verb in SOCIALS}
+VERB_FOR_ALIAS.update({third: verb for verb, (third, _prep) in SOCIALS.items()})
+
 
 class CmdSocial(Command):
     """
@@ -41,14 +46,14 @@ class CmdSocial(Command):
     """
 
     key = "socials"
-    aliases = list(SOCIALS)
+    aliases = list(VERB_FOR_ALIAS)
     locks = "cmd:all()"
     help_category = "Comms"
 
     def func(self):
         caller = self.caller
-        verb = self.cmdstring.strip().lower()
-        if verb not in SOCIALS:
+        verb = VERB_FOR_ALIAS.get(self.cmdstring.strip().lower())
+        if verb is None:
             caller.msg("Socials: " + ", ".join(SOCIALS) + ". Add someone's name to aim one at them.")
             return
 

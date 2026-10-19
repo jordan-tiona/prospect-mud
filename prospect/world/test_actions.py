@@ -100,9 +100,9 @@ class ActionValidatorTests(TestCase):
         self.actor.move_to(self.cafe, quiet=True)
         result = validate_and_apply(self.iri, self.actor, "give_directions", {"destination": "Civic Office"})
         self.assertTrue(result.applied)
-        # two hops: cafe -(south)-> square -(west)-> office
-        self.assertIn("south", result.narration)
-        self.assertIn("west", result.narration)
+        # two hops: cafe -(south)-> square -(west)-> office, each step
+        # naming the room it reaches so the model needn't guess one
+        self.assertIn(f"south to {self.square.key}, then west to {self.office.key}", result.narration)
 
     def test_give_directions_already_there(self):
         self.actor.move_to(self.office, quiet=True)

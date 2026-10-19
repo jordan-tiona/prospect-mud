@@ -60,6 +60,11 @@ class SocialTests(TestCase):
         self.ravis.execute_cmd("nod me")
         self.assertIn("Ravis nods.", self._seen_by(self.watcher))
 
+    def test_third_person_form_works_too(self):
+        self.ravis.execute_cmd("nods mara")
+        self.assertIn("You nod to Mara.", self._seen_by(self.ravis))
+        self.assertIn("Ravis nods to Mara.", self._seen_by(self.watcher))
+
     def test_unknown_target_sends_nothing_to_the_room(self):
         self.ravis.execute_cmd("bow nobody")
         self.assertNotIn("bows", self._seen_by(self.watcher))

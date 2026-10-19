@@ -852,8 +852,22 @@ def _validate_give_directions(npc, actor, arguments: dict) -> ActionResult:
     if not path:
         return ActionResult(True, f"{npc.key} says you're already there.")
 
-    route_text = ", then ".join(path)
+    route_text = ", then ".join(_name_waypoints(start_room, path))
     return ActionResult(True, f"{npc.key} points the way: {route_text}.")
+
+
+def _name_waypoints(start_room, path):
+    """Each step of a route with the room it reaches ("east to Old
+    Quarter Square"). Bare exit keys left the model to supply the
+    landmark itself, and live (2026-10-18) Iri sent people "east along
+    Old Quarter Street" when the route ran through the square."""
+    steps = []
+    room = start_room
+    for key in path:
+        exi = next(e for e in room.exits if e.key == key)
+        room = exi.destination
+        steps.append(f"{key} to {room.key}")
+    return steps
 
 
 # Validators that also take the player's message this turn.
