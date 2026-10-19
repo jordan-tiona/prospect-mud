@@ -5,6 +5,7 @@ asgiref==3.12.1
 attrs==26.1.0
 autobahn==20.12.3
 Automat==25.4.16
+better-profanity==0.7.0
 black==26.10.1
 cffi==2.1.1
 click==8.5.0

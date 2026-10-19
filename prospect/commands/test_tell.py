@@ -50,6 +50,10 @@ class TellTests(TestCase):
         self.assertIn('Ana Pell tells you, |Y"Meet me at the cafe."|n', self._seen_by(self.ravis))
         self.assertIn('You tell Ravis Vardur, |Y"Meet me at the cafe."|n', self._seen_by(self.ana))
 
+    def test_profanity_is_masked(self):
+        self.ana.execute_cmd("tell Ravis this is shit")
+        self.assertIn('Ana Pell tells you, |Y"This is ****."|n', self._seen_by(self.ravis))
+
     def test_first_name_and_case(self):
         self.ana.execute_cmd("tell ravis hi")
         self.assertIn("tells you", self._seen_by(self.ravis))

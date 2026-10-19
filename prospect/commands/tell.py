@@ -22,6 +22,7 @@ import time
 from evennia.server.sessionhandler import SESSION_HANDLER
 
 from commands.command import Command
+from world.profanity import mask_speech
 from world.speech_format import normalize_speech
 
 # LR-DEV-0005. {name} is the other person as the reader sees them.
@@ -118,7 +119,7 @@ class CmdTell(Command):
             return
 
         message, _ = normalize_speech(message)
-        _deliver(caller, target, message)
+        _deliver(caller, target, mask_speech(message))
 
 
 def _deliver(sender, target, message):

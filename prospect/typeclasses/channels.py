@@ -15,6 +15,7 @@ to be modified.
 from evennia.comms.comms import DefaultChannel
 from evennia.utils.utils import inherits_from
 
+from world.profanity import mask_speech
 from world.session_log import account_session_id, log_channel_message
 from world.stealth import is_staff
 
@@ -119,7 +120,10 @@ class Channel(DefaultChannel):
 
     """
 
-    pass
+    def at_pre_msg(self, message, **kwargs):
+        """Masks profanity (world/profanity.py) in every channel line,
+        before any subscriber sees it."""
+        return mask_speech(super().at_pre_msg(message, **kwargs))
 
 
 class PlaytestChannel(Channel):

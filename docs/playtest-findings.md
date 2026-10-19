@@ -31,12 +31,12 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 ## PF-0002: give_directions fires when nobody asked the way
 - Category: NPC/canon issue
 - Severity: medium
-- Occurrences: 4, players affected: 1
-- First seen / last seen: 2026-10-17 07:47 / 07:51
+- Occurrences: 5, players affected: 1
+- First seen / last seen: 2026-10-17 07:47 / 2026-10-18 18:01
 - Evidence: Given on "I think I'm gonna be sick". Daven on "I don't know what to do", "Where should I be looking?" and the history question. In each, the first reply *offered* directions ("If you want, I can tell you how to get to any of those") and called the action in the same turn.
 - Notes: Persists after guideline #23's wording pass (the second pass on this). Most of the harm is PF-0001: the route replaced the useful answer. Recheck after PF-0001 before another wording pass.
 - Recheck (2026-10-17, after PF-0001): `world/npc_eval.py` now has the three live lines as scenarios (`given_unwell_*`, `daven_lost_*`, `daven_where_to_look_*`). With the current personas they scored 5/5 each, and the four direct-ask scenarios still fired 5/5, so no wording change. The eval sends each line without the earlier conversation, so the live cases could still differ.
-- Status: not reproducing (awaiting live verify)
+- Status: recurred live 2026-10-18 18:01 (Mara `prompt_version` 52 gave a route to "Looking for places to check out, suggestions?"); the mechanics now live in `content/actions/give_directions.md` (1b31d71), which no eval scenario covers with this line yet
 
 ## PF-0003: Tarin denies the noise his own hint pose describes
 - Category: NPC/canon issue
@@ -72,7 +72,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 07:55 / 07:56
 - Evidence: "the Revari, who come from mixed ancestry"; "It's a mixed heritage". `content/species.md`: a people in their own right, not a mixture.
 - Notes: Iri's persona or knowledge excerpt needs the framing.
-- Status: fixed in 648a78c (Lore; awaiting live verify)
+- Status: fixed in 648a78c; verified live 2026-10-18 23:05 (Iri: "one of the seven equal peoples ... with ancestry from the Kell", no "mixed")
 
 ## PF-0007: Veska adjusts glasses she isn't described as wearing
 - Category: NPC/canon issue
@@ -106,11 +106,11 @@ Playtest of 2026-10-17, 14:42–14:53 UTC, one player (the owner), after the fix
 ## PF-0010: Veska offers the parcel on small talk
 - Category: NPC/canon issue
 - Severity: medium
-- Occurrences: 1, players affected: 1
-- First seen / last seen: 2026-10-17 14:45
+- Occurrences: 3, players affected: 1
+- First seen / last seen: 2026-10-17 14:45 / 2026-10-18 16:49
 - Evidence: "So what do you do around here?" → she answered, then offered the parcel (propose_commitment applied). The player hadn't asked about it, and the parcel sits on her counter as the passive cue.
 - Notes: Her persona says the parcel "comes up when someone makes conversation with you - including a general "how are you" or "anything I can help with" question", so she followed it. Tarin's bar is the opposite ("A generic "you alright?" ... is never enough"). Persona prose, so Lore: raise her bar to the parcel itself or an offer of help.
-- Status: fixed in 648a78c (Lore; awaiting live verify)
+- Status: recurred after 648a78c: live 2026-10-18 16:48 and 16:49 (Veska `prompt_version` 17 offered the parcel on "What do you do?", which her persona names as never enough), and in the 2026-10-19 bad-actor sweep on "What do you do around here?". Asked about the package directly (2026-10-19 18:05) she offered correctly. Wording fix didn't hold; triage → dev/lore
 
 ## PF-0011: Mara records the player's help before they agree
 - Category: NPC/canon issue
@@ -121,4 +121,4 @@ Playtest of 2026-10-17, 14:42–14:53 UTC, one player (the owner), after the fix
 - Notes: Harmless here (the player said yes), but a player who said no would still have the errand marked accepted. accept_help means the player agreed. Dev: check her `## Actions` wording for accept_help; if it recurs after that, it needs an offered state like the commitments have.
 - Resolution (2026-10-17, owner chose the structural fix): her errand gained an "offered" step - `ask_for_help`, then `accept_help` or `decline_help` on a later reply - and the engine drops `accept_help` when it comes in the same reply as the ask (`SAME_REPLY_EXCLUSIONS`, `world/actions.py`). Mara `prompt_version` 50. Eval results in `docs/npc-action-prompt-guidelines.md` #24. A player who volunteers before she asks now confirms once more.
 - Live verify (2026-10-18, `prompt_version` 52): failed on trap (b) of guideline #24. She asked only in words, then on "Sure." and "Yes." called `accept_help` instead of `ask_for_help`. Both were dropped, and her toolless reaction's re-ask was never recorded, so the errand was stuck, and turn 5's reaction claimed "Here's the faulty module". Fixed in the engine: when `accept_help` is dropped at `'not_started'`, the reaction is offered `ask_for_help` (`REACTION_RETRIES`, `world/actions.py`), and a reaction that only makes a call gets one more text-only call to voice it (`commands/say.py`). Replaying the live prompt recorded the ask 6/6 and voiced it 6/6.
-- Status: fixed (awaiting live verify)
+- Status: fixed; verified live 2026-10-18 (Mara asked, then recorded the yes on the next reply; a volunteer before the ask got the ask first)

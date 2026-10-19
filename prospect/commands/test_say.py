@@ -247,6 +247,15 @@ class _SayTestBase(TestCase):
 
 
 class SayCommandTests(_SayTestBase):
+    @patch("commands.say.chat")
+    def test_npc_hears_the_masked_line(self, mock_chat):
+        # world/profanity.py: the model never sees the word, so it can't repeat it.
+        mock_chat.return_value = _reply("Language.")
+        self._say("to Mara, this coffee is shit")
+        sent = mock_chat.call_args.args[0][-1]["content"]
+        self.assertIn("****", sent)
+        self.assertNotIn("shit", sent)
+
     # -- other players present: one hint per room visit -----------------
 
     @patch("commands.say.chat")

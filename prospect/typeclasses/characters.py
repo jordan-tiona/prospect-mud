@@ -13,6 +13,7 @@ import time
 from evennia.objects.objects import DefaultCharacter
 
 from world.appearance import identity_phrase, tidy
+from world.profanity import mask_speech
 from world.session_log import log_room_changed, session_id_for
 from world.stealth import is_hidden, is_staff, suppressed_for
 
@@ -89,6 +90,11 @@ class Character(ObjectParent, DefaultCharacter):
     unless this character is staff.
 
     """
+
+    def at_pre_say(self, message, **kwargs):
+        """Masks profanity (world/profanity.py) in say and whisper,
+        which both call this before anyone hears the line."""
+        return mask_speech(super().at_pre_say(message, **kwargs))
 
     def msg(self, text=None, from_obj=None, session=None, options=None, **kwargs):
         if suppressed_for(self, from_obj):

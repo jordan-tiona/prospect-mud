@@ -10,6 +10,7 @@ you first, the same as `say` (commands/say.py) - the owner's call
 from evennia import default_cmds
 
 from commands.command import Command
+from world.profanity import mask_speech
 from world.stealth import hide, is_hidden, reveal, reveal_for_speech
 
 
@@ -54,7 +55,7 @@ class CmdPose(default_cmds.CmdPose):
     def func(self):
         if self.args:
             reveal_for_speech(self.caller)
-            self.args = punctuate_pose(self.args)
+            self.args = mask_speech(punctuate_pose(self.args))
         super().func()
 
 
