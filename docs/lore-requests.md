@@ -448,7 +448,7 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   - **C, leave it out.** Odd replies still reach BUG through the general line above.
 
   Lore leans towards B: the bad-actor eval already covers deliberate breaking, and this group is mainly testing whether the game is fun to inhabit.
-- Handoff: dev: apply the approved text, with option B's last line as in the block above, in `prospect/world/disclosure.py`
+- Handoff: none (Dev applied it 2026-10-19 as `WELCOME_TEXT` in `prospect/world/disclosure.py`, shown in the same message as, and just before, `DISCLOSURE_TEXT`)
 
 ## LR-DEV-0011: Stasis flavour text when a character logs out or back in
 - Requested by: dev (on the owner's behalf, 2026-10-19)

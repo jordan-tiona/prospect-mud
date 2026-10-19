@@ -435,6 +435,14 @@ class DisclosureTests(TestCase):
         self.assertIn("OpenRouter", self.session.transcript)
         return gen
 
+    def test_welcome_comes_first_and_names_bug_and_feedback(self):
+        # LR-DEV-0010: before the agreement, in the same message.
+        self._to_disclosure()
+        transcript = self.session.transcript
+        self.assertLess(transcript.index("Welcome to the Prospect: Elsewhere playtest"), transcript.index("OpenRouter"))
+        self.assertIn("type BUG", transcript)
+        self.assertIn("type FEEDBACK", transcript)
+
     def test_quit_ends_registration_and_keeps_the_code(self):
         gen = self._to_disclosure()
         with self.assertRaises(StopIteration):

@@ -34,7 +34,33 @@ This is a playtest, and what you do here is recorded so the game can be improved
 
 Please don't share personal information you wouldn't want recorded."""
 
-AGREE_PROMPT = "Type |wAGREE|n to continue, or |wQUIT|n to leave without creating a character."
+# Shown just before DISCLOSURE_TEXT (LR-DEV-0010, owner-approved
+# 2026-10-19). Not part of what a player agrees to, so changing it
+# doesn't bump DISCLOSURE_VERSION. It mustn't name or count the quests:
+# whether testers find them through conversation is one of the
+# playtest's questions (docs/prospect-initial-playtest-design-spec.md
+# section 11).
+WELCOME_TEXT = """\
+|wWelcome to the Prospect: Elsewhere playtest|n
+
+This is an early test of a small part of the game: one neighbourhood, a
+handful of people to talk to, and a few things to do. A lot is unfinished,
+and finding where it falls short is the point.
+
+While you play, try to:
+  - find your way around using only what the game tells you,
+  - talk to people in your own words, as you would to anyone,
+  - type commands however feels natural, and notice which ones don't work,
+  - and notice whether you'd want to stay and look around afterwards.
+
+To report a problem, type BUG and then what went wrong. To tell us anything
+else, type FEEDBACK and then what you think. You can use either at any time,
+and only the staff see them. A short note the moment something happens is
+more useful than a long one later.
+
+If a character says something odd or out of character, a BUG report helps."""
+
+AGREE_PROMPT ="Type |wAGREE|n to continue, or |wQUIT|n to leave without creating a character."
 
 AGREE_WORDS = {"agree", "i agree"}
 QUIT_WORDS = {"quit", "q", "no", "disagree", "leave"}

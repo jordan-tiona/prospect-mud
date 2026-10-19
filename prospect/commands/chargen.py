@@ -77,7 +77,14 @@ from world.chargen import (
     validate_sex,
     validate_species,
 )
-from world.disclosure import AGREE_PROMPT, AGREE_WORDS, DISCLOSURE_TEXT, QUIT_WORDS, agreement_record
+from world.disclosure import (
+    AGREE_PROMPT,
+    AGREE_WORDS,
+    DISCLOSURE_TEXT,
+    QUIT_WORDS,
+    WELCOME_TEXT,
+    agreement_record,
+)
 from world.invites import consume_code, is_valid_code
 from world.profanity import name_is_profane
 
@@ -274,7 +281,8 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
     def _ask_disclosure(self, session):
         """world/disclosure.py: returns the agreement record, or None if
         the player declined."""
-        session.msg(DISCLOSURE_TEXT)
+        # One message, so the blank line between them shows in every client.
+        session.msg(WELCOME_TEXT + "\n\n" + DISCLOSURE_TEXT)
         while True:
             answer = (yield AGREE_PROMPT).strip().lower()
             if answer in AGREE_WORDS:
