@@ -82,3 +82,50 @@ Lore leans towards 1–3, with 4 as light support.
 - Where the settlements would go: on or near Haven's ruins, or elsewhere on Prospect.
 - When and how a player first meets the movement, and how they come to work with it (or against it).
 - Whether a player can oppose the movement, and what home-habitat membership means when the habitats disagree about it.
+
+## Session 1, continued (2026-10-19)
+
+### Owner's leanings
+
+**Temporary memory loss is normal after short sleeps.** It's expected to clear within a couple of weeks, so nobody thinks twice about a freshly woken player having no memory. This settles the base-rate question above.
+
+Lore's note: this gives a natural early beat. The first sign anything is wrong is that the player's memory *doesn't* come back after a couple of weeks. A follow-up clinic visit that ends in polite reassurance does the work, and needs no authored reveal.
+
+### Options offered: names (not chosen)
+
+Names follow the translation convention (§2): meaningful names in plain English.
+
+What the movement calls itself:
+
+1. **Landfall** ("Landfallers"). The Nine's landfall, done again and done right. Hopeful, historical.
+2. **The Return.** Nostalgic, with some of the old resentment. Fits the fringe origins.
+3. **The Second Nine.** States the plan outright: several settlements, not one Haven. Risk: ties the plan to the number nine.
+4. **Groundward.** A direction, not a place. Quieter; suits the idealists.
+
+What the Constellation calls it: **Haveners**, a label from the fringe days, when they did want Haven back. The movement has long since rejected the single city, but the name stuck, and members hate it.
+
+The zealots:
+
+1. **The Sowers.** Their own name: they plant people on the surface. After the disasters, it turns bitter.
+2. **Groundbreakers.** Their own name; outsiders use it with a sneer.
+3. **Named for their worst incident**, the way "the Bloom" names a disaster. Most realistic; needs the incident named first.
+
+Lore's lean: Landfall / Haveners / the Sowers, with option 3 likely to take over in public speech.
+
+### Options offered: what the zealots did (not chosen)
+
+Suggested shape: one signature disaster everyone knows by name, plus a pattern of smaller acts.
+
+1. **An unsanctioned colony that failed** (backfired). Families, children included, settled at a surface site without permission, to prove it could be done. It failed. The survivors called for help, and habitats refused them dock (§11.6: each habitat decides what it admits from the surface). That leaves guilt on everyone, not only the zealots. Leaves an explorable ruin.
+2. **A contamination on a station** (backfired, then covered up). Surface organisms brought aboard to prove they were manageable; a smaller station lost or sealed. A small-scale Bloom, the Constellation's deepest fear. Explains Hermitage's and Anchorage's reactions.
+3. **Taking people to the surface by force** (unethical from the start). Debtors, Tailings labourers, or people nobody would ask after, shipped down as "settlers." Echoes the engineered peoples' history as property. Waking the old frozen without consent is a softer version of the same thing, and conspiracy theorists would say so.
+4. **Sabotage to make the case** (unethical from the start). Damaging a habitat's farms or life support to prove orbital life is fragile. Clearest reason the movement isn't seen as peaceful; least distinctive.
+5. **Reactivating Haven's machinery** (backfired). Restarting environmental or security systems in the ruins to prepare a site, killing salvage crews. Ruins content, and a hazard the movement made itself.
+
+Lore's lean: 1 as the signature disaster, 3 among the smaller acts. Strong alternative: 2, if fear rather than guilt should lead.
+
+### Still open from this part
+
+- Is the Constellation's wariness pure fear and contempt, or mixed with guilt about its own part (such as the refused rescue)?
+- Does the movement today disown the zealots, quietly benefit from them, or is it still partly run by them?
+- Names for the signature incident and its site.
