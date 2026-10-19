@@ -1,6 +1,6 @@
 # Playtest recruitment: pitches, research and pre-posting TODOs
 
-**Status:** Draft. Pitch text needs the project owner's editing pass before it goes anywhere.
+**Status:** Draft (§5.1 rewritten 2026-10-19). Pitch text needs the project owner's editing pass before it goes anywhere.
 **Date:** 2026-10-17
 **Purpose:** Everything needed to recruit the first external test group (4–5 players, per `prospect-initial-playtest-design-spec.md` §11): where to post, what to say, what the community reacts to, and what has to be true before posting.
 
@@ -115,46 +115,78 @@ Setting facts below come from bible §19 (canon synopsis), §13.1 (planned direc
 
 ### 5.1 r/MUD post (long)
 
-> **Title:** Looking for 4–5 playtesters: a tiny sci-fi Evennia MUD where the NPCs are LLM-voiced, but the engine and the writing are not
->
-> Hi r/MUD,
->
-> I'm a solo developer building **Prospect**, a sci-fi MUD on Evennia. I'm looking for a handful of people to break its first playable release, *Prospect: Elsewhere*.
->
-> **Up front, since it's the first question people ask:** some NPCs speak through a large language model. That's the experiment. What the LLM does *not* do:
-> - **It doesn't write the world.** Rooms, characters, lore and quests are written by me. Each NPC only knows what someone in their position would know, from material I wrote.
-> - **It doesn't control the game.** The engine owns all state. If an NPC wants to hand you an item or mark a job done, that's a request the engine checks against the actual game state. Telling an NPC "I already fixed it" doesn't fix it.
-> - **It can't set prices or be talked out of the rules.**
->
-> The question I'm testing is whether the AI-voiced NPCs are actually *fun* to talk to inside a real MUD, or whether they're just a gimmick.
->
-> **The setting**
-> Prospect is a dangerous, biologically rich world, settled centuries ago by nine generation ships carrying seven humanoid peoples from a single home system. Three of those peoples were engineered and were legally property when the ships left. The planet's great city, Haven, fell about 150 years ago when native alien life breached its defenses. Its layered ruins are still down there. Civilization now lives in the Constellation, a ring of independent orbital habitats with their own politics and competing interests. The influences are Alastair Reynolds' *Revelation Space* and science fantasy grounded in consistent speculative science.
->
-> **What's in this test (it's very small)**
-> - You wake from cryosleep in a medical bay on **Elsewhere**, the oldest habitat, a 30 km rotating cylinder. Character creation happens in-world: name, sex, and one of the seven peoples.
-> - About **nine rooms** of one neighborhood, the Old Quarter.
-> - **Five LLM-voiced NPCs**: a medical tech, a mentor for newly woken people, a café owner, a maintenance tech and a community volunteer. Talk to them however you like.
-> - **Three small quests**: an item errand, a gardening job, and some light combat clearing vermin out of the neighborhood.
-> - Persistent characters, multiplayer, and a parser that tries to accept natural phrasing as well as standard MUD commands.
->
-> No classes, no economy, no crafting, no other habitats yet. Planned later: the other Constellation habitats (ferries between them), expeditions and salvage on the planet's surface and in Haven's ruins, and the field-based technologies that let some people manipulate the world through engineered devices or genetic specialization.
->
-> **What I want from you**
-> - Could you find your way around and figure out what to do without help outside the game?
-> - Did the NPCs feel like people with jobs, or like a chatbot in a costume?
-> - Did quests come up naturally, or did you feel like you had to guess magic words?
-> - Which commands did you try that didn't work? (I log failed commands.)
-> - **When you finished, did you want to keep talking and exploring?** This is the one I care about most.
-> - Try to break the NPCs. I'd rather you find the holes than a later player.
->
-> **Logistics**
-> - Invite-only for now, because every NPC line costs me real money and I'm reading every session log. Comment or DM me, or join [DISCORD LINK]. If the slots fill, you're on the list for the next round.
-> - Play whenever during [DATES], plus a group session on [DATE/TIME] to test multiplayer.
-> - Connect by [WEB CLIENT URL] or telnet at [HOST:PORT].
-> - **Logging notice:** conversations with the NPCs are logged. I may review and curate some of them, with names stripped and passwords never recorded, to improve the NPCs, possibly including fine-tuning a model. You'll see this notice before you play, and you can ask to have your logs deleted.
->
-> Happy to answer anything in the comments, including skeptical AI questions.
+Rewritten 2026-10-19 for the current build: six NPCs, nine rooms, ambient residents, PROBE, the Mudlet mapper, the screen-reader mode, invite codes and the in-game data notice. Quests are no longer named or counted, matching the in-game welcome (LR-DEV-0010). Paste it in Reddit's Markdown mode, then switch to the rich-text editor and drop each image in at its marker (images can't be added in Markdown mode). Each image has a transcript line under it for screen-reader users.
+
+````markdown
+**Title:** Prospect: Elsewhere, a small sci-fi MUD on Evennia. I wrote the world, the engine runs the game, and the NPCs talk through an LLM. Looking for a few playtesters.
+
+Hi r/MUD,
+
+I'm a solo developer building **Prospect**, a sci-fi MUD on Evennia, and I'm looking for a small group to play its first test release, *Prospect: Elsewhere*, and tell me what's wrong with it.
+
+**First, the AI part, since you'll want to know.** The NPCs you can talk to speak through a language model (currently gpt-4.1-mini, through OpenRouter). That's the experiment. What the model does *not* do:
+
+- **It doesn't write the world.** I wrote the rooms, characters, lore and quests. Each NPC knows only what someone in their position would know, taken from material I wrote. If you ask about something outside that, they should say they don't know rather than make it up.
+- **It doesn't run the game.** The engine owns all game state. When an NPC hands you something, serves you a drink or signs off a job, that's a request the engine checks against the real state, and the engine prints the result. Telling an NPC "I already did it" doesn't make it done.
+- **It doesn't set prices and can't be argued out of the rules.** Before posting I ran every NPC against a set of bad-actor prompts (false claims, fake names, "ignore your instructions"). The rules held. They can still sometimes be made to sound silly, and I want to hear about it when they do.
+
+What I'm testing is whether talking to these NPCs is actually fun inside a real MUD, or just a gimmick.
+
+[SCREENSHOT 1: the first minutes of play]
+
+*Transcript: [plain-text transcript of screenshot 1]*
+
+**The setting**
+
+Prospect is a dangerous, biologically rich planet, settled centuries ago by nine generation ships carrying seven humanoid peoples from one home system. Three of those peoples were engineered, and were legally property when the ships left. The planet's great city, Haven, fell about 150 years ago when native life breached its defenses, and its layered ruins are still down there. People now live in the Constellation: seven major orbital habitats, each self-governing, with no shared law between them and plenty of competing interests. The influences are Alastair Reynolds' *Revelation Space* and science fantasy with consistent speculative science behind it.
+
+**What's in this test (it's small)**
+
+- You wake from cryosleep in the medical bay of **Elsewhere**, the oldest habitat: a 30 km rotating cylinder that's a civic republic and a trading hub. Character creation happens in the world: your name, your sex, and which of the seven peoples you belong to.
+- **Nine rooms** in one neighbourhood, the Old Quarter.
+- **Six NPCs you can talk to** in your own words: a medical tech, someone who helps newly woken sleepers settle in, a café owner, a maintenance tech, a records clerk and a student volunteer. They know each other, most can give you directions, and they remember things you tell them about yourself.
+- **Background residents** who aren't LLM-driven: hand-written idle actions, and a reply if you speak to them.
+- **A few things to do.** I'm not listing them: whether you find them by looking around and talking to people is one of the things I'm testing.
+- **LOOK and PROBE**: LOOK for the quick view, PROBE when you want the detail.
+- Persistent characters and multiplayer. Each player's conversations with an NPC are their own, so an NPC won't tell you what someone else said to them.
+
+No classes, no economy, no crafting and no other habitats yet. Planned later: travel between the habitats, expeditions and salvage on the surface and in Haven's ruins, and the field technologies that let some people act on the world through engineered devices or their own genetic specialization.
+
+[SCREENSHOT 2: a validated action, in the café]
+
+*Transcript: [plain-text transcript of screenshot 2]*
+
+**Clients and accessibility**
+
+- Telnet works with any MUD client, and there's a web client. Mudlet users get room data over GMCP, and I've written a small mapper script for it.
+- **Screen readers:** if your client reports one, the game skips the login art, and room listings say in words which characters you can talk to instead of relying on colour. Or type `option/save screenreader=on`. I haven't tested it with a blind player yet, so if that's you I'd especially like to hear from you.
+
+**What I'd like from you**
+
+- Could you find your way around and work out what to do without help from outside the game?
+- Did the NPCs feel like people with jobs, or like a chatbot in a costume?
+- Did things to do come up naturally, or did it feel like guessing magic words?
+- Which commands did you try that didn't work? (Failed commands are logged.)
+- **When you'd done everything, did you want to stay and keep looking around?** This is the one I care about most.
+
+Type `BUG` or `FEEDBACK` in the game any time; only I see them. A short note in the moment helps more than a long one afterwards.
+
+**Logistics**
+
+- **Invite-only for now**, because every NPC line costs me real money and I'm reading every session log. Comment or DM me, or join [DISCORD LINK], and I'll send you an invite code. If the slots fill up, you're first in line for the next round.
+- Play any time during [DATES], plus a group session on [DATE/TIME] to test several players in the same rooms.
+- Connect: [WEB CLIENT URL], or telnet to [HOST:PORT].
+- **What gets logged:** your commands, your NPC conversations, the playtest channel, and bug and feedback reports. What you say to NPCs goes to OpenRouter and on to the model's provider (currently OpenAI). Private TELLs and passwords are never logged. Logs may be used to improve the game, including tuning the model that voices the NPCs. The game shows you all this and asks you to agree before you make a character. Ask and I'll delete your logs.
+
+I'll answer anything in the comments, including skeptical questions about the AI.
+````
+
+**Screenshot plan (two full-size shots).** Unedited, typical play, commands visible, font bumped for phone readers, other testers' names hidden unless they've agreed. Each one backs a claim the post makes.
+
+1. **First minutes (after "a gimmick", before the setting).** A fresh character in the Medical Bay: the room description, the tannoy, then a short exchange with Given Marr about where they are ("Where is... here?" → "Elsewhere?" → "Orbiting what?", per §4.1), with the Mudlet map pane visible if you use it. It sells the world and the writing before the post says anything about it, and shows NPC speech among ordinary room text, not on its own.
+2. **A validated action (after "what's in this test").** In the Corner Café: a room description, Mara's idle emote, an off-script question she answers in character, then ordering a drink so her reply is followed by the engine's own action line, then `inventory`. It backs "the engine prints the result" without showing any quest. If a second tester is around, their character in the room and seeing her reply strengthens the multiplayer claim. A Tarin skitter-count report (§4.1 Slot 3) also works here but gives away a quest. Keep it for the follow-up post.
+
+**Before posting, check:** that log deletion on request actually works (§6 is still unchecked), since the post promises it.
 
 ### 5.2 Discord short version
 
