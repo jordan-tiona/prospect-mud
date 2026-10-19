@@ -145,3 +145,20 @@ class PromptCacheMarkerTests(SimpleTestCase):
         with self.settings(LLM_PROMPT_CACHE_MARKERS=True):
             self._send(mock_get_client, messages)
         self.assertEqual(messages[0]["content"], "persona")
+
+
+class ReasoningBudgetTests(SimpleTestCase):
+    """settings.LLM_REASONING_MAX_TOKENS: a fixed, hidden thinking budget."""
+
+    @patch("world.llm_client._get_client")
+    def test_budget_replaces_effort_and_adds_to_the_reply_cap(self, mock_get_client):
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = _mock_response()
+        mock_get_client.return_value = mock_client
+
+        with self.settings(LLM_REASONING_MAX_TOKENS=400):
+            chat([{"role": "user", "content": "hi"}], max_tokens=150)
+
+        kwargs = mock_client.chat.completions.create.call_args.kwargs
+        self.assertEqual(kwargs["extra_body"]["reasoning"], {"max_tokens": 400, "exclude": True})
+        self.assertEqual(kwargs["max_tokens"], 550)

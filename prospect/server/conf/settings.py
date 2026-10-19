@@ -76,6 +76,13 @@ LLM_TIMEOUT_SECONDS = float(os.environ.get("PROSPECT_LLM_TIMEOUT_SECONDS", "30")
 # entirely (e.g. for a model that errors on unknown params).
 LLM_REASONING_EFFORT = os.environ.get("PROSPECT_LLM_REASONING_EFFORT", "none")
 
+# A fixed reasoning budget in tokens, sent as OpenRouter's
+# `reasoning.max_tokens` instead of LLM_REASONING_EFFORT when set (0 =
+# off). For a model that, with reasoning off, writes its deliberation
+# into the reply instead (Claude Haiku 5.5, guideline #30). Added on
+# top of the reply's max_tokens, since reasoning counts against it.
+LLM_REASONING_MAX_TOKENS = int(os.environ.get("PROSPECT_LLM_REASONING_MAX_TOKENS", "0"))
+
 # Explicit prompt-cache markers (OpenRouter's `cache_control`). OpenAI
 # models cache a long shared prefix automatically, but Anthropic models
 # only cache what the request marks, and are billed full input price
