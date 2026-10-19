@@ -219,14 +219,15 @@ class PromptBuilderTests(SimpleTestCase):
 
     def test_provisional_lore_never_appears(self):
         """
-        Hard rule 4's own named examples of content that must never
-        reach a prompt. Freehold and Meridian are Provisional; the
-        Sealing is explicitly called out as a proposed/provisional
-        term.
+        Provisional content that must never reach a prompt. The
+        Sealing is one of hard rule 4's named examples; Sera Venn and
+        Talin Saye are the discoverers' suggested names, Provisional
+        in bible §2 (the field's name, Venn–Saye, is Established, so
+        only the full names are checked).
         """
         for npc_id in ALL_NPC_IDS:
             prompt = build_system_prompt(npc_id).text
-            for forbidden in ("Freehold", "Meridian", "the Sealing"):
+            for forbidden in ("the Sealing", "Sera Venn", "Talin Saye"):
                 self.assertNotIn(forbidden, prompt)
 
     def test_builds_for_all_prototype_npcs(self):
