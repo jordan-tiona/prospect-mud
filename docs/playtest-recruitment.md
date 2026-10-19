@@ -190,7 +190,18 @@ I'll answer anything in the comments, including skeptical questions about the AI
 
 ### 5.2 Discord short version
 
-> **Prospect: Elsewhere**: a tiny sci-fi Evennia MUD testing LLM-voiced NPCs. The world, lore and quests are written by me, and the engine checks every NPC action. Wake from cryosleep on an orbital habitat, explore a 9-room neighborhood, talk to 5 NPCs however you like, and do 3 small quests (including light combat). Looking for **4–5 testers** for [DATES] + a group session [DATE]. I want blunt feedback on whether the NPCs are fun or just a gimmick. NPC chats are logged for review. DM me or [LINK].
+Rewritten 2026-10-19 for the MUD community Discord, posted after the r/MUD post went up; links to it for detail. Quests not named or counted (LR-DEV-0010).
+
+```
+**Prospect: Elsewhere**: playtesters wanted
+A small sci-fi MUD built with Evennia. I wrote the world, the rooms, the characters and the quests. The NPCs you talk to are voiced by an LLM, but the engine runs the game: every action an NPC takes is checked against the real game state, so talking one into handing you something doesn't work.
+
+You wake from cryosleep on Elsewhere, an old orbital habitat, and explore one neighbourhood: 9 rooms, 6 NPCs you can talk to in your own words, and a few things to do. Telnet or web client, GMCP with a Mudlet mapper, and a screen-reader mode.
+
+I'm looking for a small group to play any time during [DATES], plus a group session on [DATE/TIME]. It's invite-only because every NPC line costs me money, so DM me for an invite code. NPC conversations are logged, and the game tells you what's recorded before you make a character.
+
+More detail and a screenshot: [REDDIT LINK]
+```
 
 ### 5.3 Owner's editing decisions
 
