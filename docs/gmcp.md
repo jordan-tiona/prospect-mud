@@ -43,6 +43,12 @@ Sent on puppet.
 - **`Comm.Channel`** (the playtest channel, `tell`), and possibly room speech, for clients that split chat into its own window. Screen-reader users on Mudlet and MUSHclient use this.
 - **Not yet:** `Char.Items`, quest/commitment tracking and skills. Those systems are still changing shape.
 
+## Client scripts
+
+`clients/mudlet/prospect-mapper.lua` is a Mudlet mapper for players, built on `Room.Info`: it keys rooms on `num`, places them at `coords` (falling back to one step from the previous room when a room has none), and links `exits`, with names outside the standard set becoming special exits. Setup steps are in its header. Adapted from Blizzard's generic GMCP mapping script, which didn't fit as downloaded: it expects long direction names and ignores `coords`. Owner confirmed it working live, 2026-10-19.
+
+A change to `Room.Info`'s fields should be checked against this script.
+
 ## Map coordinates
 
 `Room.Info` sends `coords` only when a room has `db.map_coords`. The editor's `editor.x`/`editor.y` values are canvas pixels on an uneven spacing, and export strips them; the grid below is separate.
