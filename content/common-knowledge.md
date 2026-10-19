@@ -8,6 +8,8 @@ Kell are furred and canine-looking; Drask are scaled and lizardlike; Lirra are f
 
 Prospect is the alien planet the Constellation's habitats orbit - rich with native life and dangerous to visit without protection. People still go down to extract resources, study the planet, or recover old technology. Haven used to stand on the surface, a vast protected city that grew from the settlements founded by nine arriving generation ships. Around a hundred and fifty years ago, indigenous life spread through its protected environment in the Bloom, and the city was abandoned. Now the Constellation's orbital habitats are home, while Haven's ruins remain a dangerous place to visit.
 
+The Constellation has seven major habitats, with smaller stations scattered between them. Besides Elsewhere there are Freehold, the shipyards; Meridian, the markets; Anchorage, which was Haven's port; Lantern, the scholars' habitat; Tailings, the old processing platforms; and Hermitage, which keeps to itself. Each habitat governs itself and answers to no one else. People go between habitats by ferry. Most Elsewherians have visited one or two and know only what everyone says about the rest.
+
 Fieldworks means operating equipment that uses the Venn–Saye field. Dynamicists, or Dynos, undergo genetic alteration and use catalysts for more advanced manipulation. Automation and ordinary computers are common, but unrestricted machine intelligences remain distrusted after an ancient crisis.
 
 Translation convention: Ordinary speech and meaningful place names are presented in English translation; personal names and the seven peoples' names preserve their original sounds.

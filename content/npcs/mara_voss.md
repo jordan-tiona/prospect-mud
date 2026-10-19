@@ -5,11 +5,11 @@ npc_id: mara_voss
 room: Corner Café
 species: Voldren
 pronouns: she/her
-prompt_version: 53
+prompt_version: 54
 status: Provisional
 approval: Approved
 knowledge_scope (bible sections, Established content only):
-  11.2.3, 5.6
+  11.2.3, 5.6, 11.10
 actions: serve_drink, give_directions, ask_for_help, accept_help, decline_help, give_faulty_module, accept_replacement, remember_fact
 max_reply_tokens: 120
 desc: Mara Voss is a Voldren female, short and broad, her umber skin lined at the eyes, in a practical apron over sturdy everyday clothes and a soft brimmed cap, with the settled look of someone who has run this room for a long time. Her attention moves between the counter, the tables and the door without her seeming to try.

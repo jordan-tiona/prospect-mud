@@ -15,7 +15,7 @@ These are non-negotiable architecture constraints:
 1. **The engine is the source of truth; the LLM is only the NPC's voice.** Generated text never changes game state directly.
 2. **Every NPC game action is a tool call validated by the engine** against authoritative state, rules, caps and cooldowns. Invalid calls are dropped, not "fixed up."
 3. **NPCs never set or negotiate prices.** No bartering.
-4. **Only Established canon goes into NPC prompts.** The bible tags material as Established, Provisional or Unresolved. Provisional/Unresolved content (e.g. Freehold, Meridian, the Sealing) must never reach a prompt.
+4. **Only Established canon goes into NPC prompts.** The bible tags material as Established, Provisional or Unresolved. Provisional/Unresolved content (e.g. the Sealing, the Nine's individual names, the Dynamicism schools) must never reach a prompt.
 5. **Each NPC sees only its own knowledge scope** of lore, not the whole bible.
 6. **Player text is always labeled as player text** in prompts, and player claims are never stored as fact.
 7. **Never invent setting lore** in code, comments, fixtures, test data, room descriptions or prompts. Use placeholders like `TODO(lore): ...` and flag it instead. Writing new in-world content is the project owner's call.
