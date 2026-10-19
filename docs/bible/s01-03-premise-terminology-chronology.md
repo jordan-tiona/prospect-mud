@@ -44,8 +44,13 @@ The setting emphasizes historical continuity, competing political philosophies, 
 | The Nine | Nine original generation ships and their founding settlements | Established concept; individual names unresolved |
 | The Bloom | Biological catastrophe that destroyed Haven | Established |
 | The Sealing | Escalating automated quarantine response during the Bloom | Proposed historical term |
-| Freehold | Industrial habitat associated with labor emancipation | Proposed habitat |
-| Meridian | Commercial and financial habitat | Proposed habitat |
+| Freehold | Worker-owned heavy-industry habitat; the name commemorates freedom from engineered peoples' treatment as property | Established (owner approval 2026-10-18, §11.3) |
+| Meridian | Commercial and financial habitat around the old freight transfer hub | Established (owner approval 2026-10-18, §11.4) |
+| Anchorage | Haven's former orbital port, now a refugee-descended habitat that claims Haven's succession | Established (owner approval 2026-10-18, §11.8) |
+| Lantern | Research-charter habitat founded by scholars leaving Haven | Established (owner approval 2026-10-18, §11.9) |
+| Tailings | Unchartered cluster of old ore-processing platforms counted as a habitat | Established (owner approval 2026-10-18, §11.10) |
+| Hermitage | Ascetic, self-sufficient habitat sealed for about a century after the Bloom | Established (owner approval 2026-10-18, §11.11) |
+| Threshold | A surface-gateway habitat run under an agreement of all habitats | Rejected by the owner 2026-10-18; do not reuse (§11.7) |
 | **Kell** | Ancestral A; primarily canine, furred, digitigrade | Adopted working species name (renamed 2026-10-16 from *Kethari*) |
 | **Drask** | Ancestral B; scaled, lizard-faced, plantigrade | Adopted working species name (renamed 2026-10-16 from *Sylari*) |
 | **Lirra** | Ancestral C; avian/feathered | Adopted working species name (renamed 2026-10-16 from *Aevyrin*) |
@@ -95,9 +100,9 @@ Only certain chronological relationships are established. Dates marked approxima
 | Date undecided | Haven is established as a unified city and common environmental protection network is developed |
 | Following centuries | Haven expands horizontally, then vertically after reaching its practical protected footprint |
 | Approximately 400 years before present (working age) | Elsewhere is founded as the first independent orbital habitat; over centuries its cylinder expands lengthwise away from the docking end |
-| Following centuries | Additional habitats emerge, developing into the Constellation; Elsewhere becomes a mature, economically diverse civic republic |
+| Following centuries | Additional habitats emerge, developing into the Constellation (Freehold, Meridian, Lantern, Tailings and Hermitage all exist before the Bloom; Anchorage is Haven's orbital port, not yet a habitat); Elsewhere becomes a mature, economically diverse civic republic |
 | Before the Bloom (ordering relative to Elsewhere's founding undecided) | Emancipation of the engineered peoples is complete across Haven and the habitats; hereditary servitude is history everywhere by the time of the Bloom, not something Elsewhere alone ended |
-| ~150 years before present | The Bloom and ensuing containment catastrophe cause the fall of Haven |
+| ~150 years before present | The Bloom and ensuing containment catastrophe cause the fall of Haven; Anchorage takes in the most evacuees and closes itself to the surface for good; Hermitage seals its docks for about a century |
 | Present | The Constellation survives; Prospect remains a dangerous resource and exploration destination |
 
 

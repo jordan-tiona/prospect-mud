@@ -125,13 +125,13 @@ The reference identifies these separate identity dimensions:
 
 Historical events should shape an NPC's circumstances and attitudes without requiring constant historical exposition. No species-wide personality, morality, intelligence, political allegiance, or occupational preference should substitute for individual characterization.
 
-The reference's dockworker example illustrates limited, situated knowledge: an Elsewhere worker could care much more about local employers and surface-mining contracts than the ancient AI crisis. Its mention of merchants from Meridian is conditional on that proposed habitat being adopted; it does not canonize Meridian or establish a particular dockworker.
+The reference's dockworker example illustrates limited, situated knowledge: an Elsewhere worker could care much more about local employers and surface-mining contracts than the ancient AI crisis. Its mention of merchants from Meridian is now consistent with Established canon (Meridian, §11.4, approved 2026-10-18); it still does not establish a particular dockworker.
 
 ### 14.2 Knowledge, belief, and unresolved lore
 
 **Established design direction:** NPCs do not possess perfect knowledge of history or the world. Prejudice and misconception are elements of individual perspective, not narrator-endorsed facts.
 
-**Established design direction (adopted 2026-10-10):** Only **Established** canon is ever placed in NPC prompts. Provisional and Unresolved material (for example Freehold, Meridian or the Sealing) stays out of NPC context until approved. On Unresolved questions, NPCs answer with ignorance or personal belief, never invented fact. See [Section 16.6](#166-lore-store-knowledge-scopes-and-memory).
+**Established design direction (adopted 2026-10-10):** Only **Established** canon is ever placed in NPC prompts. Provisional and Unresolved material (for example the Sealing, the Nine's individual names or the proposed Dynamicism schools) stays out of NPC context until approved. On Unresolved questions, NPCs answer with ignorance or personal belief, never invented fact. See [Section 16.6](#166-lore-store-knowledge-scopes-and-memory).
 
 **Proposed implementation guidance:** Maintain separate representations of approved world facts, an NPC's personal experiences, beliefs or rumors, and information that NPC does not know. Preserve uncertainty rather than asking a model to complete missing setting details. A model-generated claim about the cause of the Bloom, for example, must not silently become its actual cause.
 
@@ -168,7 +168,7 @@ This boundary supports the source's intent of believable, limited individuals wh
 - Maintain an individual's needs and relationships without substituting species stereotypes.
 - Admit ignorance and distinguish beliefs from established history.
 - Leave an unanswered authorial question unanswered.
-- Avoid treating Freehold, Meridian, or a candidate Haven facility as approved content.
+- Avoid treating a candidate Haven facility, or any habitat beyond the seven in §11.7, as approved content.
 - Respond to a player's situation without turning ordinary conversation into a lore lecture.
 - Keep action outcomes and memories consistent with confirmed game events.
 - Remain coherent when an LLM response is unavailable or delayed, using a fallback policy that still needs design.
