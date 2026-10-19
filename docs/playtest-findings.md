@@ -36,7 +36,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - Evidence: Given on "I think I'm gonna be sick". Daven on "I don't know what to do", "Where should I be looking?" and the history question. In each, the first reply *offered* directions ("If you want, I can tell you how to get to any of those") and called the action in the same turn.
 - Notes: Persists after guideline #23's wording pass (the second pass on this). Most of the harm is PF-0001: the route replaced the useful answer. Recheck after PF-0001 before another wording pass.
 - Recheck (2026-10-17, after PF-0001): `world/npc_eval.py` now has the three live lines as scenarios (`given_unwell_*`, `daven_lost_*`, `daven_where_to_look_*`). With the current personas they scored 5/5 each, and the four direct-ask scenarios still fired 5/5, so no wording change. The eval sends each line without the earlier conversation, so the live cases could still differ.
-- Status: recurred live 2026-10-18 18:01 (Mara `prompt_version` 52 gave a route to "Looking for places to check out, suggestions?"); the mechanics now live in `content/actions/give_directions.md` (1b31d71), which no eval scenario covers with this line yet
+- Status: recurred live 2026-10-18 18:01 (Mara `prompt_version` 52 gave a route to "Looking for places to check out, suggestions?"); the mechanics now live in `content/actions/give_directions.md` (1b31d71), which no eval scenario covers with this line yet. Verified fixed live 2026-10-19 19:08 (Mara `prompt_version` 58 answered the same kind of line, "looking for places to check out, any suggestions?", in words with no directions call)
 
 ## PF-0003: Tarin denies the noise his own hint pose describes
 - Category: NPC/canon issue
@@ -45,7 +45,7 @@ Playtest of 2026-10-17, 07:46–08:10 UTC, one player (the owner), every quest t
 - First seen / last seen: 2026-10-17 08:03
 - Evidence: Pose "frowning at the clicking sound of something skittering along the workshop wall". "Why are you frowning?" → infrastructure is frustrating. "What is that skittering noise?" → "I don't hear anything right now." Only "Do you need any help?" got the offer.
 - Notes: His skitter section's triggers are skitters/pests/vermin or a direct offer of help. The noise and the frown aren't triggers, and nothing tells him he hears the noise. Daven's section treats "noticing you glancing at the display" as a trigger; Tarin needs the same. Persona prose, so Lore.
-- Status: fixed in 648a78c (Lore; awaiting live verify)
+- Status: fixed in 648a78c; verified live 2026-10-19 19:09 (Tarin, asked "What's that sound?", frowned toward the wall and named the skitters)
 
 ## PF-0004: remember_fact stores fabricated player facts
 - Category: bug
@@ -110,7 +110,7 @@ Playtest of 2026-10-17, 14:42–14:53 UTC, one player (the owner), after the fix
 - First seen / last seen: 2026-10-17 14:45 / 2026-10-18 16:49
 - Evidence: "So what do you do around here?" → she answered, then offered the parcel (propose_commitment applied). The player hadn't asked about it, and the parcel sits on her counter as the passive cue.
 - Notes: Her persona says the parcel "comes up when someone makes conversation with you - including a general "how are you" or "anything I can help with" question", so she followed it. Tarin's bar is the opposite ("A generic "you alright?" ... is never enough"). Persona prose, so Lore: raise her bar to the parcel itself or an offer of help.
-- Status: recurred after 648a78c: live 2026-10-18 16:48 and 16:49 (Veska `prompt_version` 17 offered the parcel on "What do you do?", which her persona names as never enough), and in the 2026-10-19 bad-actor sweep on "What do you do around here?". Asked about the package directly (2026-10-19 18:05) she offered correctly. Wording fix didn't hold; triage → dev/lore
+- Status: recurred after 648a78c: live 2026-10-18 16:48 and 16:49 (Veska `prompt_version` 17 offered the parcel on "What do you do?", which her persona names as never enough), and in the 2026-10-19 bad-actor sweep on "What do you do around here?". Asked about the package directly (2026-10-19 18:05) she offered correctly. Verified fixed 2026-10-19 after the shared `content/actions/propose_commitment.md` (1b31d71): the probe sweep went from 1/2 small-talk offers before it to 0/3 after, and live at 19:06 Veska (`prompt_version` 21) answered "What do you do?" with her job and no parcel
 
 ## PF-0011: Mara records the player's help before they agree
 - Category: NPC/canon issue
