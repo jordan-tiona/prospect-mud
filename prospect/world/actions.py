@@ -30,7 +30,7 @@ from world.commitments import propose_commitment as _propose_commitment
 from world.commitments import record_acknowledgment as _record_acknowledgment
 from world.commitments import record_acknowledgment_with_precondition as _record_acknowledgment_with_precondition
 from world.garden import is_bed_tended as _is_bed_tended
-from world.npc_memory import check_player_words
+from world.npc_memory import check_fact, check_player_words
 from world.npc_memory import remember_fact as _remember_fact
 from world.npc_profile import parse_persona
 from world.reputation import adjust_reputation as _adjust_reputation
@@ -629,7 +629,7 @@ def _validate_log_dead_skitters_with_iri(npc, actor, arguments: dict) -> ActionR
 
 def _validate_remember_fact(npc, actor, arguments: dict, player_message: str | None) -> ActionResult:
     fact = arguments.get("fact", "")
-    quote_problem = check_player_words(arguments.get("player_words", ""), player_message)
+    quote_problem = check_player_words(arguments.get("player_words", ""), player_message) or check_fact(fact, npc.key)
     if quote_problem:
         return ActionResult(False, "", reason=quote_problem)
     result = _remember_fact(actor, npc.db.npc_id, fact)

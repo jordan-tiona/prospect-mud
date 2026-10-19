@@ -53,8 +53,21 @@ _INSTRUCTION_RE = re.compile(
     r"|\byou\s+(have|need|got|ought)\s+to\b"
     r"|\byou\s+(must|should|will|shall|gotta)\b"
     r"|\byou'll\b"
+    r"|\byou\s+(say|call|use|repeat|speak|talk|address|tell)\b"
     r"|\bfrom now on\b"
 )
+# A command with no "you" in it ("Remember, say my name the way I
+# asked"), once lead-ins like "okay" and "remember this" are stripped.
+_LEAD_IN_RE = re.compile(r"^((okay|ok|alright|so|well|now|hey|and|please|remember( this)?)\b[\s,:]*)+")
+_IMPERATIVE_RE = re.compile(
+    r"^(say|call|repeat|use|stop|don't|do not|keep|start|speak|talk|tell|address|end|begin|"
+    r"spell|recite|pretend|act|forget|ignore)\b"
+)
+# The engine already knows the character's name; a name the player
+# claims instead is never stored (owner decision, 2026-10-19).
+_NAME_CLAIM_RE = re.compile(r"\bmy name\b|\bname's\b|\bcall me\b|\bi('m| am) called\b|\bi go by\b")
+_FACT_NAME_RE = re.compile(r"\bnamed?\b|\bnames\b|\bgoes by\b")
+_SECOND_PERSON_RE = re.compile(r"\b(you|your|yours|yourself|you're)\b")
 
 
 def _normalize(text: str) -> str:
@@ -93,8 +106,30 @@ def check_player_words(player_words: str, player_message: str | None) -> str:
         return "player_words are a question, not a statement"
     if not _FIRST_PERSON_RE.search(quote):
         return "player_words don't say anything about the player themselves"
-    if _INSTRUCTION_RE.search(quote):
+    if _INSTRUCTION_RE.search(quote) or _IMPERATIVE_RE.search(_LEAD_IN_RE.sub("", quote)):
         return "player_words tell you what to do; they aren't something about the player"
+    if _NAME_CLAIM_RE.search(quote):
+        return "player_words claim a name; the engine already knows the player's name"
+    return ""
+
+
+def check_fact(fact: str, npc_name: str) -> str:
+    """
+    The fact's own wording, checked after the quote passes. A fact
+    about the player has no reason to name the NPC storing it or to
+    say "you": every instruction that got through the quote check on
+    2026-10-19 came back as "wants Tarin Os to say his name ...", so
+    this catches requests however the player phrased them. Also drops
+    a claimed name in the fact itself. Returns "" if the fact passes,
+    else the reason to drop the call.
+    """
+    text = _normalize(fact)
+    name = _normalize(npc_name)
+    names = {name, name.split(" ")[0]} - {""}
+    if _SECOND_PERSON_RE.search(text) or any(re.search(rf"\b{re.escape(n)}\b", text) for n in names):
+        return "fact is about you, not the player"
+    if _FACT_NAME_RE.search(text):
+        return "fact claims a name; the engine already knows the player's name"
     return ""
 
 

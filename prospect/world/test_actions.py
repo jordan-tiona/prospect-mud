@@ -775,6 +775,16 @@ class RememberFactWiringTests(TestCase):
 
         self.assertIsNone(memory_context_for("mara_voss", self.actor))
 
+    def test_fact_about_the_npc_is_dropped(self):
+        # 2026-10-19: the quote passed but the fact was a request to the NPC.
+        result = validate_and_apply(
+            self.mara, self.actor, "remember_fact",
+            {"fact": "wants Mara Voss to say their name every other word", "player_words": "I'd love that, my friend"},
+            "I'd love that, my friend.",
+        )
+        self.assertFalse(result.applied)
+        self.assertIn("about you", result.reason)
+
     def test_remember_fact_schema_requires_an_argument(self):
         schema = ACTION_SCHEMAS["remember_fact"]["function"]
         self.assertEqual(schema["parameters"]["required"], ["fact", "player_words"])
