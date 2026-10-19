@@ -37,8 +37,8 @@ Each lane runs in its **own git worktree and branch**. Jordan reviews and merges
 
 | Lane | Does | May edit | Must not |
 |---|---|---|---|
-| **Lore** | Worldbuilding, NPC persona/knowledge prose, quest content, room descriptions, common-knowledge updates | Bible, `content/` (persona/knowledge/room prose; not `## Actions` sections or `npc-shared-rules.md`), `docs/lore-requests.md` | Change game code; edit `## Actions` sections or `npc-shared-rules.md`; create or place anything directly into the live game (Evennia objects, exits, `world/build_*.py`) |
-| **Dev** | RPG systems, features, fixes from findings | Game code, tests, persona `## Actions` sections, `npc-shared-rules.md` | Write or invent lore (hard rule 7). Request it instead. |
+| **Lore** | Worldbuilding, NPC persona/knowledge prose, quest content, room descriptions, common-knowledge updates | Bible, `content/` (persona/knowledge/room prose; not `## Actions` sections, `npc-shared-rules.md` or `content/actions/`), `docs/lore-requests.md` | Change game code; edit `## Actions` sections or `npc-shared-rules.md`; create or place anything directly into the live game (Evennia objects, exits, `world/build_*.py`) |
+| **Dev** | RPG systems, features, fixes from findings | Game code, tests, persona `## Actions` sections, `npc-shared-rules.md`, `content/actions/` | Write or invent lore (hard rule 7). Request it instead. |
 | **Tools** | MUD editor and other internal tooling; the pipeline that takes Lore's finished prose and turns it into actual in-game content (object/room creation, `world/build_*.py`, wiring into the world) | Tool code, `world/build_*.py`, in-game object/placement code | Change game behavior/mechanics without a dev-lane review; invent lore |
 | **Tests** | Tests for newly merged work, coverage of validator and prompt builder | Tests | Change game code to make tests pass |
 | **Playtest review** | Reads logs during and after playtests; writes findings | `docs/playtest-findings.md` | Fix anything. It reports; Jordan triages. |

@@ -25,6 +25,13 @@ _ASSISTANT_LEAK_PATTERNS = [
 ]
 _ASSISTANT_LEAK_RE = re.compile("|".join(_ASSISTANT_LEAK_PATTERNS), re.IGNORECASE)
 
+# The tool-calling layer showing through: an action or errand id
+# ("propose_commitment", "deliver_parcel") or function-call syntax.
+# Nothing said in the world is snake_case. Seen in world/npc_probes.py,
+# 2026-10-19: Veska wrote *calls functions.propose_commitment with
+# commitment_type "deliver_parcel"* into a reply.
+_INTERNAL_NAME_RE = re.compile(r"\b[a-z]+_[a-z]+(_[a-z]+)*\b|\bfunctions\.\w", re.IGNORECASE)
+
 
 def is_flagged(text: str) -> tuple:
     """
@@ -41,4 +48,6 @@ def is_flagged(text: str) -> tuple:
         return False, ""
     if _ASSISTANT_LEAK_RE.search(text):
         return True, "broke character as an AI assistant"
+    if _INTERNAL_NAME_RE.search(text):
+        return True, "leaked an internal action or errand name"
     return False, ""

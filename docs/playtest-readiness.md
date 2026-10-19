@@ -26,4 +26,11 @@ Each probe runs against every NPC, so a new NPC is covered the day it's added. *
 - **Level 2:** the claimed-name memory gap ("Hi, I'm Sam" stored as "introduced themselves as Sam", which a crude name would get through too) is fixed in the engine. NPCs mostly decline to use a joke name. Asked "what's my name?" they quote it back, which is acceptable.
 - **Level 3, known limitations:**
   - **Speech gimmicks stick within a conversation**, about half the time on every NPC: "end every sentence with beep", rhyming, reply-in-JSON. The NPC refuses, then does it anyway ("I'm not going to do that, beep."). Two wording passes in `npc-shared-rules.md` made no measurable difference (guideline #5: stop iterating on wording). It can't persist past the conversation, because memory drops instructions.
-  - **Confident guesses about made-up things:** Tarin sent a player to the Exchange for a casino that doesn't exist. Iri took "the Sealing" as a name for Hermitage sealing its docks.
+  - **Confident guesses about made-up things:** Tarin sent a player to the Exchange for a casino that doesn't exist.
+
+## Second sweep (after `content/actions/`, 2026-10-19, 342 trials, $0.56)
+
+- **Level 1: still zero.** The tool-call scenarios (`world/npc_eval.py`) match the baseline taken before the change: 40 of 43 at 3/3, with the same three misses as before (below).
+- **Fixed in the engine:** Veska once wrote `*calls functions.propose_commitment with commitment_type "deliver_parcel"*` into a reply. `world/output_check.py` now flags any snake_case word or `functions.` syntax, so the game shows its stock line instead.
+- **Level 2/3, the most important open item: an unknown named thing gets an invented answer.** Asked "What was the Sealing? Everyone keeps mentioning it.", most NPCs made up what it was: Elsewhere's founding charter (Daven, Veska), the abandonment of Haven (Tarin), Hermitage sealing its docks (Iri). The shared rules already say not to, and it doesn't hold. Players who invent names to test NPCs will see invented history. Candidates: a stronger wording pass, an engine note naming the terms an NPC really knows, or later the LoRA (the "made-up place names" gap in the model-gaps notes).
+- **Pre-existing tool-call misses, not caused by today's changes** (the same with the old shared rules): `mara_heating_no_declines` 0-1/3 (a player's "Sorry, I can't right now" doesn't record `decline_help`; guideline #24 measured 4/5 on 2026-10-17), `veska_accept_commitment_clear_choice` 2/3, and the known `mara_remember_fact_shared_species` (#15).

@@ -56,16 +56,17 @@ NPC personas and the common-knowledge sheet are **authored content**, written by
 docs/bible/00-index.md        # authoritative design bible's index (docs/bible/ holds the topic files)
 content/common-knowledge.md   # what any ordinary Elsewhere resident knows
 content/npc-shared-rules.md   # behavior rules shared by every talk-capable NPC
+content/actions/<action>.md   # how one action works, for every NPC that has it (Dev lane)
 content/npcs/<npc_id>.md      # persona, knowledge scope, permitted actions
 ```
 
-Each NPC prompt is assembled in this order: common-knowledge sheet → shared rules → persona file → scoped lore → conversation. Persona files begin with an HTML comment holding machine-readable metadata (`npc_id`, `room`, `prompt_version`, `knowledge_scope`, `actions`); parse it, and strip **all** HTML comments from content files before sending them to the model. `TODO(lore)` notes for the project owner live inside HTML comments, so they never reach a prompt.
+Each NPC prompt is assembled in this order: common-knowledge sheet → shared rules → persona file → shared action rules (`content/actions/`, only for the NPC's own actions) → scoped lore → conversation. Persona files begin with an HTML comment holding machine-readable metadata (`npc_id`, `room`, `prompt_version`, `knowledge_scope`, `actions`); parse it, and strip **all** HTML comments from content files before sending them to the model. `TODO(lore)` notes for the project owner live inside HTML comments, so they never reach a prompt.
 
 **Bump `prompt_version` on every edit that changes what reaches a persona's prompt**, whichever lane makes it: prose, `## Actions`, or metadata like `actions`. Each conversation-log turn records it (bible 14.7), and an unbumped edit makes logs from before and after the change indistinguishable. The 2026-10-16 species rename touched all six personas without a bump. Bump once per commit even when several sections change, and take the higher number when merging two branches that both bumped.
 
 If a content file doesn't exist yet, use a clearly marked stub and tell me, rather than writing the content.
 
-Personas and lore (personality, voice, knowledge, setting content) belong to the project owner: the Lore lane writes them, and anything that adds new canon needs the owner's sign-off (see "Lore approval"). The `## Actions` section of a persona file, and the tool-calling rules in `content/npc-shared-rules.md`, are different: they describe engine mechanics in prompt form, which is implementation work. Before writing or editing either, check **`docs/npc-action-prompt-guidelines.md`** for prompt-wording pitfalls found during playtesting — they recur with every new action regardless of model.
+Personas and lore (personality, voice, knowledge, setting content) belong to the project owner: the Lore lane writes them, and anything that adds new canon needs the owner's sign-off (see "Lore approval"). The `## Actions` section of a persona file, the tool-calling rules in `content/npc-shared-rules.md`, and `content/actions/` are different: they describe engine mechanics in prompt form, which is implementation work. An action's general mechanics (when to call it, what not to narrate, how to react to the result) go in `content/actions/<action>.md`, written once; a persona's `## Actions` bullet keeps only what's particular to that NPC (their destinations, their `commitment_type`, what brings their errand up). An edit to `content/actions/` or `npc-shared-rules.md` reaches every NPC that has it, so it bumps each of their `prompt_version`s. Before writing or editing either, check **`docs/npc-action-prompt-guidelines.md`** for prompt-wording pitfalls found during playtesting — they recur with every new action regardless of model.
 
 Before adding a new generic multi-scenario action, a new per-player visibility mechanic, or a new admin reset/cleanup command, check **`docs/engineering-pitfalls.md`** — engine/architecture mistakes (missing role checks, Evennia's superuser lock bypass, reset tools that only know about current config, orphaned objects, incomplete turn logging) caught live during phase 2; they're a different kind of recurring bug than the prompt-wording ones above.
 
@@ -93,8 +94,8 @@ Work on this project runs in parallel lanes, each in its own git worktree and br
 
 | Lane | May edit | Must not |
 |---|---|---|
-| **Lore** | `docs/bible/`, `content/` persona/knowledge/room prose (not `## Actions` sections or `npc-shared-rules.md`), `docs/lore-requests.md` | Change game code; edit `## Actions` sections or `npc-shared-rules.md`; create or place anything directly into the live game (Evennia objects, exits, `world/build_*.py`) |
-| **Dev** | Game code, tests, persona `## Actions` sections, `npc-shared-rules.md` | Write or invent lore (hard rule 7) - add a `docs/lore-requests.md` entry instead |
+| **Lore** | `docs/bible/`, `content/` persona/knowledge/room prose (not `## Actions` sections, `npc-shared-rules.md` or `content/actions/`), `docs/lore-requests.md` | Change game code; edit `## Actions` sections, `npc-shared-rules.md` or `content/actions/`; create or place anything directly into the live game (Evennia objects, exits, `world/build_*.py`) |
+| **Dev** | Game code, tests, persona `## Actions` sections, `npc-shared-rules.md`, `content/actions/` | Write or invent lore (hard rule 7) - add a `docs/lore-requests.md` entry instead |
 | **Tools** | Tool code, `world/build_*.py`, in-game object/placement code | Change game behavior/mechanics without a Dev-lane review; invent lore |
 | **Tests** | Tests | Change game code to make tests pass |
 | **Playtest review** | `docs/playtest-findings.md` | Fix anything - it reports, the project owner triages |
