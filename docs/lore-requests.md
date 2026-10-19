@@ -417,17 +417,56 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   - **Owner's call, please flag it:** whether to invite testers to try to break the characters. The bad-actor eval (`docs/playtest-readiness.md`) says the engine holds, but some NPCs can still be made to sound silly, so an open invitation sets expectations. Offer wording both ways if it helps.
   - Out-of-character interface text with no setting content, so Lore can approve its own wording, but the owner should see the final text because it's the first thing testers read.
 - Blocking: yes for the first external playtest
-- Status: open
-- Approved by:
-- Resolution:
-- Handoff: dev: apply the approved text in `prospect/world/disclosure.py`
+- Status: drafted (2026-10-19). Wording approved by Lore (out-of-character text, no setting facts). Waiting on the owner for two things: a look at the final text, and which of the three "breaking the characters" options to use (the draft below uses option B). Dev applies it once the owner picks.
+- Approved by: lore (wording); owner to confirm the final text
+- Resolution: a separate block shown just before `DISCLOSURE_TEXT`, as Dev suggested, so the agreement text and `DISCLOSURE_VERSION` stay as they are. Same conventions as the disclosure: a `|w` heading, plain "  - " list lines, commands in capitals, no art or boxes. Quests aren't named or counted.
+
+  ```
+  |wWelcome to the Prospect: Elsewhere playtest|n
+
+  This is an early test of a small part of the game: one neighbourhood, a
+  handful of people to talk to, and a few things to do. A lot is unfinished,
+  and finding where it falls short is the point.
+
+  While you play, try to:
+    - find your way around using only what the game tells you,
+    - talk to people in your own words, as you would to anyone,
+    - type commands however feels natural, and notice which ones don't work,
+    - and notice whether you'd want to stay and look around afterwards.
+
+  To report a problem, type BUG and then what went wrong. To tell us anything
+  else, type FEEDBACK and then what you think. You can use either at any time,
+  and only the staff see them. A short note the moment something happens is
+  more useful than a long one later.
+
+  If a character says something odd or out of character, a BUG report helps.
+  ```
+
+  **Owner's call, the last line.** Three options:
+  - **A, invite it:** "You're welcome to test the characters' limits. If one says something odd or out of character, report it with BUG." Gets more adversarial testing, and tells testers up front that odd replies are expected.
+  - **B, neutral (in the draft):** "If a character says something odd or out of character, a BUG report helps." Asks for the reports without inviting testers to spend their session trying to break things, so the playtest's own questions (finding your way, natural conversation, staying to explore) get the attention.
+  - **C, leave it out.** Odd replies still reach BUG through the general line above.
+
+  Lore leans towards B: the bad-actor eval already covers deliberate breaking, and this group is mainly testing whether the game is fun to inhabit.
+- Handoff: dev: apply the approved text in `prospect/world/disclosure.py` once the owner confirms it and picks A, B or C
 
 ## LR-DEV-0011: Stasis flavour text when a character logs out or back in
 - Requested by: dev (on the owner's behalf, 2026-10-19)
 - Needed for: `docs/prospect-initial-playtest-design-spec.md` section 8, "Login, logout, and stasis", which hasn't been built. Today Evennia's stock lines show on logout and login. The spec: a character who logs out enters a network-mediated stasis, so nearby players briefly see "a restrained message that the character becomes still or unresponsive" before they disappear from the room and `who`, and they return where they left off with no implied trip to a cryo pod. The physics of stasis needn't be explained.
 - What's needed: Room-visible lines for (1) a character going into stasis on logout or disconnect, and (2) a character coming out of it on login, each in the third person, as other players in the room see it. Possibly also (3) the line the returning player sees themselves. One line each is enough; a couple of variants to rotate are optional. Keep them restrained (the spec's word) and short, since they show on every login and logout. If saying what stasis looks like adds anything new about the world, that part is new canon and needs the owner.
 - Blocking: no (owner, 2026-10-19: "make a note of that for later"; not needed for the first playtest)
-- Status: open
-- Approved by:
-- Resolution:
+- Status: approved (2026-10-19, by Lore). The lines say only what the spec already says (the character goes still and unresponsive, and is in stasis) and name the stasis convention from bible 13.8. They don't describe how the character leaves the room, where they go, or how stasis works, so nothing new about the world is added. Species-neutral: no eyes, breath or other body details, since they must fit all seven peoples.
+- Approved by: lore (rewording owner-written spec text; no new setting facts)
+- Resolution: `{name}` is the character's name as other players see it. One line each; the second line of each pair is an optional variant to rotate with the first.
+
+  1. **Going into stasis**, seen by others in the room, shown just before the character leaves the room listing (logout and dropped connection alike):
+     - "{name} goes still and unresponsive, slipping into stasis."
+     - "{name} falls still, no longer responding, and slips into stasis."
+  2. **Coming out of stasis**, seen by others in the room on login:
+     - "{name} stirs, coming back out of stasis."
+     - "{name} stirs and is alert again, out of stasis."
+  3. **The returning player's own line**, on login, before the room look:
+     - "You come out of stasis where you left off."
+
+  Notes for Dev: styling is Dev's choice; `|x` gray would match the engine narration lines (LR-LORE-0008) and the emotes, and the text reads the same without colour for screen readers. A duplicate login (a session taking over an already-puppeted character) shouldn't show either line, since the character never left. For someone in combat, the same lines are fine as wording; whether stasis can begin mid-fight is a mechanics call for Dev under spec section 8.
 - Handoff: dev: wire the lines into the logout/login hooks (`at_post_unpuppet`/`at_post_puppet`), checking the spec's edge cases: a dropped connection, a duplicate login, and someone in combat
