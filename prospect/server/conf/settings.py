@@ -76,6 +76,16 @@ LLM_TIMEOUT_SECONDS = float(os.environ.get("PROSPECT_LLM_TIMEOUT_SECONDS", "30")
 # entirely (e.g. for a model that errors on unknown params).
 LLM_REASONING_EFFORT = os.environ.get("PROSPECT_LLM_REASONING_EFFORT", "none")
 
+# Explicit prompt-cache markers (OpenRouter's `cache_control`). OpenAI
+# models cache a long shared prefix automatically, but Anthropic models
+# only cache what the request marks, and are billed full input price
+# otherwise. When on, world/llm_client.py marks the first system message
+# (the NPC's fixed prompt, shared by every player talking to that NPC)
+# and asks OpenRouter to mark the end of the conversation too. Off by
+# default: a backend that doesn't know the field may reject the
+# content-parts message shape it needs.
+LLM_PROMPT_CACHE_MARKERS = os.environ.get("PROSPECT_LLM_PROMPT_CACHE_MARKERS", "") == "1"
+
 # Caps worst-case reply length (passed through as the OpenAI-standard
 # `max_tokens` field, which Ollama's compat endpoint does honor).
 # Per-NPC overrides live in that NPC's persona metadata

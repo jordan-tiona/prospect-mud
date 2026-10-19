@@ -102,3 +102,46 @@ class UsageCaptureTests(SimpleTestCase):
         reply = chat([{"role": "user", "content": "hi"}])
 
         self.assertEqual(reply.usage, {})
+
+
+class PromptCacheMarkerTests(SimpleTestCase):
+    """settings.LLM_PROMPT_CACHE_MARKERS: explicit cache markers for
+    providers (Anthropic, via OpenRouter) that only cache marked text."""
+
+    def _send(self, mock_get_client, messages):
+        mock_client = MagicMock()
+        mock_client.chat.completions.create.return_value = _mock_response()
+        mock_get_client.return_value = mock_client
+        chat(messages)
+        return mock_client.chat.completions.create.call_args.kwargs
+
+    @patch("world.llm_client._get_client")
+    def test_off_by_default_sends_messages_unchanged(self, mock_get_client):
+        messages = [{"role": "system", "content": "persona"}, {"role": "user", "content": "hi"}]
+        kwargs = self._send(mock_get_client, messages)
+        self.assertNotIn("cache_control", kwargs["extra_body"])
+        self.assertEqual(kwargs["messages"], messages)
+
+    @patch("world.llm_client._get_client")
+    def test_on_marks_the_fixed_prompt_and_the_request(self, mock_get_client):
+        messages = [
+            {"role": "system", "content": "persona"},
+            {"role": "system", "content": "quest state"},
+            {"role": "user", "content": "hi"},
+        ]
+        with self.settings(LLM_PROMPT_CACHE_MARKERS=True):
+            kwargs = self._send(mock_get_client, messages)
+        self.assertEqual(kwargs["extra_body"]["cache_control"], {"type": "ephemeral"})
+        self.assertEqual(
+            kwargs["messages"][0]["content"],
+            [{"type": "text", "text": "persona", "cache_control": {"type": "ephemeral"}}],
+        )
+        self.assertEqual(kwargs["messages"][1:], messages[1:])
+
+    @patch("world.llm_client._get_client")
+    def test_on_leaves_the_callers_list_untouched(self, mock_get_client):
+        # Callers keep their message lists as conversation history.
+        messages = [{"role": "system", "content": "persona"}, {"role": "user", "content": "hi"}]
+        with self.settings(LLM_PROMPT_CACHE_MARKERS=True):
+            self._send(mock_get_client, messages)
+        self.assertEqual(messages[0]["content"], "persona")

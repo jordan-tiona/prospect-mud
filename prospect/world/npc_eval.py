@@ -22,6 +22,7 @@ Run with:
     evennia shell -c "from world.npc_eval import run; run()"
 """
 
+import os
 from dataclasses import dataclass, field
 from uuid import uuid4
 
@@ -778,11 +779,13 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
             )
             if ok:
                 hits += 1
-            elif scenario.expect_text_contains or scenario.expect_text_absent:
+            elif scenario.expect_text_contains or scenario.expect_text_absent or os.environ.get("PROSPECT_NPC_EVAL_TRANSCRIPTS"):
                 # A text-content scenario's failure is usually about
                 # wording, not the tool-call set - keep the actual text
                 # alongside it rather than just the (likely correct,
-                # unhelpful) called-action set.
+                # unhelpful) called-action set. PROSPECT_NPC_EVAL_TRANSCRIPTS
+                # keeps it for every failure, e.g. to tell a model that
+                # narrates an action from one that skips it.
                 unexpected.append((called, displayed_text))
             else:
                 unexpected.append(called)
