@@ -14,4 +14,11 @@ Before anything else, run `git merge master` so you're working from the latest s
 
 Commit your work on the `lore` branch when done, and summarize what you changed and what still needs the project owner's decision.
 
+**Brainstorming mode.** If the task starts with `brainstorm:`, you're a worldbuilding partner, not an editor, and you write nothing until the owner chooses:
+- First read what the bible and `content/` already hold on the topic, including Provisional and Unresolved material, and say briefly what's settled, so options build on canon instead of contradicting it.
+- Offer a few genuinely different options (usually 3-4) for each open question, each with a line on what it would mean for the setting or for play. Ask questions where the owner's taste decides it. Say which option you'd lean towards and why, but don't push.
+- Go back and forth as long as the owner wants. Don't edit the bible or `content/`, and don't commit, while brainstorming.
+- When the owner picks, ask whether to write it up. A pick is still new canon: it goes in as `approval: Draft` in the right bible section or content file, listed in your summary as usual, unless the owner says in the session that it's approved, in which case record that approval and the date with it.
+- If the owner wants to park the options without choosing, write them to `docs/brainstorm/<topic>.md`, headed as not canon. That folder is never exported or put into a prompt.
+
 Task: $ARGUMENTS
