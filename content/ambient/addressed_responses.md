@@ -1,9 +1,9 @@
 <!--
 content_id: ambient_addressed_responses
 status: Provisional
-approval: Draft
+approval: Approved
 request: LR-LORE-0007
-purpose: the one global list of nonverbal responses an ambient (non-LLM) NPC gives the first time a given player addresses it with `say to`. The engine picks one line at random, substitutes `{name}` with the NPC's display name as the room shows it, and sends it to the room. Lines are written to fit any ambient NPC regardless of species, sex or activity: no pronouns, no body parts a people might not have, no reference to a specific task. Drafted by the Lore lane 2026-10-18 at the owner's request; awaiting owner approval.
+purpose: the one global list of nonverbal responses an ambient (non-LLM) NPC gives the first time a given player addresses it with `say to`. The engine picks one line at random, substitutes `{name}` with the NPC's display name as the room shows it, and sends it to the room. Lines are written to fit any ambient NPC regardless of species, sex or activity: no pronouns, no body parts a people might not have, no reference to a specific task. Drafted by the Lore lane 2026-10-18 at the owner's request; approved by the owner 2026-10-19.
 -->
 
 # Ambient NPC responses to being addressed

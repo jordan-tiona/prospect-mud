@@ -316,10 +316,10 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Needed for: immersion, and teaching the talk/scenery distinction. Today `say to <ambient NPC>, ...` is not matched at all (`world/npc_addressing.py` only considers `TalkativeNPC`), so the line falls through to ambient speech: the player says the words aloud and nothing acknowledges them. A nonverbal response from the addressed ambient NPC makes the room feel inhabited and tells the player, in-world, that this one does not talk.
 - What's needed: **Dev:** when `say to <name>` (or the whole-word name form) names a present **ambient** NPC and no talk-capable NPC, the speech still goes out to the room as ambient speech exactly as now, and the ambient NPC then emits one line picked at random from the global list in `content/ambient/addressed_responses.md` (`## Responses`, `{name}` replaced by the NPC's display name as the room shows it), to the whole room. **Once per room visit, per player and NPC** (owner's call, revised 2026-10-18 from "once ever": no spamming a room with useless prose, but a player coming back later should still get an acknowledgement rather than silence that reads like a failed command): the first address during a player's stay in the room gets a response; further addresses to that NPC during the same stay get nothing extra, just the speech line as today; leaving and re-entering the room resets it. In-memory state on the character (ndb) is enough; nothing persistent, nothing to survive a reload. A second player in the room gets their own first response. The list is global, not per NPC, so a line must fit every ambient NPC: the drafted lines use no pronouns, no species-specific body parts and no reference to a task. Dev decides the loader (there is no parser for this file yet) and where the per-player set lives. The response is engine output, not an LLM call, and never enters any NPC prompt. Suggest the response is not delayed: it answers the address immediately, unlike the idle emotes of LR-LORE-0006, so it reads as a reaction. Screen-reader users get the same plain sentence.
 - Blocking: no
-- Status: drafted (2026-10-18; the eight lines in `content/ambient/addressed_responses.md` are `approval: Draft`, awaiting the owner. The file is not referenced by the sector, so it does not block the export). **Dev:** done 2026-10-18 in 63af03a. The game reads the file at runtime and uses no lines while it is `approval: Draft`. Once the owner approves and it reaches master, it takes effect with no export or rebuild. Owner calls from the Dev session (2026-10-18): only the player who spoke sees the reaction, since the lines say "you"; `{name}` becomes the key with "A/An" turned to "The" ("The elderly Kell nods..."). Only `say to <name>` matches: the name can drop its article or be any trailing part ("to the Kell", "to courier"), but a bare mention doesn't count, since "Kell" in ordinary speech would set it off. The speech line itself is unchanged (it still shows the "to ..." prefix).
+- Status: approved (owner approved all eight lines 2026-10-19; `content/ambient/addressed_responses.md` is `approval: Approved`). **Dev:** done 2026-10-18 in 63af03a. The game reads the file at runtime and uses no lines while it is `approval: Draft`. Once the owner approves and it reaches master, it takes effect with no export or rebuild. Owner calls from the Dev session (2026-10-18): only the player who spoke sees the reaction, since the lines say "you"; `{name}` becomes the key with "A/An" turned to "The" ("The elderly Kell nods..."). Only `say to <name>` matches: the name can drop its article or be any trailing part ("to the Kell", "to courier"), but a bare mention doesn't count, since "Kell" in ordinary speech would set it off. The speech line itself is unchanged (it still shows the "to ..." prefix).
 - Approved by: owner
 - Resolution: `content/ambient/addressed_responses.md`, eight lines. No setting facts; the lines describe gesture only.
-- Handoff: none
+- Handoff: dev: merge lore into master so the lines take effect (no export or rebuild needed), then confirm one live
 
 ## LR-LORE-0008: Engine action lines: second person, emote styling, observable facts
 - Requested by: owner (2026-10-18, asked for a Lore read of the engine narration lines, since they stay on screen as the fallback when the NPC's own reaction doesn't arrive)
@@ -417,17 +417,60 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   - **Owner's call, please flag it:** whether to invite testers to try to break the characters. The bad-actor eval (`docs/playtest-readiness.md`) says the engine holds, but some NPCs can still be made to sound silly, so an open invitation sets expectations. Offer wording both ways if it helps.
   - Out-of-character interface text with no setting content, so Lore can approve its own wording, but the owner should see the final text because it's the first thing testers read.
 - Blocking: yes for the first external playtest
-- Status: open
-- Approved by:
-- Resolution:
-- Handoff: dev: apply the approved text in `prospect/world/disclosure.py`
+- Status: approved (2026-10-19). The owner approved the text below as written and chose option B, the neutral last line.
+- Approved by: owner
+- Resolution: a separate block shown just before `DISCLOSURE_TEXT`, as Dev suggested, so the agreement text and `DISCLOSURE_VERSION` stay as they are. Same conventions as the disclosure: a `|w` heading, plain "  - " list lines, commands in capitals, no art or boxes. Quests aren't named or counted.
+
+  ```
+  |wWelcome to the Prospect: Elsewhere playtest|n
+
+  This is an early test of a small part of the game: one neighbourhood, a
+  handful of people to talk to, and a few things to do. A lot is unfinished,
+  and finding where it falls short is the point.
+
+  While you play, try to:
+    - find your way around using only what the game tells you,
+    - talk to people in your own words, as you would to anyone,
+    - type commands however feels natural, and notice which ones don't work,
+    - and notice whether you'd want to stay and look around afterwards.
+
+  To report a problem, type BUG and then what went wrong. To tell us anything
+  else, type FEEDBACK and then what you think. You can use either at any time,
+  and only the staff see them. A short note the moment something happens is
+  more useful than a long one later.
+
+  If a character says something odd or out of character, a BUG report helps.
+  ```
+
+  **The last line (owner chose B, 2026-10-19).** The options were:
+  - **A, invite it:** "You're welcome to test the characters' limits. If one says something odd or out of character, report it with BUG." Gets more adversarial testing, and tells testers up front that odd replies are expected.
+  - **B, neutral (in the draft):** "If a character says something odd or out of character, a BUG report helps." Asks for the reports without inviting testers to spend their session trying to break things, so the playtest's own questions (finding your way, natural conversation, staying to explore) get the attention.
+  - **C, leave it out.** Odd replies still reach BUG through the general line above.
+
+  Lore leans towards B: the bad-actor eval already covers deliberate breaking, and this group is mainly testing whether the game is fun to inhabit.
+- Handoff: dev: apply the approved text, with option B's last line as in the block above, in `prospect/world/disclosure.py`
 
 ## LR-DEV-0011: Stasis flavour text when a character logs out or back in
 - Requested by: dev (on the owner's behalf, 2026-10-19)
 - Needed for: `docs/prospect-initial-playtest-design-spec.md` section 8, "Login, logout, and stasis", which hasn't been built. Today Evennia's stock lines show on logout and login. The spec: a character who logs out enters a network-mediated stasis, so nearby players briefly see "a restrained message that the character becomes still or unresponsive" before they disappear from the room and `who`, and they return where they left off with no implied trip to a cryo pod. The physics of stasis needn't be explained.
 - What's needed: Room-visible lines for (1) a character going into stasis on logout or disconnect, and (2) a character coming out of it on login, each in the third person, as other players in the room see it. Possibly also (3) the line the returning player sees themselves. One line each is enough; a couple of variants to rotate are optional. Keep them restrained (the spec's word) and short, since they show on every login and logout. If saying what stasis looks like adds anything new about the world, that part is new canon and needs the owner.
 - Blocking: no (owner, 2026-10-19: "make a note of that for later"; not needed for the first playtest)
-- Status: open
-- Approved by:
-- Resolution:
-- Handoff: dev: wire the lines into the logout/login hooks (`at_post_unpuppet`/`at_post_puppet`), checking the spec's edge cases: a dropped connection, a duplicate login, and someone in combat
+- Status: approved (2026-10-19; the owner approved lines 1-3 and asked for line 4, a line for the player who QUITs, shown with a short delay before they're disconnected). The lines say only what the spec already says (the character goes still and unresponsive, and is in stasis) and name the stasis convention from bible 13.8. They don't describe how the character leaves the room, where they go, or how stasis works, so nothing new about the world is added. Species-neutral: no eyes, breath or other body details, since they must fit all seven peoples.
+- Approved by: owner (lines 1-3); lore (line 4, same wording as line 1, no new setting facts)
+- Resolution: `{name}` is the character's name as other players see it. One line each; the second line of each pair is an optional variant to rotate with the first.
+
+  1. **Going into stasis**, seen by others in the room, shown just before the character leaves the room listing (logout and dropped connection alike):
+     - "{name} goes still and unresponsive, slipping into stasis."
+     - "{name} falls still, no longer responding, and slips into stasis."
+  2. **Coming out of stasis**, seen by others in the room on login:
+     - "{name} stirs, coming back out of stasis."
+     - "{name} stirs and is alert again, out of stasis."
+  3. **The returning player's own line**, on login, before the room look:
+     - "You come out of stasis where you left off."
+  4. **The quitting player's own line**, on QUIT, shown right away; the disconnect follows after a short delay (owner, 2026-10-19). Line 1 goes to the room when the delay starts, so the room sees the character go still while the player is reading this:
+     - "You go still and slip into stasis."
+
+  The delay's length, and whether the player can act or cancel during it, are Dev's call. A few seconds is enough for the line to be read. A dropped connection has no delay and no line 4, only line 1 for the room.
+
+  Notes for Dev: styling is Dev's choice; `|x` gray would match the engine narration lines (LR-LORE-0008) and the emotes, and the text reads the same without colour for screen readers. A duplicate login (a session taking over an already-puppeted character) shouldn't show either line, since the character never left. For someone in combat, the same lines are fine as wording; whether stasis can begin mid-fight is a mechanics call for Dev under spec section 8.
+- Handoff: dev: wire the lines into the logout/login hooks (`at_post_unpuppet`/`at_post_puppet`), add the QUIT delay with line 4, and check the spec's edge cases: a dropped connection, a duplicate login, and someone in combat
