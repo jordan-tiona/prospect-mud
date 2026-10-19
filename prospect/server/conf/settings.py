@@ -120,11 +120,13 @@ LLM_OUTPUT_COST_PER_1M_TOKENS = float(os.environ.get("PROSPECT_LLM_OUTPUT_COST_P
 LLM_CACHED_INPUT_COST_PER_1M_TOKENS = float(os.environ.get("PROSPECT_LLM_CACHED_INPUT_COST_PER_1M_TOKENS", "0.10"))
 
 # Server-wide daily spend circuit breaker (world/llm_budget.py), well
-# below the OpenRouter key's own $25 spend limit. Deliberately set
-# far above realistic playtest volume - this is a backstop against a
-# bug or runaway loop, not a throttle on ordinary play. Logged at
-# error level when tripped; nothing else is notified yet.
-LLM_DAILY_SPEND_LIMIT_USD = float(os.environ.get("PROSPECT_LLM_DAILY_SPEND_LIMIT_USD", "2.00"))
+# below the OpenRouter key's own $25 spend limit. A backstop against a
+# bug or runaway loop, not a throttle on ordinary play, so it has to sit
+# well above every player's LLM_PLAYER_DAILY_SPEND_USD added together:
+# $2 was under five testers' $0.50 each plus the owner's exempt play.
+# $10 is the owner's call for the first playtest (2026-10-19). Logged
+# at error level when tripped; nothing else is notified yet.
+LLM_DAILY_SPEND_LIMIT_USD = float(os.environ.get("PROSPECT_LLM_DAILY_SPEND_LIMIT_USD", "10.00"))
 
 # Invite-only account registration (game-plan.md 6.2's last
 # safeguards-audit item) - see world/invites.py and
