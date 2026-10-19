@@ -151,6 +151,13 @@ class ScriptedCreateTests(TestCase):
         account = self.session.sessionhandler.login.call_args[0][1]
         self.assertEqual(_character_from(account).key, "Jordan")
 
+    def test_a_profane_name_reprompts(self):
+        self._create(["Fuckface", "Jordan", "female", "Kell", "yes", "confirm",
+                      "ScriptedPass123!", "ScriptedPass123!"])
+        self.assertTrue(any("can't record that name" in m for m in self.session.msgs))
+        account = self.session.sessionhandler.login.call_args[0][1]
+        self.assertEqual(_character_from(account).key, "Jordan")
+
     def test_password_never_appears_in_any_displayed_line(self):
         gen = self.cmd.func()
         try:

@@ -79,6 +79,7 @@ from world.chargen import (
 )
 from world.disclosure import AGREE_PROMPT, AGREE_WORDS, DISCLOSURE_TEXT, QUIT_WORDS, agreement_record
 from world.invites import consume_code, is_valid_code
+from world.profanity import name_is_profane
 
 COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
 
@@ -387,6 +388,9 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
             name = validate_character_name(raw)
             if name is None:
                 session.msg(_voice("Please give your name in letters only, with at most one space."))
+                continue
+            if name_is_profane(name):
+                session.msg(_voice("I can't record that name. Please give a different one."))
                 continue
             username = account_name_for(name)
             valid, errors = Account.validate_username(username)

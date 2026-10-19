@@ -1046,4 +1046,6 @@ class CmdSay(DefaultCmdSay):
             caller.msg(f"Say what to {target.key}?")
             return
 
-        engage_npc(target, caller, broadcast_text)
+        # The masked line (Character.at_pre_say), so the NPC never sees
+        # a word it could repeat back to the room.
+        engage_npc(target, caller, speech)

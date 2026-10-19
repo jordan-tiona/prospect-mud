@@ -22,6 +22,7 @@ import re
 from evennia.utils.ansi import strip_ansi, strip_mxp
 
 from world.output_check import is_flagged
+from world.profanity import description_is_profane
 from world.speech_format import normalize_speech
 
 FIELDS = ("pose", "short", "long")
@@ -73,6 +74,8 @@ def validate(field: str, text: str) -> tuple[str, str]:
         )
     if is_flagged(text)[0] or _INSTRUCTION_RE.search(text):
         return "", f"Your {label} should describe how your character looks."
+    if description_is_profane(text):
+        return "", f"Please keep your {label} free of profanity."
     # After the length check, so a full stop added here never pushes
     # text the player kept within the limit over it.
     return (text if field == "pose" else tidy(text)), ""
