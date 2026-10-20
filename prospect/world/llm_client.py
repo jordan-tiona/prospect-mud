@@ -89,6 +89,25 @@ def _parse_tool_calls(message) -> list:
     return tool_calls
 
 
+_CACHE_MARKER = {"type": "ephemeral"}
+
+
+def _mark_fixed_prompt(messages: list[dict]) -> list[dict]:
+    """
+    A copy of messages with a cache marker on the first system message
+    (settings.LLM_PROMPT_CACHE_MARKERS). The top-level marker alone
+    only caches the whole previous request, which any change to the
+    per-player context after it invalidates; this one keeps the NPC's
+    fixed prompt cached regardless. A copy, because callers persist
+    their message lists as conversation history.
+    """
+    if not messages or messages[0].get("role") != "system" or not isinstance(messages[0].get("content"), str):
+        return messages
+    first = dict(messages[0])
+    first["content"] = [{"type": "text", "text": first["content"], "cache_control": _CACHE_MARKER}]
+    return [first] + messages[1:]
+
+
 def chat(
     messages: list[dict],
     tools: list[dict] | None = None,
@@ -120,7 +139,14 @@ def chat(
     client = _get_client()
     use_model = model or settings.LLM_MODEL
     extra_body = {}
-    if settings.LLM_REASONING_EFFORT:
+    reply_cap = max_tokens if max_tokens is not None else settings.LLM_MAX_TOKENS
+    if settings.LLM_REASONING_MAX_TOKENS:
+        # A fixed thinking budget, hidden from the reply. Reasoning
+        # tokens count against max_tokens, so the reply keeps its own
+        # cap on top of the budget.
+        extra_body["reasoning"] = {"max_tokens": settings.LLM_REASONING_MAX_TOKENS, "exclude": True}
+        reply_cap += settings.LLM_REASONING_MAX_TOKENS
+    elif settings.LLM_REASONING_EFFORT:
         # Sent two ways because OpenAI-compatible backends disagree on
         # the wire shape for this: some (e.g. Ollama, matching OpenAI's
         # own o-series/gpt-5 field) read a flat `reasoning_effort`.
@@ -138,11 +164,15 @@ def chat(
         else:
             extra_body["reasoning"] = {"effort": settings.LLM_REASONING_EFFORT}
 
+    if settings.LLM_PROMPT_CACHE_MARKERS:
+        extra_body["cache_control"] = _CACHE_MARKER
+        messages = _mark_fixed_prompt(messages)
+
     kwargs = {
         "model": use_model,
         "messages": messages,
         "extra_body": extra_body,
-        "max_tokens": max_tokens if max_tokens is not None else settings.LLM_MAX_TOKENS,
+        "max_tokens": reply_cap,
     }
     if tools:
         kwargs["tools"] = tools

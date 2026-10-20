@@ -164,3 +164,25 @@ class RunScenarioTests(TestCase):
         run_scenario(scenario, trials=1)
 
         self.assertFalse(ObjectDB.objects.filter(db_key__startswith="EvalActor").exists())
+
+
+class ReactionFollowOnTests(TestCase):
+    """A reply with tool calls and no text gets a reaction, the same as
+    in commands/say.py, and calls the engine applies there count."""
+
+    @patch("world.npc_eval.chat")
+    def test_hand_over_made_in_the_reaction_counts(self, mock_chat):
+        from world.npc_eval import _setup_mara_asked
+
+        mock_chat.side_effect = [
+            _reply([{"name": "accept_help", "arguments": {"confirmed": True}}]),
+            _reply([{"name": "give_faulty_module", "arguments": {"confirmed": True}}], text='"Here it is."'),
+        ]
+        scenario = EvalScenario(
+            name="t", npc_id="mara_voss", setup=_setup_mara_asked, player_message="Sure, I'll take it.",
+            expect_calls={"accept_help", "give_faulty_module"},
+        )
+
+        result = run_scenario(scenario, trials=1)
+
+        self.assertEqual(result.hits, 1)
