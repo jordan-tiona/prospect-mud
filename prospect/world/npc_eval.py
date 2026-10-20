@@ -22,6 +22,7 @@ Run with:
     evennia shell -c "from world.npc_eval import run; run()"
 """
 
+import os
 from dataclasses import dataclass, field
 from uuid import uuid4
 
@@ -699,8 +700,9 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
     skitters/discrepancy_report priority gate) - the exact shape of
     gap docs/engineering-pitfalls.md #8 already named for the display
     layer, recurring here in the eval harness instead. expect_calls/
-    expect_no_calls still check the *original* completion's tool
-    calls - that's what actually gets applied, never the reaction's."""
+    expect_no_calls check the original completion's tool calls, plus
+    any the reaction made that the engine applied (REACTION_FOLLOW_ONS
+    and REACTION_RETRIES, the only tools a reaction gets)."""
     build_rooms()
     npc = build_npcs()[scenario.npc_id]
     actor = create_object("typeclasses.characters.Character", key=f"EvalActor-{uuid4().hex[:8]}")
@@ -738,7 +740,11 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
             called = {call["name"] for call in reply.tool_calls}
 
             displayed_text = reply.text
-            if reply.tool_calls and (called & FORCE_REACTION_ACTIONS):
+            # The same condition as commands/say.py's needs_reaction: a
+            # reply with tool calls and no text gets a reaction too, and
+            # that reaction is where REACTION_FOLLOW_ONS/RETRIES can
+            # finish or redo the step.
+            if reply.tool_calls and (not (reply.text or "").strip() or called & FORCE_REACTION_ACTIONS):
                 tool_results = []
                 applied_names = []
                 for call in reply.tool_calls:
@@ -763,10 +769,12 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
                 displayed_text = reaction.text
                 for call in reaction.tool_calls:
                     if call["name"] in reaction_actions:
-                        validate_and_apply(
+                        result = validate_and_apply(
                             npc, actor, call["name"], call["arguments"], scenario.player_message,
                             applied_earlier=applied_names,
                         )
+                        if result.applied:
+                            called = called | {call["name"]}
 
             text = (displayed_text or "").lower()
             ok = (
@@ -778,11 +786,13 @@ def run_scenario(scenario: EvalScenario, trials: int = DEFAULT_TRIALS) -> EvalRe
             )
             if ok:
                 hits += 1
-            elif scenario.expect_text_contains or scenario.expect_text_absent:
+            elif scenario.expect_text_contains or scenario.expect_text_absent or os.environ.get("PROSPECT_NPC_EVAL_TRANSCRIPTS"):
                 # A text-content scenario's failure is usually about
                 # wording, not the tool-call set - keep the actual text
                 # alongside it rather than just the (likely correct,
-                # unhelpful) called-action set.
+                # unhelpful) called-action set. PROSPECT_NPC_EVAL_TRANSCRIPTS
+                # keeps it for every failure, e.g. to tell a model that
+                # narrates an action from one that skips it.
                 unexpected.append((called, displayed_text))
             else:
                 unexpected.append(called)
