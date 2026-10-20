@@ -137,6 +137,36 @@ def format_narration(npc_key: str, text: str) -> str:
     return f"|x{text}|n"
 
 
+# The emote line starts with the NPC's name, so an action the model wrote
+# as a full sentence ("*He raises his hands*", "*His eyes flick to the
+# knife*", "*Mara smiles*", "*Keeps her eyes on it*") would come out as
+# "Given He raises..." - seen from GPT-5.6 Luna, 2026-10-19. The leading
+# subject or the NPC's own name is dropped, a leading possessive becomes
+# "Name's", and a capitalized first verb is lowercased.
+_LEADING_SUBJECT_RE = re.compile(r"^(?:he|she|it)\s+", re.IGNORECASE)
+_LEADING_POSSESSIVE_RE = re.compile(r"^(?:his|her|its)\s+", re.IGNORECASE)
+
+
+def _fit_after_name(text: str, npc_key: str) -> tuple:
+    """(joiner, rest): what goes between the NPC's name and the rest of
+    the action text, "" or "'s"."""
+    for name in dict.fromkeys((npc_key, first_name(npc_key))):
+        if name and text.startswith(name + " "):
+            return "", text[len(name) + 1:]
+        if name and text.startswith(name + "'s "):
+            return "'s", text[len(name) + 3:]
+    match = _LEADING_POSSESSIVE_RE.match(text)
+    if match:
+        return "'s", text[match.end():]
+    match = _LEADING_SUBJECT_RE.match(text)
+    if match:
+        return "", text[match.end():]
+    first_word = text.split(" ", 1)[0]
+    if first_word[:1].isupper() and first_word[1:2].islower() and "'" not in first_word:
+        text = text[0].lower() + text[1:]
+    return "", text
+
+
 def format_emote(npc_key: str, emote_text: str, pronouns: str = "") -> str:
     """One emote's text as a third-person action line, e.g. 'smiles
     and nods' -> 'Mara smiles and nods.' Callers pass first_name(key),
@@ -149,6 +179,7 @@ def format_emote(npc_key: str, emote_text: str, pronouns: str = "") -> str:
     text = _ESCAPED_QUOTE_RE.sub(r"\1", emote_text.strip())
     if pronouns:
         text = _fix_self_pronouns(text, pronouns)
+    joiner, text = _fit_after_name(text, npc_key)
     if text and text[-1] not in ".!?":
         text += "."
-    return f"|x{npc_key} {text}|n"
+    return f"|x{npc_key}{joiner} {text}|n"

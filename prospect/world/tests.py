@@ -339,8 +339,32 @@ class EmoteSplitTests(SimpleTestCase):
     def test_format_emote_fixes_i_me_myself(self):
         self.assertEqual(
             format_emote("Tarin Os", "I catch myself and steady me", pronouns="he/him"),
-            "|xTarin Os He catch himself and steady him.|n",
+            "|xTarin Os catch himself and steady him.|n",
         )
+
+    def test_format_emote_drops_a_leading_subject_pronoun(self):
+        self.assertEqual(
+            format_emote("Daven", "He raises his hands slowly.", pronouns="he/him"),
+            "|xDaven raises his hands slowly.|n",
+        )
+
+    def test_format_emote_turns_a_leading_possessive_into_the_name(self):
+        self.assertEqual(
+            format_emote("Veska", "Her feathers flatten against her neck"),
+            "|xVeska's feathers flatten against her neck.|n",
+        )
+
+    def test_format_emote_does_not_repeat_the_npcs_own_name(self):
+        self.assertEqual(format_emote("Mara", "Mara smiles"), "|xMara smiles.|n")
+        self.assertEqual(format_emote("Mara", "Mara's cap slips"), "|xMara's cap slips.|n")
+
+    def test_format_emote_lowercases_a_capitalized_first_verb(self):
+        self.assertEqual(
+            format_emote("Mara", "Keeps her eyes on the knife."), "|xMara keeps her eyes on the knife.|n"
+        )
+
+    def test_format_emote_keeps_another_characters_name(self):
+        self.assertEqual(format_emote("Iri", "Veska's stamp catches her eye"), "|xIri Veska's stamp catches her eye.|n")
 
     def test_format_emote_with_no_pronouns_given_is_unchanged(self):
         self.assertEqual(
