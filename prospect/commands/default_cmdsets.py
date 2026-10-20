@@ -27,6 +27,7 @@ from commands.admin import (
     CmdResetQuest,
 )
 from commands.attack import CmdAttack
+from commands.character_info import CmdExits, CmdSave, CmdScore
 from commands.chargen import CmdScriptedCreate
 from commands.command import CmdNoMatch
 from commands.describe import CmdDescribe
@@ -78,6 +79,9 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(CmdUse())
         self.add(CmdAttack())
         self.add(CmdTannoy())
+        self.add(CmdScore())
+        self.add(CmdExits())
+        self.add(CmdSave())
         # Replaces stock setdesc, which had no limit or check.
         self.remove(default_cmds.CmdSetDesc)
         self.add(CmdDescribe())

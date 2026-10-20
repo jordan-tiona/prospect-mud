@@ -142,4 +142,28 @@ class CmdNoMatch(BaseMuxCommand):
                     location=caller.location.key if caller.location else "",
                     raw_input=self.args or "",
                 )
+        direction = _DIRECTIONS.get((self.args or "").strip().lower())
+        if direction and caller.location:
+            # A direction with no exit that way: say so, and what does
+            # lead out, rather than "Huh?", which doesn't tell a player
+            # (least of all through a screen reader) whether they
+            # mistyped or there's just no way west (first external
+            # playtest, 2026-10-20).
+            exits = caller.location.get_display_exits(caller) if hasattr(caller.location, "get_display_exits") else ""
+            caller.msg(f"You can't go {direction} from here." + (f" {exits}" if exits else ""))
+            return
         caller.msg("Huh?")
+
+
+# Every spelling of a compass or vertical direction a player might type,
+# to its full name. Matching an actual exit happens before CmdNoMatch
+# (the exit's own command), so a direction that reaches here has no exit.
+_DIRECTIONS = {
+    **{name: name for name in (
+        "north", "south", "east", "west", "northeast", "northwest",
+        "southeast", "southwest", "up", "down", "in", "out",
+    )},
+    "n": "north", "s": "south", "e": "east", "w": "west",
+    "ne": "northeast", "nw": "northwest", "se": "southeast", "sw": "southwest",
+    "u": "up", "d": "down",
+}

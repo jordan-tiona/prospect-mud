@@ -173,3 +173,46 @@ class NoMatchCommandTests(TestCase):
         self._make_cmd(thing).func()
 
         mock_log_unknown.assert_not_called()
+
+
+class NoMatchDirectionTests(TestCase):
+    """A direction with no exit that way says so and lists the exits
+    there are, instead of "Huh?" (first external playtest, 2026-10-20)."""
+
+    def setUp(self):
+        self.room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.other = create_object("typeclasses.rooms.Room", key="Other Room")
+        create_object("typeclasses.exits.Exit", key="north", location=self.room, destination=self.other)
+        self.actor = create_object(
+            "typeclasses.characters.Character", key="Tester", location=self.room
+        )
+        self.messages = []
+        self.actor.msg = lambda text="", **kw: self.messages.append(text)
+
+    def _run(self, args):
+        cmd = CmdNoMatch()
+        cmd.caller = self.actor
+        cmd.args = args
+        cmd.func()
+        return " ".join(str(m) for m in self.messages)
+
+    def test_abbreviated_direction_names_it_and_lists_exits(self):
+        text = self._run("w")
+        self.assertIn("You can't go west from here.", text)
+        self.assertIn("north", text)
+        self.assertNotIn("Huh?", text)
+
+    def test_full_direction_and_case(self):
+        self.assertIn("You can't go southwest from here.", self._run("Southwest"))
+
+    def test_up_and_down(self):
+        self.assertIn("You can't go down from here.", self._run("d"))
+
+    def test_non_direction_is_still_huh(self):
+        self.assertIn("Huh?", self._run("west please"))
+
+    def test_room_with_no_exits_just_says_cant_go(self):
+        self.actor.location = self.other
+        text = self._run("e")
+        self.assertIn("You can't go east from here.", text)
+        self.assertNotIn("You see", text)

@@ -538,3 +538,19 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Approved by: lore (behaviour wording, no new canon)
 - Resolution: Persona prose above, on lore. Proposed replacement for the last sentence of Daven's `## Actions` `propose_commitment` bullet ("Never call it on 'what should I do?' or a generic check-in - the display only comes up when they've asked about the display itself."): "Call it when they've asked about the display itself, and also when they ask what they should do, whether there's anything to do or help with, or say they're looking for work, while the state is `"not offered"` and they haven't turned it down in this conversation. Never call it on a greeting or a generic check-in."
 - Handoff: dev: deploy (reload), then live-check. Done 2026-10-20 (Dev, the commit after a9167ee): Daven's `## Actions` bullet uses Lore's sentence (`prompt_version` 23); `daven_what_should_i_do_does_not_propose` is now `daven_what_should_i_do_proposes`, plus what-to-do and greeting cases for all five. Eval (`prospect/server/logs/npc_eval/2026-10-20_1026/`): every new case 5/5 except `tarin_what_are_you_working_on_proposes` 3/5 - the two misses offer the baton in words without calling `propose_commitment` (guideline #11), so a yes would be refused; Dev follow-up, not Lore's.
+
+## LR-DEV-0016: Errand labels for the `score` quest log
+- Requested by: dev (owner decision, 2026-10-20)
+- Needed for: the new `score` command (`prospect/commands/character_info.py`, aliases `stats`, `info`, `errands`, `quests`...), which lists every errand a player has been offered, is working on, or has finished. In the first external playtest one tester tried `scor`, `escore`, `stats`, `score` and `info` and quit; the owner wants the sheet to double as the quest log, since nobody knew what there was to do.
+- What's needed: confirm or reword the one-line label for each errand. Dev drafted them from what the personas already say, so they should add no new facts, but they're player-facing text:
+  - `verify_display_revision`: "Check the number on Daven Varek's display with Iri Vael"
+  - `deliver_parcel`: "Take the misdelivered parcel from Veska Renn to Tarin Os"
+  - `hunt_skitters`: "Thin out the skitters for Tarin Os"
+  - `tend_planting_bed`: "Tend the overgrown planting beds for Iri Vael"
+  - Mara's heating unit: "Carry Mara Voss's faulty heating module to Tarin Os and bring the working one back"
+  Each is followed by a status Dev wrote ("in progress", "offered - you haven't said yes or no yet", "done"); reword those too if wanted. The empty-log line reuses LR-DEV-0014's tannoy wording. Constraints: plain text, one line each, read aloud by screen readers; an errand's label is the same for every player and every state.
+- Blocking: no (the drafted labels are live meanwhile, marked `TODO(lore)` in the code)
+- Status: open
+- Approved by:
+- Resolution:
+- Handoff: dev: paste any reworded labels into `_ERRAND_LABELS`/`_HEATING_LABEL` in `commands/character_info.py`
