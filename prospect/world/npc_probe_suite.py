@@ -53,7 +53,9 @@ class _NpcEval(TestCase):
     def test_probes(self):
         if "probes" not in MODES:
             self.skipTest("probes not requested")
-        results = npc_probes.run_for_npc(self.npc_id, trials=self._trials(npc_probes.DEFAULT_TRIALS))
+        names = {name.strip() for name in os.environ.get("PROSPECT_NPC_EVAL_PROBES", "").split(",") if name.strip()}
+        probes = [probe for probe in npc_probes.PROBES if probe.name in names] if names else None
+        results = npc_probes.run_for_npc(self.npc_id, trials=self._trials(npc_probes.DEFAULT_TRIALS), probes=probes)
         self._write("probes", npc_probes.to_json(results))
 
     def test_scenarios(self):

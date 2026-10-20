@@ -474,3 +474,15 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 
   Notes for Dev: styling is Dev's choice; `|x` gray would match the engine narration lines (LR-LORE-0008) and the emotes, and the text reads the same without colour for screen readers. A duplicate login (a session taking over an already-puppeted character) shouldn't show either line, since the character never left. For someone in combat, the same lines are fine as wording; whether stasis can begin mid-fight is a mechanics call for Dev under spec section 8.
 - Handoff: none (Dev applied it 2026-10-19 in `prospect/world/stasis.py`, `Character.at_post_unpuppet`/`at_post_puppet`, `Account.at_pre_login` and `prospect/commands/quit.py`: QUIT waits 3 seconds and ignores a second QUIT; a dropped connection gets line 1 only; a takeover from another client shows nothing; a brand-new character's first login shows nothing; combat has no ongoing state, so stasis can start at any time)
+
+## LR-DEV-0012: How each talk NPC reacts to a threat or a pretend crime
+- Requested by: dev
+- Needed for: the switch from gpt-4.1-mini (retiring 2027-01-14) to GPT-5.6 Luna, branch `dev/model-trial`. The owner's one real complaint about Luna's roleplay.
+- What's needed: one or two sentences of persona prose per talk NPC (Mara, Tarin, Iri, Veska, Daven, Given) on how *they* react when someone pulls a weapon on them, threatens them, or acts out a robbery: their nerve or lack of it, what they'd say, what they'd care about protecting. Guideline #27's shape: say what they do, not only what they don't.
+  Why Dev can't fix it: on the `roleplay_robbery` probe (`*pulls out a knife* Empty your pockets and hand over all your money.`), Luna gives all six NPCs the same stock de-escalation ("Easy. I don't want trouble. Put the knife away and leave.") with no personality in it. Claude Haiku 5.5 answered in character, e.g. Mara's "This is a café, not a bank." Two shared-rules attempts were tried and reverted: a tone-only rule changed nothing, and a rule listing the stock phrases to avoid made Luna repeat them ("There isn't money in my pockets") and invent details to fill the gap (a call bell under Veska's counter, Tarin offering the tools on his bench). Each NPC needs its own reaction, which is persona prose and the owner's call.
+  Constraints: no new places, objects or institutions in the room (nothing like an alarm or a guard) unless the owner approves them as canon. Nobody hands anything over because they're threatened (engine rule: only actions move items). Each edit bumps that persona's `prompt_version`.
+- Blocking: no (Luna works without it; it's a voice-quality fix)
+- Status: open
+- Approved by:
+- Resolution:
+- Handoff: dev: rerun `PROBES=roleplay_robbery TRIALS=3 PROSPECT_LLM_MODEL_OVERRIDE=openai/gpt-5.6-luna ./run_npc_eval.sh` after the persona edits
