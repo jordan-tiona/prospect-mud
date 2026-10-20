@@ -19,4 +19,4 @@ A tall, plain locker shared by the people who live around the courtyard. The doo
 
 ## Probe Description
 
-The locker has been repainted more than once, in shades that don't quite match, like the walls around it. The hinges are oiled and the door swings easily. Taped inside the door is a handwritten note asking people to take what they need and bring it back when they're done.
+The locker has been repainted more than once, in shades that don't quite match, like the walls around it, and the paint is worn through to bare metal around the handle where hands have pulled it open. The hinges are oiled and the door swings easily, with no catch or lock to work. Inside, the hooks run along a rail at about shoulder height, each with a kit hanging from it: trowels, shears and hanks of twine bundled together, some with fresh tape on the handles, some with none. A few hooks have been bent and straightened again. Taped inside the door is a handwritten note, its corners curling, asking people to take what they need and bring it back when they're done. Someone has added a second line underneath in different handwriting: "Oil the shears if they stick."
