@@ -8,7 +8,7 @@ Run with:
 from unittest.mock import patch
 
 from django.test import TestCase
-from evennia import create_object
+from evennia import GLOBAL_SCRIPTS, create_object
 
 from world.actions import (
     PARCEL_TAG_CATEGORY,
@@ -22,6 +22,7 @@ from world.actions import (
 )
 from world.build_npcs import build as build_npcs
 from world.build_rooms import build as build_rooms
+from world.invites import consume_code, generate_codes, record_registration
 from world.commitments import (
     accept_commitment,
     fulfill_commitment_with_precondition,
@@ -573,3 +574,43 @@ class GenerateInviteCommandTests(TestCase):
         self.actor.execute_cmd("geninvite 1")
 
         self.assertFalse(any("New invite code" in m for m in self.messages))
+
+    def test_a_note_is_stored_on_the_code(self):
+        GLOBAL_SCRIPTS.invite_registry.db.codes = {}
+        self.actor.execute_cmd("geninvite 1 = screen reader player")
+
+        (entry,) = GLOBAL_SCRIPTS.invite_registry.db.codes.values()
+        self.assertEqual(entry["note"], "screen reader player")
+
+
+class InvitesCommandTests(TestCase):
+    def setUp(self):
+        room = create_object("typeclasses.rooms.Room", key="Test Room")
+        self.actor = create_object("typeclasses.characters.Character", key="Tester", location=room)
+        self.actor.permissions.add("Builder")
+        self.messages = []
+        self.actor.msg = lambda text="", **kw: self.messages.append(text)
+        GLOBAL_SCRIPTS.invite_registry.db.codes = {}
+
+    def test_lists_each_code_with_its_character_and_note(self):
+        used, unused = generate_codes(1, note="screen reader player")[0], generate_codes(1)[0]
+        consume_code(used, used_by="10.0.0.1")
+        record_registration(used, "kaelin", "Kaelin")
+
+        self.actor.execute_cmd("invites")
+
+        shown = "\n".join(self.messages)
+        self.assertIn('by Kaelin - "screen reader player"', shown)
+        self.assertIn(f"{unused}: unused", shown)
+
+    def test_says_so_when_there_are_no_codes(self):
+        self.actor.execute_cmd("invites")
+
+        self.assertTrue(any("No invite codes yet" in m for m in self.messages))
+
+    def test_requires_builder_permission(self):
+        generate_codes(1)
+        self.actor.permissions.remove("Builder")
+        self.actor.execute_cmd("invites")
+
+        self.assertFalse(any("Invite codes" in m for m in self.messages))

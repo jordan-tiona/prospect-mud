@@ -85,7 +85,7 @@ from world.disclosure import (
     WELCOME_TEXT,
     agreement_record,
 )
-from world.invites import consume_code, is_valid_code
+from world.invites import announce_registration, consume_code, is_valid_code, record_registration
 from world.profanity import name_is_profane
 
 COMMAND_DEFAULT_CLASS = utils.class_from_module(settings.COMMAND_DEFAULT_CLASS)
@@ -261,6 +261,10 @@ class CmdScriptedCreate(COMMAND_DEFAULT_CLASS):
                     "Something went wrong finishing your revival - an admin has been notified. "
                     "You can still log in; a staff member will sort out your starting location."
                 )
+        if code is not None:
+            account.db.invite_code = code.strip().upper()
+            record_registration(code, account.key, character.key if character is not None else name)
+            announce_registration(code)
 
         yield from self._scene_5(session, name)
 

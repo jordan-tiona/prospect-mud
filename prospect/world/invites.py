@@ -12,6 +12,10 @@ Codes live on a GLOBAL_SCRIPTS singleton (same pattern as
 world/llm_budget.py's spend tracker) since they're server-wide state
 with no single player/NPC object to live on, and persist across a
 server restart.
+
+Each code can carry a private admin note (who it was sent to), and
+records the account and character it created, so `invites` can show
+which tester is playing as whom.
 """
 
 import string
@@ -19,6 +23,11 @@ from datetime import datetime, timezone
 from secrets import choice as _secrets_choice
 
 from evennia import GLOBAL_SCRIPTS
+from evennia.server.sessionhandler import SESSION_HANDLER
+
+# Who sees the registration alert - the same level that can run
+# geninvite.
+STAFF_PERMISSION = "Builder"
 
 # Excludes visually ambiguous characters (0/O, 1/I/L) - these codes
 # are meant to be read aloud or typed from a chat message, not
@@ -42,15 +51,20 @@ def _generate_one_code() -> str:
     return "".join(_secrets_choice(_CODE_ALPHABET) for _ in range(_CODE_LENGTH))
 
 
-def generate_codes(count: int) -> list:
-    """Create `count` new unused codes and return them, newest last."""
+def _normalize(raw_code) -> str:
+    return (raw_code or "").strip().upper()
+
+
+def generate_codes(count: int, note: str = "") -> list:
+    """Create `count` new unused codes and return them, newest last.
+    `note` is admin-only, e.g. who the code is for."""
     codes = _codes()
     new_codes = []
     for _ in range(count):
         code = _generate_one_code()
         while code in codes:  # astronomically unlikely, but never silently drop one
             code = _generate_one_code()
-        codes[code] = {"used_by": None, "created": datetime.now(timezone.utc).isoformat()}
+        codes[code] = {"used_by": None, "created": datetime.now(timezone.utc).isoformat(), "note": note}
         new_codes.append(code)
     return new_codes
 
@@ -59,7 +73,7 @@ def is_valid_code(raw_code: str) -> bool:
     """True if `raw_code` exists and is unused, without using it up -
     so a player who then declines the disclosure (world/disclosure.py)
     keeps a code they can come back with."""
-    entry = _codes().get((raw_code or "").strip().upper())
+    entry = _codes().get(_normalize(raw_code))
     return entry is not None and entry["used_by"] is None
 
 
@@ -71,10 +85,51 @@ def consume_code(raw_code: str, used_by: str) -> bool:
     attempt with the same code always fails, even by the same person.
     """
     codes = _codes()
-    code = (raw_code or "").strip().upper()
-    entry = codes.get(code)
+    entry = codes.get(_normalize(raw_code))
     if entry is None or entry["used_by"] is not None:
         return False
     entry["used_by"] = used_by
     entry["used_at"] = datetime.now(timezone.utc).isoformat()
     return True
+
+
+def all_codes() -> list:
+    """Every code as (code, entry), oldest first."""
+    return sorted(_codes().items(), key=lambda item: item[1].get("created") or "")
+
+
+def record_registration(raw_code: str, account_name: str, character_name: str) -> dict | None:
+    """Notes which account and character a used code created, and
+    returns its entry (None for an unknown code)."""
+    entry = _codes().get(_normalize(raw_code))
+    if entry is None:
+        return None
+    entry["account"] = account_name
+    entry["character"] = character_name
+    return entry
+
+
+def describe(code: str, entry: dict) -> str:
+    """One plain-text line per code, readable by a screen reader."""
+    if entry["used_by"] is None:
+        status = "unused"
+    elif entry.get("character"):
+        status = f"used {entry.get('used_at', '')[:16].replace('T', ' ')} UTC by {entry['character']}"
+    else:
+        status = f"used {entry.get('used_at', '')[:16].replace('T', ' ')} UTC, no character yet"
+    note = f' - "{entry["note"]}"' if entry.get("note") else ""
+    return f"{code}: {status}{note}"
+
+
+def announce_registration(raw_code: str) -> None:
+    """Tells every online staff account that a code has just created
+    a character."""
+    code = _normalize(raw_code)
+    entry = _codes().get(code)
+    if entry is None:
+        return
+    note = f' "{entry["note"]}"' if entry.get("note") else ""
+    text = f"[Invite] Code {code}{note} is now playing as {entry.get('character')}."
+    for account in SESSION_HANDLER.all_connected_accounts():
+        if account.is_superuser or account.check_permstring(STAFF_PERMISSION):
+            account.msg(text)

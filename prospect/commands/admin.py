@@ -20,7 +20,7 @@ from world.conversation_log import (
     log_rumor_reset,
 )
 from world.garden import reset_bed_tended
-from world.invites import generate_codes
+from world.invites import all_codes, describe, generate_codes
 from world.npc_memory import known_npc_ids_with_memory_for, reset_memory
 from world.noticeboard import reset_expected_revision
 from world.reputation import reset_reputation
@@ -358,6 +358,10 @@ class CmdGenerateInvite(Command):
 
     Usage:
       geninvite <count>
+      geninvite <count> = <note>
+
+    The note is for staff only (e.g. who the code is for); `invites`
+    shows it next to the character the code creates.
     """
 
     key = "geninvite"
@@ -365,10 +369,32 @@ class CmdGenerateInvite(Command):
     help_category = "Building"
 
     def func(self):
-        raw_count = self.args.strip()
+        raw_count, _, note = self.args.partition("=")
+        raw_count, note = raw_count.strip(), note.strip()
         if not raw_count.isdigit() or int(raw_count) < 1:
-            self.caller.msg("Usage: geninvite <count> (a positive whole number)")
+            self.caller.msg("Usage: geninvite <count> [= <note>] (count a positive whole number)")
             return
 
-        codes = generate_codes(int(raw_count))
+        codes = generate_codes(int(raw_count), note=note)
         self.caller.msg("New invite code(s):\n" + "\n".join(codes))
+
+
+class CmdInvites(Command):
+    """
+    List every invite code: unused, or when it was used and the
+    character it created, with its staff note.
+
+    Usage:
+      invites
+    """
+
+    key = "invites"
+    locks = "cmd:perm(Builder)"
+    help_category = "Building"
+
+    def func(self):
+        codes = all_codes()
+        if not codes:
+            self.caller.msg("No invite codes yet. Make one with geninvite.")
+            return
+        self.caller.msg("Invite codes:\n" + "\n".join(describe(code, entry) for code, entry in codes))

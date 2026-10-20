@@ -22,7 +22,7 @@ import itertools
 from unittest.mock import Mock, patch
 
 from django.test import TestCase, override_settings
-from evennia import create_object
+from evennia import GLOBAL_SCRIPTS, create_object
 
 from commands.chargen import CmdScriptedCreate, species_menu
 from typeclasses.objects import indent_paragraphs
@@ -407,6 +407,18 @@ class InviteGateTests(TestCase):
         value = gen.send(code)
 
         self.assertIn("isn't valid", second_cmd.caller.transcript)
+
+    def test_code_records_the_character_it_created(self):
+        code = generate_codes(1, note="screen reader player")[0]
+
+        with patch("commands.chargen.announce_registration") as announce:
+            self._finish_with(invite_code=code.lower(), name="Testerg")
+
+        entry = GLOBAL_SCRIPTS.invite_registry.db.codes[code]
+        self.assertEqual(entry["character"], "Testerg")
+        account = self.session.sessionhandler.login.call_args.args[1]
+        self.assertEqual(account.db.invite_code, code)
+        announce.assert_called_once()
 
     def test_code_check_is_case_and_whitespace_insensitive(self):
         code = generate_codes(1)[0]
