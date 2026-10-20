@@ -72,11 +72,17 @@ class TannoyTests(TestCase):
         self.assertIn('To hear this again, type TANNOY."|n', text)
         self.assertTrue(text.endswith("The tannoy clicks off."))
 
-    def test_tannoy_is_three_blocks_with_a_blank_line_between(self):
+    def test_tannoy_is_four_blocks_with_a_blank_line_between(self):
         text = tannoy_text_for_room(self.rooms["medical_bay"])
-        self.assertEqual(text.count('|c"'), 3)
-        # Two between the blocks, one before "The tannoy clicks off."
-        self.assertEqual(text.count("|n\n\n"), 3)
+        self.assertEqual(text.count('|c"'), 4)
+        # Three between the blocks, one before "The tannoy clicks off."
+        self.assertEqual(text.count("|n\n\n"), 4)
+
+    def test_tannoy_tells_new_arrivals_to_ask_for_work_second(self):
+        # LR-DEV-0014: second, so screen-reader players hear it early.
+        blocks = tannoy_text_for_room(self.rooms["medical_bay"]).split("|n\n\n")
+        self.assertIn("whether they need any help", blocks[1])
+        self.assertIn("looking for work", blocks[1])
 
     def test_tannoy_blocks_arrive_paced_on_arrival(self):
         with patch("world.tutorial.utils.delay") as mock_delay:
@@ -85,11 +91,11 @@ class TannoyTests(TestCase):
         self.assertIn("Attention, new arrivals.", self.sent[0])
         self.assertNotIn("PLAYTEST", self.sent[0])
         waits = [call.args[0] for call in mock_delay.call_args_list]
-        self.assertEqual(waits, [TANNOY_BLOCK_PAUSE, TANNOY_BLOCK_PAUSE * 2])
+        self.assertEqual(waits, [TANNOY_BLOCK_PAUSE, TANNOY_BLOCK_PAUSE * 2, TANNOY_BLOCK_PAUSE * 3])
         for call in mock_delay.call_args_list:
             call.args[1](*call.args[2:])
-        self.assertEqual(len(self.sent), 3)
-        self.assertIn("PLAYTEST", self.sent[2])
+        self.assertEqual(len(self.sent), 4)
+        self.assertIn("PLAYTEST", self.sent[3])
 
     def test_later_blocks_stop_if_the_player_leaves(self):
         with patch("world.tutorial.utils.delay") as mock_delay:
@@ -154,8 +160,8 @@ class TannoyTests(TestCase):
             call = mock_delay.call_args
             if call is not None:
                 gaps.append(call.args[0])
-        self.assertEqual(len(self.sent), 3)
-        self.assertEqual(gaps, [TANNOY_CYCLE_GAP, TANNOY_CYCLE_GAP])
+        self.assertEqual(len(self.sent), 4)
+        self.assertEqual(gaps, [TANNOY_CYCLE_GAP, TANNOY_CYCLE_GAP, TANNOY_CYCLE_GAP])
         for text in self.sent:
             self.assertIn("A tannoy near the ceiling crackles to life:", text)
             self.assertIn("To hear the whole announcement, type TANNOY.", text)

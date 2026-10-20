@@ -426,11 +426,91 @@ SCENARIOS = [
         expect_calls={"propose_commitment"},
         notes="Explain-and-ask in one reply; the old Mara version needed guideline #11's same-turn rule.",
     ),
+    # LR-DEV-0015 (first external playtest, 2026-10-20): no tester was
+    # offered an errand. Every errand NPC offered on "need any help?",
+    # but the testers asked a newcomer's questions instead ("What do I
+    # do here?", "Where should I go?", "What are you working on?"), and
+    # the trigger bars excluded them. Those now count, for all five;
+    # a bare greeting still mustn't raise the errand (guidelines #12,
+    # #18, #19 - the bars were set after NPCs offered too eagerly).
+    # The player lines are the testers' own where there was one.
     EvalScenario(
-        name="daven_what_should_i_do_does_not_propose",
+        name="daven_what_should_i_do_proposes",
+        npc_id="daven_varek",
+        player_message="Hi, where should I go? What should I do?",
+        expect_calls={"propose_commitment"},
+        notes="Reversed 2026-10-20 (was daven_what_should_i_do_does_not_propose). Transcript: display first, any tour after.",
+    ),
+    EvalScenario(
+        name="daven_anything_to_do_proposes",
         npc_id="daven_varek",
         player_message="I'm not sure what to do next. Any ideas?",
+        expect_calls={"propose_commitment"},
+    ),
+    EvalScenario(
+        name="daven_greeting_does_not_propose",
+        npc_id="daven_varek",
+        player_message="Hi.",
         expect_no_calls={"propose_commitment"},
+        notes="Transcript: a glance at the display is fine, the errand itself isn't.",
+    ),
+    EvalScenario(
+        name="veska_what_should_i_do_proposes",
+        npc_id="veska_renn",
+        player_message="Is there anything to do around here? What should I do?",
+        expect_calls={"propose_commitment"},
+    ),
+    EvalScenario(
+        name="veska_greeting_does_not_propose",
+        npc_id="veska_renn",
+        player_message="Hello.",
+        expect_no_calls={"propose_commitment"},
+    ),
+    EvalScenario(
+        name="tarin_what_are_you_working_on_proposes",
+        npc_id="tarin_os",
+        player_message="What are you working on?",
+        expect_calls={"propose_commitment"},
+        notes="Live 2026-10-20 this got 'routine infrastructure repairs'.",
+    ),
+    EvalScenario(
+        name="tarin_looking_for_work_proposes",
+        npc_id="tarin_os",
+        player_message="I'm looking for work. Anything I can do?",
+        expect_calls={"propose_commitment"},
+    ),
+    EvalScenario(
+        name="tarin_greeting_does_not_propose",
+        npc_id="tarin_os",
+        player_message="Hi.",
+        expect_no_calls={"propose_commitment"},
+        notes="Transcript: half an ear on the wall is fine, naming the skitters isn't.",
+    ),
+    EvalScenario(
+        name="iri_looking_for_work_proposes",
+        npc_id="iri_vael",
+        player_message="I'm new here and looking for work. Is there anything to do?",
+        expect_calls={"propose_commitment"},
+    ),
+    EvalScenario(
+        name="iri_greeting_does_not_propose",
+        npc_id="iri_vael",
+        player_message="Hello.",
+        expect_no_calls={"propose_commitment"},
+    ),
+    EvalScenario(
+        name="mara_what_do_i_do_here_asks",
+        npc_id="mara_voss",
+        player_message="What do I do here?",
+        expect_calls={"ask_for_help"},
+        expect_no_calls={"accept_help", "give_directions"},
+        notes="Live 2026-10-20 this got a tour of the neighbourhood.",
+    ),
+    EvalScenario(
+        name="mara_greeting_does_not_ask",
+        npc_id="mara_voss",
+        player_message="Hi.",
+        expect_no_calls={"ask_for_help"},
     ),
     EvalScenario(
         name="iri_verify_revision_clear_report_fires",

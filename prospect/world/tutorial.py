@@ -101,6 +101,12 @@ _ROOM_TANNOYS = {
             "what you want to say. To move, type a direction, such as NORTH "
             "or SOUTHWEST. To look at something, type LOOK and then its name; "
             "to study it more closely, type PROBE and then its name.",
+            # LR-DEV-0014 (first external playtest, 2026-10-20): no tester
+            # thought to offer help, so nobody was offered an errand.
+            "People around the Old Quarter often have small jobs they'd be "
+            "glad of a hand with. If you're looking for something to do, ask "
+            "the people you meet whether they need any help, or SAY that "
+            "you're looking for work.",
             "To change how others see you, type DESCRIBE. To speak privately "
             "with someone, wherever they are, type TELL, then their name, "
             "then your message.",
