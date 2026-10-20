@@ -195,6 +195,28 @@ class PopulationTests(TestCase):
         for _ in range(10):
             skitter = spawn_one(exclude_room=exclude)
             self.assertNotEqual(skitter.location, exclude)
+            skitter.delete()
+
+    def test_spawn_one_never_shares_a_room(self):
+        # Owner, 2026-10-19: one skitter per room.
+        spawned = [spawn_one() for _ in ELIGIBLE_ROOM_TAGS]
+        rooms = [skitter.location for skitter in spawned]
+        self.assertEqual(len(set(rooms)), len(ELIGIBLE_ROOM_TAGS))
+
+    def test_spawn_one_spawns_nothing_when_every_room_is_occupied(self):
+        for _ in ELIGIBLE_ROOM_TAGS:
+            spawn_one()
+        self.assertIsNone(spawn_one())
+        self.assertEqual(len(_live_skitters()), len(ELIGIBLE_ROOM_TAGS))
+
+    def test_spawn_one_falls_back_to_the_excluded_room_if_it_is_the_only_free_one(self):
+        exclude = self.rooms["corner_cafe"]
+        for tag in ELIGIBLE_ROOM_TAGS:
+            if tag != "corner_cafe":
+                create_object("typeclasses.creatures.Skitter", key="a skitter", location=self.rooms[tag]).tags.add(
+                    SKITTER_TAG, category=SKITTER_TAG_CATEGORY
+                )
+        self.assertEqual(spawn_one(exclude_room=exclude).location, exclude)
 
     def test_ensure_population_spawns_up_to_the_target_count(self):
         ensure_population()

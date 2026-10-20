@@ -179,12 +179,20 @@ def spawn_one(exclude_room=None):
     reads as "appeared elsewhere" rather than "immediately back where
     it died"). Falls back to allowing the excluded room if it's the
     only eligible room available, rather than failing to spawn at all.
+
+    Never spawns into a room that already has a live skitter (owner,
+    2026-10-19: one skitter per room). Returns None, spawning nothing,
+    if every eligible room is occupied.
     """
     rooms = _eligible_rooms()
     if not rooms:
         raise RuntimeError("No eligible rooms found. Run world.build_rooms.build() first.")
 
-    choices = [r for r in rooms if r != exclude_room] or rooms
+    occupied = {skitter.location for skitter in _live_skitters()}
+    free = [r for r in rooms if r not in occupied]
+    if not free:
+        return None
+    choices = [r for r in free if r != exclude_room] or free
     room = random.choice(choices)
 
     skitter = create_object("typeclasses.creatures.Skitter", key="a skitter", location=room)
@@ -211,7 +219,9 @@ def ensure_population(exclude_room=None):
     """Idempotent: spawns skitters until ACTIVE_SKITTER_COUNT live
     instances exist, excluding exclude_room from the first spawn only
     (a kill only ever creates a deficit of one; the builder's initial
-    call passes no exclude_room at all)."""
+    call passes no exclude_room at all). Stops early if every eligible
+    room already has a skitter."""
     deficit = ACTIVE_SKITTER_COUNT - len(_live_skitters())
     for i in range(max(deficit, 0)):
-        spawn_one(exclude_room=exclude_room if i == 0 else None)
+        if spawn_one(exclude_room=exclude_room if i == 0 else None) is None:
+            break
