@@ -81,6 +81,22 @@ def _match_explicit_name(npcs, rest, names=_candidate_names):
     return None, None
 
 
+def _match_leading_name(npcs, speech):
+    """Matches a present NPC's name opening the line ("Iri hello",
+    "Iri, hello") and returns the rest, like `_match_explicit_name`.
+    Unlike the "to" prefix's pattern, the name must end at a comma,
+    whitespace or the end of the line, so a possessive ("Iri's desk
+    looks tidy") is left alone rather than stripped to "'s desk"."""
+    candidates = [(name, npc) for npc in npcs for name in _candidate_names(npc)]
+    candidates.sort(key=lambda pair: -len(pair[0].split()))
+    for name, npc in candidates:
+        words = r"\s+".join(re.escape(word) for word in name.split())
+        match = re.match(r"^" + words + r"(?:\s*,\s*|\s+|$)", speech, re.IGNORECASE)
+        if match:
+            return npc, speech[match.end():]
+    return None, None
+
+
 def _match_mentioned_name(npcs, speech):
     """Finds the present NPC whose name appears earliest in `speech`."""
     best = None
@@ -147,7 +163,12 @@ def resolve_addressee(speech, room, focus=None, speaker=None):
     Returns (npc, message): `npc` is the talk-capable NPC this `say`
     addresses, or None for ambient speech. `message` is what the NPC
     actually hears - the player's words, with an explicit "to <name>"
-    addressing prefix stripped (it's command syntax, not speech).
+    addressing prefix stripped (it's command syntax, not speech), and
+    likewise a present NPC's name opening the line ("say Iri hello").
+    Kept in, that name reached the model as part of the speech, and
+    Iri answered "Iri hello." by repeating it back (first external
+    playtest, 2026-10-20). A name later in the line stays: there it's
+    part of what the player is saying.
 
     Explicit naming or a name mentioned anywhere always wins over
     `focus` - if a player names a *different* present NPC, that's a
@@ -163,6 +184,10 @@ def resolve_addressee(speech, room, focus=None, speaker=None):
         npc, remainder = _match_explicit_name(npcs, to_match.group(1))
         if npc is not None:
             return npc, remainder
+
+    npc, remainder = _match_leading_name(npcs, stripped)
+    if npc is not None:
+        return npc, remainder
 
     npc = _match_mentioned_name(npcs, speech)
     if npc is not None:

@@ -494,13 +494,37 @@ class SayCommandTests(_SayTestBase):
     def test_multiple_players_with_name_mention_addresses_npc(self, mock_chat):
         self._add_other_player()
         mock_chat.return_value = _reply("Hi there!")
+        self._say("how are you, Mara?")
+
+        mock_chat.assert_called_once()
+        kwargs = self.mock_log_turn.call_args.kwargs
+        # A name later in the line is part of the player's actual
+        # speech and is not stripped out.
+        self.assertEqual(kwargs["player_message"], "How are you, Mara?")
+
+    @patch("commands.say.chat")
+    def test_name_opening_the_line_is_stripped_like_to(self, mock_chat):
+        # Live 2026-10-20: "say Iri hello" reached Iri as "Iri hello."
+        # and she repeated it back.
+        self._add_other_player()
+        mock_chat.return_value = _reply("Hi there!")
         self._say("Mara, how are you?")
 
         mock_chat.assert_called_once()
         kwargs = self.mock_log_turn.call_args.kwargs
-        # The mentioned name is part of the player's actual speech and
-        # is not stripped out.
-        self.assertEqual(kwargs["player_message"], "Mara, how are you?")
+        self.assertEqual(kwargs["player_message"], "How are you?")
+
+    @patch("commands.say.chat")
+    def test_bare_name_asks_say_what_without_echoing(self, mock_chat):
+        self._add_other_player()
+        with patch.object(self.actor, "msg") as mock_msg:
+            self._say("Mara")
+
+        mock_chat.assert_not_called()
+        self.mock_log_turn.assert_not_called()
+        sent = " ".join(str(call.args[0]) for call in mock_msg.call_args_list if call.args)
+        self.assertIn("Say what to Mara Voss?", sent)
+        self.assertNotIn("say to", sent)
 
     @patch("commands.say.chat")
     def test_whole_word_match_avoids_false_positive(self, mock_chat):

@@ -56,9 +56,50 @@ class NpcAddressingTests(TestCase):
 
     def test_multiple_players_name_mention_resolves_and_keeps_text(self):
         self._add_other_player()
+        npc, message = resolve_addressee("hey, how are you, Mara?", self.cafe)
+        self.assertIs(npc, self.mara)
+        self.assertEqual(message, "hey, how are you, Mara?")
+
+    # -- a name opening the line is addressing, like "to <name>" ----------
+
+    def test_leading_name_with_comma_strips_name(self):
+        self._add_other_player()
         npc, message = resolve_addressee("Mara, how are you?", self.cafe)
         self.assertIs(npc, self.mara)
-        self.assertEqual(message, "Mara, how are you?")
+        self.assertEqual(message, "how are you?")
+
+    def test_leading_name_without_comma_strips_name(self):
+        # Live 2026-10-20: "say Iri hello" reached Iri as "Iri hello."
+        # and she repeated it back.
+        self._add_other_player()
+        npc, message = resolve_addressee("Mara hello", self.cafe)
+        self.assertIs(npc, self.mara)
+        self.assertEqual(message, "hello")
+
+    def test_leading_full_name_strips_whole_name(self):
+        self.tarin.move_to(self.cafe, quiet=True)
+        npc, message = resolve_addressee("Mara Voss, hello there", self.cafe)
+        self.assertIs(npc, self.mara)
+        self.assertEqual(message, "hello there")
+
+    def test_leading_possessive_is_not_stripped(self):
+        self._add_other_player()
+        npc, message = resolve_addressee("Mara's coffee is good", self.cafe)
+        self.assertIs(npc, self.mara)
+        self.assertEqual(message, "Mara's coffee is good")
+
+    def test_leading_name_alone_leaves_nothing_to_say(self):
+        self._add_other_player()
+        npc, message = resolve_addressee("Mara", self.cafe)
+        self.assertIs(npc, self.mara)
+        self.assertEqual(message, "")
+
+    def test_leading_name_of_absent_npc_is_kept_for_the_npc_present(self):
+        # In the café, "Iri hello" isn't addressing Iri (she isn't
+        # here) - Mara, alone with the player, hears the whole line.
+        npc, message = resolve_addressee("Iri hello", self.cafe)
+        self.assertIs(npc, self.mara)
+        self.assertEqual(message, "Iri hello")
 
     def test_whole_word_match_rejects_substring(self):
         self._add_other_player()

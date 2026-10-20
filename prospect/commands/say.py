@@ -971,11 +971,16 @@ class CmdSay(DefaultCmdSay):
                 # They know to name who they mean - what both
                 # addressing hints below teach.
                 caller.db.say_hint_learned = True
-        # An explicit "to <name>" prefix is addressing syntax, not
-        # something the character actually says aloud - strip it from
-        # what the room hears too, not just what the NPC hears. A bare
-        # name mention or ambient speech has message == self.args, so
-        # this is a no-op for those cases.
+            # "say to Iri" or "say Iri" with nothing after the name:
+            # ask before echoing, or the room hears the bare name.
+            if not message.strip():
+                caller.msg(f"Say what to {target.key}?")
+                return
+        # An explicit "to <name>" prefix or a name opening the line is
+        # addressing syntax, not something the character actually says
+        # aloud - strip it from what the room hears too, not just what
+        # the NPC hears. A name later in the line or ambient speech has
+        # message == self.args, so this is a no-op for those cases.
         broadcast_text = message or self.args
         broadcast_text, is_question = normalize_speech(broadcast_text)
 
@@ -1041,9 +1046,6 @@ class CmdSay(DefaultCmdSay):
                         f"(With other people here, {name} won't assume you mean them - "
                         f"use their name, e.g. 'say to {name}, ...', to talk to them.)",
                     )
-            return
-        if not message:
-            caller.msg(f"Say what to {target.key}?")
             return
 
         # The masked line (Character.at_pre_say), so the NPC never sees
