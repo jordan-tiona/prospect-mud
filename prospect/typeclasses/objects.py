@@ -276,7 +276,48 @@ class GardeningKit(ObjectParent, DefaultObject):
     planting bed; nothing about possession needs to be exclusive or
     consumed, since the completion fact tracked is per-player
     (world/garden.py), not tied to the kit itself.
+
+    The kit placed in the Residential Courtyard is a supply that never
+    leaves: `get kit` creates the player's own copy instead (world/
+    garden.py's give_personal_kit), so one player carrying it off can't
+    block everyone else. A personal copy is an ordinary kit, except that
+    it can only be put down where a supply kit is, which returns it.
     """
+
+    def at_pre_get(self, getter, **kwargs):
+        from world.garden import carried_kits, give_personal_kit, is_personal_kit
+
+        if is_personal_kit(self):
+            return True
+        held = carried_kits(getter)
+        if held:
+            getter.msg(f"You already have {held[0].get_display_name(getter)}.")
+            return False
+        kit = give_personal_kit(self, getter)
+        if getter.location:
+            getter.location.msg_contents(
+                f"$You() $conj(pick) up {kit.get_display_name(getter)}.", from_obj=getter
+            )
+        return False
+
+    def at_pre_drop(self, dropper, **kwargs):
+        from world.garden import GARDENING_KIT_TYPECLASS, is_personal_kit
+
+        if not is_personal_kit(self):
+            return True
+        location = dropper.location
+        supply_here = location and any(
+            obj.is_typeclass(GARDENING_KIT_TYPECLASS, exact=False) and not is_personal_kit(obj)
+            for obj in location.contents
+        )
+        if not supply_here:
+            dropper.msg(f"Hold on to {self.get_display_name(dropper)} until you can put it back where you found it.")
+            return False
+        # Returned here rather than in at_drop: stock CmdDrop still names
+        # the dropped object after at_drop, so it can't be deleted by then.
+        location.msg_contents(f"$You() $conj(put) back {self.get_display_name(dropper)}.", from_obj=dropper)
+        self.delete()
+        return False
 
 
 class PlantingBed(RoomObject):

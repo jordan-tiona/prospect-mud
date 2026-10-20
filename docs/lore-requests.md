@@ -489,3 +489,13 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
 - Resolution: `content/npcs/*.md`, "If someone threatens you" (all six talk NPCs)
   **Confirmed on master (2026-10-19, Dev, results in `prospect/server/logs/npc_eval/2026-10-19_2141/`):** lore merged into master; the robbery probe passes 18/18 on both engine checks and grader. Every NPC answers in its own voice. Repeats remaining: Iri says "I don't have money here" and asks "Why are you doing this?" in 3/3; Daven's pockets hold "lint and civic forms" in 2/3 (and Given's "lint" once). Luna's third-person slip showed 3 times in 18 (Daven "tell him what's really gone wrong", Given "He's a medical technician" twice), the quirk noted above.
 - Handoff: none
+
+## LR-DEV-0013: The Residential Courtyard's communal equipment locker, as an object
+- Requested by: dev (owner decision, 2026-10-19)
+- Needed for: Iri's planting-bed quest. Iri's persona and the gardening kit's text both say the kit comes from a communal equipment locker in the Residential Courtyard, and the playtest spec's command table expects "grab the gardening kit from the locker". Today there's no locker object, just a loose kit on the floor. Since 2026-10-19 that kit is a supply: `get kit` gives each player their own copy and the kit itself never leaves (the only kit had been carried off, which blocked the quest for everyone else). The owner wants the locker to become the real object that hands out kits, placed with the MUD editor.
+- What's needed: a `content/objects/` file for the locker, with `# Heading` (its name), `## Description` (what LOOK shows) and `## Room line` (its line in the room), the same sections as `content/objects/gardening_kit.md`. It hands out kits to anyone, as many as needed, so the text shouldn't suggest it's locked, empty or limited. Once the locker exists, the loose kit's room line ("A gardening kit sits here, free for anyone to use.") likely goes, and the kit's `## Description` ("...left out where anyone who needs them can take them") may need rewording to match.
+- Blocking: no (the loose kit works meanwhile)
+- Status: open
+- Approved by:
+- Resolution:
+- Handoff: dev: add a locker entity kind that gives out kits so the owner can place it in the editor; once it's placed and exported, have `get kit` reach into it and confirm live

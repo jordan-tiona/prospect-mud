@@ -122,3 +122,92 @@ class PlantingBedDescTests(TestCase):
 
         mark_bed_tended(self.tender)
         self.assertIn("Overgrown", self.bed.get_display_desc(self.other))
+
+
+class GardeningKitSupplyTests(TestCase):
+    """
+    The courtyard's kit is a supply: `get kit` gives each player their
+    own copy and the supply stays put. Caught live 2026-10-19, when the
+    only kit sat in one character's inventory and nobody else could
+    start Iri's quest.
+    """
+
+    def setUp(self):
+        self.courtyard = create_object("typeclasses.rooms.Room", key="Courtyard")
+        self.square = create_object("typeclasses.rooms.Room", key="Square")
+        self.supply = create_object(
+            "typeclasses.objects.GardeningKit",
+            key="a gardening kit",
+            location=self.courtyard,
+            aliases=["kit"],
+            attributes=[("desc", "A worn kit.")],
+        )
+        self.first = create_object("typeclasses.characters.Character", key="First", location=self.courtyard)
+        self.second = create_object("typeclasses.characters.Character", key="Second", location=self.courtyard)
+
+    def _kits(self, holder):
+        from world.garden import carried_kits
+
+        return carried_kits(holder)
+
+    def test_get_gives_a_copy_and_the_supply_stays(self):
+        self.first.execute_cmd("get kit")
+        self.assertIs(self.supply.location, self.courtyard)
+        kits = self._kits(self.first)
+        self.assertEqual(len(kits), 1)
+        self.assertIsNot(kits[0], self.supply)
+        self.assertEqual(kits[0].db.desc, "A worn kit.")
+
+    def test_copy_carries_no_build_tags(self):
+        self.supply.tags.add("gardening_kit", category="garden_prop")
+        self.first.execute_cmd("get kit")
+        self.assertFalse(self._kits(self.first)[0].tags.all())
+
+    def test_every_player_can_get_one(self):
+        self.first.execute_cmd("get kit")
+        self.second.execute_cmd("get kit")
+        self.assertEqual(len(self._kits(self.first)), 1)
+        self.assertEqual(len(self._kits(self.second)), 1)
+
+    def test_only_one_per_player(self):
+        self.first.execute_cmd("get kit")
+        self.first.execute_cmd("get kit")
+        self.assertEqual(len(self._kits(self.first)), 1)
+
+    def test_get_from_the_locker_phrasing(self):
+        self.first.execute_cmd("get kit from locker")
+        self.assertEqual(len(self._kits(self.first)), 1)
+
+    def test_dropping_next_to_the_supply_returns_it(self):
+        self.first.execute_cmd("get kit")
+        self.first.execute_cmd("drop kit")
+        self.assertEqual(self._kits(self.first), [])
+        self.assertEqual(
+            [obj for obj in self.courtyard.contents if obj.is_typeclass("typeclasses.objects.GardeningKit")],
+            [self.supply],
+        )
+
+    def test_cannot_drop_away_from_the_supply(self):
+        self.first.execute_cmd("get kit")
+        self.first.move_to(self.square, quiet=True)
+        self.first.execute_cmd("drop kit")
+        self.assertEqual(len(self._kits(self.first)), 1)
+
+    def test_copy_works_on_the_bed(self):
+        from world.garden import is_bed_tended
+
+        create_object("typeclasses.objects.PlantingBed", key="a planting bed", location=self.square, aliases=["bed"])
+        self.first.execute_cmd("get kit")
+        self.first.move_to(self.square, quiet=True)
+        self.first.execute_cmd("use kit on bed")
+        self.assertTrue(is_bed_tended(self.first))
+
+    def test_reset_cleanup_removes_only_personal_kits(self):
+        from world.garden import cleanup_personal_kits
+
+        self.first.execute_cmd("get kit")
+        self.assertEqual(cleanup_personal_kits(self.first), 1)
+        self.assertEqual(self._kits(self.first), [])
+        self.supply.move_to(self.first, quiet=True)
+        self.assertEqual(cleanup_personal_kits(self.first), 0)
+        self.assertIs(self.supply.location, self.first)

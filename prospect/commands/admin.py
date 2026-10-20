@@ -19,7 +19,7 @@ from world.conversation_log import (
     log_reset,
     log_rumor_reset,
 )
-from world.garden import reset_bed_tended
+from world.garden import cleanup_personal_kits, reset_bed_tended
 from world.invites import all_codes, describe, generate_codes
 from world.npc_memory import known_npc_ids_with_memory_for, reset_memory
 from world.noticeboard import reset_expected_revision
@@ -201,6 +201,7 @@ class CmdResetCommitment(Command):
 
         removed_parcels = cleanup_stray_parcels(target)
         removed_weapons = cleanup_stray_weapons(target)
+        removed_kits = cleanup_personal_kits(target)
         previous_revision = reset_expected_revision(target)
         # Quest 2/3: downstream world-state facts that aren't part of
         # the commitment record itself (world/garden.py's tended flag,
@@ -241,6 +242,7 @@ class CmdResetCommitment(Command):
             cleared_any
             or removed_parcels
             or removed_weapons
+            or removed_kits
             or previous_revision is not None
             or previous_bed_tended
             or previous_skitter_kills
@@ -253,6 +255,8 @@ class CmdResetCommitment(Command):
                 caller.msg(f"Removed {removed_parcels} stray carried parcel(s) no longer tied to anything open.")
             if removed_weapons:
                 caller.msg(f"Removed {removed_weapons} shock baton(s) no longer tied to the skitter hunt.")
+            if removed_kits:
+                caller.msg(f"Removed {removed_kits} gardening kit(s) they'd taken from the courtyard.")
             if previous_revision is not None:
                 caller.msg("Cleared their generated noticeboard revision - the display will show a fresh one.")
             if previous_bed_tended:
