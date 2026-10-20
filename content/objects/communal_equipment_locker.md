@@ -1,10 +1,10 @@
 <!--
 object_id: communal_equipment_locker
 status: Provisional
-approval: Draft
+approval: Approved
 request: LR-DEV-0013
 bible_refs: 13.6
-Lore (LR-DEV-0013, 2026-10-19): the locker's existence is already Approved (Iri's persona, gardening_kit.md). Its look is new detail, so Draft until the owner approves. Kept in line with the courtyard room prose (patched, mismatched finishes) and the kit's probe tag (put things back). Says nothing that implies it's locked, empty or limited: it hands out a kit to anyone, as often as needed.
+Lore (LR-DEV-0013, 2026-10-19): the locker's existence is already Approved (Iri's persona, gardening_kit.md). Its look was new detail; owner approved it 2026-10-19 (LOOK and the expanded PROBE). Kept in line with the courtyard room prose (patched, mismatched finishes) and the kit's probe tag (put things back). Says nothing that implies it's locked, empty or limited: it hands out a kit to anyone, as often as needed.
 -->
 
 # a communal equipment locker
