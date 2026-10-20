@@ -41,6 +41,8 @@ class _NpcEval(TestCase):
     def setUp(self):
         if not MODES:
             self.skipTest("set PROSPECT_NPC_EVAL to run the live-model NPC eval")
+        if not self.npc_id:
+            self.skipTest("base class; the per-NPC subclasses below run")
 
     def _write(self, kind, data):
         out = Path(os.environ.get("PROSPECT_NPC_EVAL_OUT", "server/logs/npc_eval/latest"))
