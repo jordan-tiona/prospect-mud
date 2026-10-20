@@ -162,10 +162,9 @@
         "gardening kits"
       ],
       "attributes": {
-        "desc": "A worn gardening kit from the courtyard's communal equipment locker: a hand trowel, a pair of shears, and a few lengths of twine, left out where anyone who needs them can take them.",
+        "desc": "A worn gardening kit from the courtyard's communal equipment locker: a hand trowel, a pair of shears, and a few lengths of twine.",
         "in_glance": true,
-        "probe_desc": "The trowel's handle is wrapped in tape where the original grip split, and its blade has been worn narrower than it started. The shears are stiff but clean, oiled by someone who cares about them. The twine is a few hand-wound hanks of different lengths, the ends tied off neatly. A tag on the kit's strap names the courtyard's communal equipment locker and asks, politely, that everything be put back when you're done.",
-        "room_line": "A gardening kit sits here, free for anyone to use."
+        "probe_desc": "The trowel's handle is wrapped in tape where the original grip split, and its blade has been worn narrower than it started. The shears are stiff but clean, oiled by someone who cares about them. The twine is a few hand-wound hanks of different lengths, the ends tied off neatly. A tag on the kit's strap names the courtyard's communal equipment locker and asks, politely, that everything be put back when you're done."
       },
       "inside": "communal_equipment_locker",
       "key": "a gardening kit",
@@ -659,7 +658,7 @@
     "content/objects/civic_office_skitter_ledger.md": "325776d41f0ddcb573556c303a53846fd6fcf2592adb7675f6b30ca2a31aeb98",
     "content/objects/communal_equipment_locker.md": "39a1a19e7cf0f1bf62b3609f550374688f4d448d0d088948d9511baae7e99d69",
     "content/objects/faulty_heating_module_hint.md": "1c84ada12e1f746516319a62dc9312acc22df2aa251258ae6a68a9f7f2d7052c",
-    "content/objects/gardening_kit.md": "8a5cb9a9f8c63711b9e2ecd04019a137d5f4e6b05196236038693b087e854ead",
+    "content/objects/gardening_kit.md": "84928684e5e842e6a6fbb43f0bace6348bfcdcd3b246c82bfb44d19ef7b8b042",
     "content/objects/misdelivered_parcel_hint.md": "81d5725d931b65a5db217c42b3544c733ceeb78fbf9ee0f1ad5995ef710d26d2",
     "content/objects/old_quarter_square_signpost.md": "a2c80680cbc1a981d540c8fc46c524958a20a564279f56b0859820d2229dabac",
     "content/objects/planting_bed.md": "31389ee7940bf1389e082e79439832bae8d2741a6f2fa747004b634fbd5a5ea2",
