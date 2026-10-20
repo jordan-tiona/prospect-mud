@@ -19,18 +19,18 @@ from world.commitments import get_state_summary
 from .command import Command
 
 # Errands in the order the playtest's NPCs usually reach a newcomer.
-# TODO(lore): labels drafted by Dev from what the personas already say
-# about each errand (LR-DEV-0016) - Lore to confirm or reword.
+# Labels from LR-DEV-0016 (Lore). Each ends on the step that closes the
+# errand, since a label is the same in every state.
 _ERRAND_LABELS = (
-    ("verify_display_revision", "Check the number on Daven Varek's display with Iri Vael"),
-    ("deliver_parcel", "Take the misdelivered parcel from Veska Renn to Tarin Os"),
-    ("hunt_skitters", "Thin out the skitters for Tarin Os"),
-    ("tend_planting_bed", "Tend the overgrown planting beds for Iri Vael"),
+    ("verify_display_revision", "Check the number on Daven Varek's display with Iri Vael at the Civic Office, then tell Daven"),
+    ("deliver_parcel", "Take the misdelivered parcel from Veska Renn to Tarin Os at the Maintenance Workshop"),
+    ("hunt_skitters", "Thin out the skitters for Tarin Os, then go back and tell him"),
+    ("tend_planting_bed", "Tend the overgrown planting bed in Old Quarter Square for Iri Vael, then tell her"),
 )
-_HEATING_LABEL = "Carry Mara Voss's faulty heating module to Tarin Os and bring the working one back"
+_HEATING_LABEL = "Take Mara Voss's heating module to Tarin Os at the workshop and bring a working one back to her"
 
 _IN_PROGRESS = "in progress"
-_OFFERED = "offered - you haven't said yes or no yet"
+_OFFERED = "offered, waiting for your answer"
 _DONE = "done"
 
 _HEATING_STATUS = {

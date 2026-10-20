@@ -58,9 +58,9 @@ class ScoreTests(_CommandTestBase):
 
         text = self._run("score")
         self.assertIn("Errands:", text)
-        skitters = text.index("Thin out the skitters for Tarin Os: in progress.")
-        display = text.index("Daven Varek's display with Iri Vael: offered")
-        parcel = text.index("from Veska Renn to Tarin Os: done.")
+        skitters = text.index("Thin out the skitters for Tarin Os, then go back and tell him: in progress.")
+        display = text.index("Iri Vael at the Civic Office, then tell Daven: offered, waiting for your answer.")
+        parcel = text.index("from Veska Renn to Tarin Os at the Maintenance Workshop: done.")
         self.assertLess(skitters, display)
         self.assertLess(display, parcel)
 
@@ -76,7 +76,7 @@ class ScoreTests(_CommandTestBase):
             ("completed", "done"),
         ):
             self.actor.attributes.add(QUEST_MODULE_EXCHANGE_KEY, state)
-            self.assertIn(f"heating module to Tarin Os and bring the working one back: {status}", self._run("score"))
+            self.assertIn(f"heating module to Tarin Os at the workshop and bring a working one back to her: {status}", self._run("score"))
 
     def test_heating_not_started_is_not_listed(self):
         self.actor.attributes.add(QUEST_MODULE_EXCHANGE_KEY, "not_started")

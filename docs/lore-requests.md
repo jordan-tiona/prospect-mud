@@ -559,4 +559,4 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   - `tend_planting_bed`: "Tend the overgrown planting bed in Old Quarter Square for Iri Vael, then tell her"
   - heating: "Take Mara Voss's heating module to Tarin Os at the workshop and bring a working one back to her"
   Statuses: `_IN_PROGRESS` "in progress" and `_DONE` "done" unchanged; `_OFFERED` becomes "offered, waiting for your answer".
-- Handoff: dev: paste the labels and the `_OFFERED` status in Resolution into `commands/character_info.py`, and drop the `TODO(lore)`
+- Handoff: none (Dev pasted the labels and `_OFFERED` status into `commands/character_info.py` and dropped the `TODO(lore)`, 2026-10-20, in the commit after b93f98a)
