@@ -550,7 +550,13 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   - Mara's heating unit: "Carry Mara Voss's faulty heating module to Tarin Os and bring the working one back"
   Each is followed by a status Dev wrote ("in progress", "offered - you haven't said yes or no yet", "done"); reword those too if wanted. The empty-log line reuses LR-DEV-0014's tannoy wording. Constraints: plain text, one line each, read aloud by screen readers; an errand's label is the same for every player and every state.
 - Blocking: no (the drafted labels are live meanwhile, marked `TODO(lore)` in the code)
-- Status: open
-- Approved by:
-- Resolution:
-- Handoff: dev: paste any reworded labels into `_ERRAND_LABELS`/`_HEATING_LABEL` in `commands/character_info.py`
+- Status: drafted (2026-10-20, Lore). Reworded labels below; Dev's drafts were accurate, and the changes are for use as a quest log. Since a label is the same in every state, each one now ends on the step that actually closes the errand (telling Daven, Tarin or Iri), where one exists, and names where the person is when it isn't obvious. Every detail comes from the personas and `world/commitments.py`, so nothing new is added and Lore approves it itself. The planting bed is singular to match the quest (one bed object, and the engine's own narration says "the planting bed"). Mara's module loses "faulty": she's only "fairly sure" it's the module, and Tarin is the one who inspects it. The offered status loses its dash, which screen readers can read out as "dash". The empty-log line is fine as it is.
+- Approved by: lore (no new canon)
+- Resolution: For `_ERRAND_LABELS` / `_HEATING_LABEL`:
+  - `verify_display_revision`: "Check the number on Daven Varek's display with Iri Vael at the Civic Office, then tell Daven"
+  - `deliver_parcel`: "Take the misdelivered parcel from Veska Renn to Tarin Os at the Maintenance Workshop"
+  - `hunt_skitters`: "Thin out the skitters for Tarin Os, then go back and tell him"
+  - `tend_planting_bed`: "Tend the overgrown planting bed in Old Quarter Square for Iri Vael, then tell her"
+  - heating: "Take Mara Voss's heating module to Tarin Os at the workshop and bring a working one back to her"
+  Statuses: `_IN_PROGRESS` "in progress" and `_DONE` "done" unchanged; `_OFFERED` becomes "offered, waiting for your answer".
+- Handoff: dev: paste the labels and the `_OFFERED` status in Resolution into `commands/character_info.py`, and drop the `TODO(lore)`
