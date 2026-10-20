@@ -517,7 +517,7 @@ Lore delivers each candidate as a Draft content file in its usual folder, with `
   **Optional, same intent**, if Dev wants the two delayed NPC nudges in `prospect/world/tutorial.py` to carry the reason too (Lore's suggestion, take or leave):
   - Given (`medical_bay`): "Once you're ready to go, Daven Varek can help you get further oriented and find you something useful to do - his office is just past Old Quarter Square."
   - Daven (`daven_office`): "Go ahead and SAY something whenever you're ready - I can answer questions, find you something useful to do, and point you anywhere else on Elsewhere once we've talked."
-- Handoff: dev: the two optional nudge lines in Resolution, waiting on the owner's yes or no. (Tannoy block pasted in as the second block of `_ROOM_TANNOYS["medical_bay"]`, Dev, 2026-10-20, in the commit after a9167ee.)
+- Handoff: none (Dev, 2026-10-20: tannoy block pasted in as the second block of `_ROOM_TANNOYS["medical_bay"]` in 0022220; the owner took both optional nudge lines, now Given's and Daven's `delayed` text in `_ROOM_NUDGES`, in the commit after it)
 
 ## LR-DEV-0015: Let the quest NPCs offer their errand when a newcomer asks what to do
 - Requested by: dev (owner decision, 2026-10-20)

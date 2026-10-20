@@ -64,8 +64,10 @@ _ROOM_NUDGES = {
         "delayed": {
             "flag": "given_nudge_sent",
             "text": (
+                # "find you something useful to do": LR-DEV-0014.
                 "Once you're ready to go, Daven Varek can help you get further "
-                "oriented - his office is just past Old Quarter Square."
+                "oriented and find you something useful to do - his office is "
+                "just past Old Quarter Square."
             ),
         },
     },
@@ -75,7 +77,8 @@ _ROOM_NUDGES = {
             "flag": "daven_nudge_sent",
             "text": (
                 "Go ahead and SAY something whenever you're ready - I can answer "
-                "questions and point you anywhere else on Elsewhere once we've talked."
+                "questions, find you something useful to do, and point you "
+                "anywhere else on Elsewhere once we've talked."
             ),
         },
     },
