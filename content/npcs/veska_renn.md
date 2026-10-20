@@ -8,7 +8,6 @@ pronouns: she/her
 prompt_version: 24
 status: Provisional
 approval: Approved
-body: Draft (LR-DEV-0012, 2026-10-19; new "If someone threatens you" section, revised after the Dev eval); pending owner approval
 knowledge_scope (bible sections, Established content only):
   11.1, 11.2.1, 11.2.5, 11.2.6, 5.8
 actions: propose_commitment, accept_commitment, decline_commitment, report_parcel_delivery, remember_fact
