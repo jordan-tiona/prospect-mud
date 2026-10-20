@@ -84,6 +84,14 @@ class TannoyTests(TestCase):
         self.assertIn("whether they need any help", blocks[1])
         self.assertIn("looking for work", blocks[1])
 
+    def test_screen_reader_hint_comes_second_and_only_once(self):
+        # Moved up from the last block (owner, 2026-10-20) so a screen-
+        # reader player hears it a few seconds in, not after the rest.
+        text = tannoy_text_for_room(self.rooms["medical_bay"])
+        blocks = text.split("|n\n\n")
+        self.assertIn("OPTION/SAVE SCREENREADER=ON", blocks[1])
+        self.assertEqual(text.count("SCREENREADER"), 1)
+
     def test_tannoy_blocks_arrive_paced_on_arrival(self):
         with patch("world.tutorial.utils.delay") as mock_delay:
             announce_tannoy(self.character)

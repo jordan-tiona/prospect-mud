@@ -109,15 +109,15 @@ _ROOM_TANNOYS = {
             "People around the Old Quarter often have small jobs they'd be "
             "glad of a hand with. If you're looking for something to do, ask "
             "the people you meet whether they need any help, or SAY that "
-            "you're looking for work.",
+            "you're looking for work. If you use a screen reader, type "
+            "OPTION/SAVE SCREENREADER=ON once and it stays on for every "
+            "later visit.",
             "To change how others see you, type DESCRIBE. To speak privately "
             "with someone, wherever they are, type TELL, then their name, "
             "then your message.",
             "To talk with the other testers and the staff running this "
             "playtest, type PLAYTEST, or PT, and then your message; to stop "
-            "hearing that channel, type PLAYTEST OFF. If you use a screen "
-            "reader, type OPTION/SAVE SCREENREADER=ON once and it stays on "
-            "for every later visit.",
+            "hearing that channel, type PLAYTEST OFF.",
         ),
     ),
 }
