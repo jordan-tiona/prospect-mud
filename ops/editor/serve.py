@@ -103,7 +103,8 @@ def kinds_view(root):
     room_kind, kinds = load_kinds(root)
     return {
         'room': {'content_dir': room_kind['content_dir'], 'id_field': room_kind['id_field']},
-        'kinds': {name: {'content_dir': k['content_dir'], 'id_field': k['id_field'], 'params': k['params']}
+        'kinds': {name: {'content_dir': k['content_dir'], 'id_field': k['id_field'], 'params': k['params'],
+                         'container': k.get('container', False)}
                   for name, k in kinds.items()},
     }
 

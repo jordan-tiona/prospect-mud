@@ -227,7 +227,22 @@
     const entity = doc.entities[id] || fail(`No entity "${id}".`);
     if ('room' in fields) {
       if (!doc.rooms[fields.room]) fail('Place it in a room of this sector.');
+      if (fields.room !== entity.room) {
+        // Leaving a container behind takes it out; a container's contents move with it.
+        delete entity.inside;
+        for (const other of Object.values(doc.entities)) if (other.inside === id) other.room = fields.room;
+      }
       entity.room = fields.room;
+    }
+    if ('inside' in fields) {
+      if (!fields.inside) delete entity.inside;
+      else {
+        const container = doc.entities[fields.inside];
+        if (!container || fields.inside === id) fail('Put it inside another thing in this sector.');
+        if (container.room !== entity.room) fail('Its container has to be in the same room.');
+        if (container.inside) fail('That is itself inside something.');
+        entity.inside = fields.inside;
+      }
     }
     if ('aliases' in fields) {
       const aliases = parseAliases(fields.aliases.join(','));
@@ -249,6 +264,8 @@
   function removeEntity(doc, id) {
     if (!doc.entities[id]) fail(`No entity "${id}".`);
     delete doc.entities[id];
+    // What was inside it stays in the room, loose.
+    for (const other of Object.values(doc.entities)) if (other.inside === id) delete other.inside;
     return doc;
   }
 

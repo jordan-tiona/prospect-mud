@@ -226,6 +226,46 @@ class BuildSectorTests(TestCase):
         self.assertEqual(len(report.held), 1)
         self.assertNotIn("gardening_kit t_kit", report.updated)
 
+    def _put_kit_in_a_locker(self):
+        self.manifest["entities"] = {
+            # Listed before its container on purpose: the build must still
+            # make the container first.
+            "t_kit": dict(self.manifest["entities"]["t_kit"], inside="t_locker"),
+            "t_locker": {"kind": "container", "typeclass": "typeclasses.objects.Container",
+                         "tag_category": "container", "room": "t_room_a", "key": "a locker",
+                         "aliases": ["locker"], "attributes": {"desc": "A locker."}},
+            **{k: v for k, v in self.manifest["entities"].items() if k != "t_kit"},
+        }
+
+    def test_entity_is_built_inside_its_container(self):
+        self._put_kit_in_a_locker()
+        self.build()
+        self.assertEqual(one("t_kit", "garden_prop").location, one("t_locker", "container"))
+        self.assertEqual(self.build().updated, {})
+
+    def test_loose_entity_moves_into_its_container(self):
+        self.build()
+        self._put_kit_in_a_locker()
+        report = self.build()
+        self.assertIn("location", report.updated["gardening_kit t_kit"])
+        self.assertEqual(one("t_kit", "garden_prop").location, one("t_locker", "container"))
+
+    def test_entity_in_a_container_held_by_a_character_is_left_with_them(self):
+        self._put_kit_in_a_locker()
+        self.build()
+        holder = create_object("typeclasses.characters.Character", key="holder", location=self.room("t_room_b"))
+        kit = one("t_kit", "garden_prop")
+        kit.move_to(holder, quiet=True)
+        report = self.build()
+        self.assertEqual(kit.location, holder)
+        self.assertEqual(len(report.held), 1)
+
+    def test_contents_of_a_container_left_out_of_the_kinds_filter_are_skipped(self):
+        self._put_kit_in_a_locker()
+        report = self.build(kinds={"gardening_kit"})
+        self.assertNotIn("gardening_kit t_kit", report.created)
+        self.assertEqual(len(report.conflicts), 1)
+
     def test_entity_held_by_an_offline_character_is_left_with_them(self):
         # With the server stopped, an offline character's location is None
         # (seen live 2026-10-17: the gardening kit was taken from a player).

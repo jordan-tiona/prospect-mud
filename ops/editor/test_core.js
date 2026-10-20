@@ -113,6 +113,26 @@ test('entities: place, move, edit, remove', () => {
   assert.equal('hint' in doc.entities, false);
 });
 
+test('entities: inside a container, which takes its contents along', () => {
+  const doc = sector();
+  core.addEntity(doc, { id: 'locker', kind: 'container', room: 'a' });
+  core.addEntity(doc, { id: 'kit', kind: 'gardening_kit', room: 'a' });
+  core.addEntity(doc, { id: 'rock', kind: 'gardening_kit', room: 'b' });
+  core.setEntity(doc, 'kit', { inside: 'locker' });
+  assert.equal(doc.entities.kit.inside, 'locker');
+  assert.throws(() => core.setEntity(doc, 'rock', { inside: 'locker' }), /same room/);
+  assert.throws(() => core.setEntity(doc, 'kit', { inside: 'kit' }), /another thing/);
+  core.setEntity(doc, 'locker', { room: 'b' });
+  assert.equal(doc.entities.kit.room, 'b');
+  core.setEntity(doc, 'kit', { room: 'a' });
+  assert.equal('inside' in doc.entities.kit, false);
+  core.setEntity(doc, 'kit', { room: 'b', inside: 'locker' });
+  core.removeEntity(doc, 'locker');
+  assert.equal('inside' in doc.entities.kit, false);
+  core.setEntity(doc, 'kit', { inside: '' });
+  assert.equal('inside' in doc.entities.kit, false);
+});
+
 test('undo and redo walk snapshots; a new edit clears redo', () => {
   const history = new core.History();
   let doc = sector();

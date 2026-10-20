@@ -30,6 +30,10 @@ Per kind:
                         writes the result as the `in_glance` attribute
                         (typeclasses/rooms.py; LR-LORE-0005). NPC kinds
                         ignore it: their presence lines always show.
+    container         - True for kinds other entities can be placed
+                        inside (a sector entity's optional `inside`
+                        field names one; docs/mud-editor-sector-
+                        format.md Section 4). Default False
 """
 
 ROOM_KIND = {
@@ -146,9 +150,24 @@ KINDS = {
         "tag_category": "garden_prop",
         "content_dir": "objects",
         "id_field": "object_id",
+        # No room line once it sits inside the communal locker
+        # (LR-DEV-0013); a kit left loose in a room still wants one.
+        "required_sections": ["Description"],
+        "needs_heading": True,
+        "params": {},
+    },
+    "container": {
+        # A fixture players take things out of (`get <item> from <it>`,
+        # or just `get <item>` in its room); what it holds is placed in
+        # the sector with `inside` (LR-DEV-0013's communal locker).
+        "typeclass": "typeclasses.objects.Container",
+        "tag_category": "container",
+        "content_dir": "objects",
+        "id_field": "object_id",
         "required_sections": ["Short Description", "Description"],
         "needs_heading": True,
         "params": {},
+        "container": True,
     },
     "planting_bed": {
         "glance": False,  # playtest spec: keep the beds out of the listing

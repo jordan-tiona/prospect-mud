@@ -349,6 +349,7 @@ def check_sector_data(root, sector_id, sector, manifest=True):
         for name, spec in kind['params'].items():
             if spec['required'] and name not in params:
                 issues.append(Issue(ERROR, 'missing_param', here, f'kind {entity["kind"]} requires param {name!r}'))
+        issues += _inside_issues(here, entity_id, entity, entities, kinds)
         found, _ = _content_issues(root, here, entity.get('content'), kind, entity_id)
         issues += found
         if entity.get('content'):
@@ -360,6 +361,25 @@ def check_sector_data(root, sector_id, sector, manifest=True):
     if manifest:
         issues += _manifest_issues(root, sector_id, sector, referenced)
     return issues, referenced
+
+
+def _inside_issues(here, entity_id, entity, entities, kinds):
+    """An entity's `inside` must name a container-kind entity in the same
+    room, which isn't itself inside anything (one level only)."""
+    container_id = entity.get('inside')
+    if container_id is None:
+        return []
+    container = entities.get(container_id)
+    if container is None or container_id == entity_id:
+        return [Issue(ERROR, 'bad_inside', here, f'inside {container_id!r} is not another entity in this sector')]
+    if not kinds.get(container.get('kind'), {}).get('container'):
+        return [Issue(ERROR, 'bad_inside', here,
+                      f"inside {container_id!r}, but kind {container.get('kind')!r} isn't a container")]
+    if container.get('room') != entity.get('room'):
+        return [Issue(ERROR, 'bad_inside', here, f'inside {container_id!r}, which is in another room')]
+    if container.get('inside'):
+        return [Issue(ERROR, 'bad_inside', here, f'inside {container_id!r}, which is itself inside something')]
+    return []
 
 
 def _manifest_issues(root, sector_id, sector, referenced):

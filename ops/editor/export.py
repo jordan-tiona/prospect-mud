@@ -74,11 +74,13 @@ def _ambient_object(entity_id, raw):
 
 
 def _object(entity_id, raw):
-    """content/objects/ files: '# key', '## Short Description' (room line),
-    optional '## Description', '## Probe Description' and '## Spoke Lines' (a '- ' list)."""
+    """content/objects/ files: '# key', optional '## Short Description' (room line;
+    the kind's required_sections say when it's needed), '## Description',
+    '## Probe Description' and '## Spoke Lines' (a '- ' list)."""
     content = parse_content('', raw)
-    attributes = _with_probe({'room_line': content.sections['Short Description']},
-                             content.sections.get('Probe Description'))
+    attributes = _with_probe({}, content.sections.get('Probe Description'))
+    if content.sections.get('Short Description'):  # none for a kit that sits in a container
+        attributes['room_line'] = content.sections['Short Description']
     if content.sections.get('Description'):
         attributes['desc'] = content.sections['Description']
     if 'Spoke Lines' in content.sections:
@@ -138,6 +140,8 @@ def build_manifest(root, sector_id):
                                                      if a not in resolved['aliases']]
         resolved.update(kind=entity['kind'], typeclass=kind['typeclass'], tag_category=kind['tag_category'],
                         room=entity['room'])
+        if entity.get('inside'):
+            resolved['inside'] = entity['inside']
         if kind.get('locks'):
             resolved['locks'] = kind['locks'].format_map(_BlankDefault(entity.get('params', {})))
         entities[entity_id] = resolved

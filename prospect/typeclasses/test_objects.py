@@ -202,6 +202,30 @@ class GardeningKitSupplyTests(TestCase):
         self.first.execute_cmd("use kit on bed")
         self.assertTrue(is_bed_tended(self.first))
 
+    def _into_locker(self):
+        locker = create_object("typeclasses.objects.Container", key="a communal equipment locker",
+                               location=self.courtyard, aliases=["locker"])
+        self.supply.move_to(locker, quiet=True)
+        return locker
+
+    def test_get_reaches_into_the_locker(self):
+        locker = self._into_locker()
+        self.first.execute_cmd("get kit")
+        self.second.execute_cmd("get kit from locker")
+        self.assertEqual(len(self._kits(self.first)), 1)
+        self.assertEqual(len(self._kits(self.second)), 1)
+        self.assertIs(self.supply.location, locker)
+
+    def test_dropping_returns_it_to_a_supply_in_the_locker(self):
+        self._into_locker()
+        self.first.execute_cmd("get kit")
+        self.first.execute_cmd("drop kit")
+        self.assertEqual(self._kits(self.first), [])
+
+    def test_looking_at_the_locker_does_not_list_its_contents(self):
+        locker = self._into_locker()
+        self.assertEqual(locker.get_display_things(self.first), "")
+
     def test_reset_cleanup_removes_only_personal_kits(self):
         from world.garden import cleanup_personal_kits
 

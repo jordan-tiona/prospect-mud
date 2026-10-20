@@ -42,6 +42,22 @@
       "tag_category": "phase1_ambient",
       "typeclass": "typeclasses.objects.RoomObject"
     },
+    "communal_equipment_locker": {
+      "aliases": [
+        "locker"
+      ],
+      "attributes": {
+        "desc": "A tall, plain locker shared by the people who live around the courtyard. The door is left unlatched so anyone can open it. Inside, gardening kits hang from a row of hooks, more of them than anyone is likely to need at once.",
+        "in_glance": true,
+        "probe_desc": "The locker has been repainted more than once, in shades that don't quite match, like the walls around it, and the paint is worn through to bare metal around the handle where hands have pulled it open. The hinges are oiled and the door swings easily, with no catch or lock to work. Inside, the hooks run along a rail at about shoulder height, each with a kit hanging from it: trowels, shears and hanks of twine bundled together, some with fresh tape on the handles, some with none. A few hooks have been bent and straightened again. Taped inside the door is a handwritten note, its corners curling, asking people to take what they need and bring it back when they're done. Someone has added a second line underneath in different handwriting: \"Oil the shears if they stick.\"",
+        "room_line": "A communal equipment locker stands against one wall, its door unlatched."
+      },
+      "key": "a communal equipment locker",
+      "kind": "container",
+      "room": "residential_courtyard",
+      "tag_category": "container",
+      "typeclass": "typeclasses.objects.Container"
+    },
     "concourse_arrival_directory": {
       "aliases": [],
       "attributes": {
@@ -151,6 +167,7 @@
         "probe_desc": "The trowel's handle is wrapped in tape where the original grip split, and its blade has been worn narrower than it started. The shears are stiff but clean, oiled by someone who cares about them. The twine is a few hand-wound hanks of different lengths, the ends tied off neatly. A tag on the kit's strap names the courtyard's communal equipment locker and asks, politely, that everything be put back when you're done.",
         "room_line": "A gardening kit sits here, free for anyone to use."
       },
+      "inside": "communal_equipment_locker",
       "key": "a gardening kit",
       "kind": "gardening_kit",
       "room": "residential_courtyard",
@@ -632,14 +649,15 @@
     "content/ambient/objects/concourse_arrival_directory.md": "7497331c6728858c03c4378446c5c1f11d9c082232eb0e2824a5d13f66f0590f",
     "content/ambient/objects/square_noticeboard.md": "3c4c5759a41f5f784dce9926048a184c87fe1ba516ab06b71b74ed2414be8a9c",
     "content/ambient/objects/workshop_parts_tray.md": "f9498d0b8a514f1bf65f2f541fe3f3b0952c6cc7ddcd4bdb1d6a42df581f45b9",
-    "content/npcs/daven_varek.md": "09d63a2bee47754645a2842a9b77576b8dccc89ec9b24174c907c3ca7d24a981",
-    "content/npcs/given_marr.md": "7ce663a2840ae144de87942c1b14ba770f6bf5931b1c5af4c45fc8b92d4310f4",
-    "content/npcs/iri_vael.md": "fd8f4a3b5b9419fddc48a9815b3b84918f9cab0ec841cc598a7b1155a5ecf57e",
-    "content/npcs/mara_voss.md": "c63fc0f3291fc755d7e593b051cf5f9eeb7da049e6cef83ef83f94d0f63960fb",
-    "content/npcs/tarin_os.md": "66d935e2e51c4ffa25422a1ae0c90bb71da24f27d5a348b16a2e328eb718c0ef",
-    "content/npcs/veska_renn.md": "d8acfd0eda886b7b627511cd6bef2cefd71decbfe4f5d53bcc0cc5d33d2aeac6",
+    "content/npcs/daven_varek.md": "7189d037d2f4244f559718005b991adb7159b58ee568ded9be68cf07202e36b3",
+    "content/npcs/given_marr.md": "73d180212cf52567de9fa4411e5aa000513b804e87092b00e5b7c3b726058048",
+    "content/npcs/iri_vael.md": "cb7eba2b2da5b5cf16265b588d13d62e4db0ac4f94b2a8e58ad4773b834f6a53",
+    "content/npcs/mara_voss.md": "9ee924465148b7479d4dc844426f3d1998a43cb30a28e95fc7f0f4dc1cb419ce",
+    "content/npcs/tarin_os.md": "af7883df17a3d0f1d24b2ef405fef1ed77d221de6cff8ef8a96f112c9cdf1370",
+    "content/npcs/veska_renn.md": "34cb08bae88b9da263da42bf04a8615547480e59a55a275ebe31b2cd4c704f8b",
     "content/objects/civic_information_display.md": "a4a42210f3684cab3b4952a236266945d454765e6fbfee4f114a61a023f8286c",
     "content/objects/civic_office_skitter_ledger.md": "325776d41f0ddcb573556c303a53846fd6fcf2592adb7675f6b30ca2a31aeb98",
+    "content/objects/communal_equipment_locker.md": "39a1a19e7cf0f1bf62b3609f550374688f4d448d0d088948d9511baae7e99d69",
     "content/objects/faulty_heating_module_hint.md": "1c84ada12e1f746516319a62dc9312acc22df2aa251258ae6a68a9f7f2d7052c",
     "content/objects/gardening_kit.md": "8a5cb9a9f8c63711b9e2ecd04019a137d5f4e6b05196236038693b087e854ead",
     "content/objects/misdelivered_parcel_hint.md": "81d5725d931b65a5db217c42b3544c733ceeb78fbf9ee0f1ad5995ef710d26d2",
@@ -654,6 +672,6 @@
     "content/rooms/old_quarter_square.md": "ffe14d1602989346e6e39538427f41b0b66d97451ac1572a41ba78781267b9f4",
     "content/rooms/old_quarter_street.md": "bb124de63b81d54211ce0dc05225d455f99a96e4bd69c552d1865db5966d4efa",
     "content/rooms/residential_courtyard.md": "4836c593f5608ec0735167b5ea988eb93120d906bd93a51d5563266df8145b2e",
-    "sectors/elsewhere/sector.json": "f9b8d290f920180ce5e2417396dba504b3abf177bb6aa1aaba64ecdee477589d"
+    "sectors/elsewhere/sector.json": "6be4c610071328fc35ca4bb70ea692431a28dc849e98560e5817c727fba94651"
   }
 }

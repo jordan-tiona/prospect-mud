@@ -173,6 +173,20 @@ class CheckTests(unittest.TestCase):
                                                      'commitment_type': 'deliver_parcel'}
         self.assertEqual(codes(self.run_check(), check.ERROR), [])
 
+    def test_inside_must_name_a_container_in_the_same_room(self):
+        self.write('objects/locker.md', OBJECT_FILE.format(id='locker', name='a locker'))
+        self.write('objects/kit.md', OBJECT_FILE.format(id='kit', name='a kit'))
+        self.sector['entities']['locker'] = {'kind': 'container', 'room': 'room_a', 'content': 'objects/locker.md'}
+        self.sector['entities']['kit'] = {'kind': 'gardening_kit', 'room': 'room_a', 'content': 'objects/kit.md',
+                                          'inside': 'locker'}
+        self.assertEqual(codes(self.run_check(), check.ERROR), [])
+        for bad in ('nothing', 'kit', 'thing'):  # missing, itself, not a container kind
+            self.sector['entities']['kit']['inside'] = bad
+            self.assertEqual(codes(self.run_check(), check.ERROR), ['bad_inside'], bad)
+        self.sector['entities']['kit']['inside'] = 'locker'
+        self.sector['entities']['locker']['room'] = 'room_b'
+        self.assertEqual(codes(self.run_check(), check.ERROR), ['bad_inside'])
+
     def test_content_reference_problems(self):
         cases = {
             'no_content': None,
@@ -314,6 +328,21 @@ class ExportTests(CheckTests.__base__):
             'content/ambient/objects/thing.md', 'content/rooms/room_a.md', 'content/rooms/room_b.md',
             'sectors/test/sector.json'])
         self.assertNotIn('editor', path.read_text(encoding='utf-8'))
+
+    def test_inside_is_exported_and_a_kit_needs_no_room_line(self):
+        self.write('objects/locker.md', OBJECT_FILE.format(id='locker', name='a locker'))
+        self.write('objects/kit.md', OBJECT_FILE.format(id='kit', name='a kit').replace(
+            '## Short Description\n\nA thing is here.\n\n', ''))
+        self.sector['entities']['locker'] = {'kind': 'container', 'room': 'room_a', 'content': 'objects/locker.md'}
+        self.sector['entities']['kit'] = {'kind': 'gardening_kit', 'room': 'room_a', 'content': 'objects/kit.md',
+                                          'inside': 'locker'}
+        issues, path = self.export()
+        self.assertIsNotNone(path, issues)
+        entities = read_json(path)['entities']
+        self.assertEqual(entities['kit']['inside'], 'locker')
+        self.assertNotIn('room_line', entities['kit']['attributes'])
+        self.assertNotIn('inside', entities['locker'])
+        self.assertEqual(entities['locker']['typeclass'], 'typeclasses.objects.Container')
 
     def test_overlap_refuses_export(self):
         self.sector['rooms']['room_b']['map_pin'] = {'x': 0, 'y': 0, 'z': 0}

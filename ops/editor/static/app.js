@@ -777,6 +777,12 @@ function sectionsHTML(file, kind) {
   return sections.map(([h, body]) => `<h3>${esc(h)}</h3><div class="prose">${prose(body)}</div>`).join('');
 }
 
+/** Container-kind entities in a room (not inside anything), excluding `except`. */
+function containersIn(room, except) {
+  return Object.entries(state.doc.entities).filter(([c, ce]) => c !== except && ce.room === room && !ce.inside
+    && state.server.kinds[ce.kind]?.container);
+}
+
 function entityPanel(id) {
   const e = state.doc.entities[id];
   const file = fileFor(e.content);
@@ -789,6 +795,8 @@ function entityPanel(id) {
     <div class="path">${esc(e.content ? `content/${e.content}` : '(no content file)')}</div>
     <h3>Room</h3>
     <select data-field="entity-room">${options(Object.entries(state.doc.rooms).map(([r, room]) => [r, `${room.title || r} (${r})`]), e.room)}</select>
+    ${containersIn(e.room, id).length || e.inside ? `<h3>Inside</h3>
+    <select data-field="entity-inside">${options([['', '(loose in the room)'], ...containersIn(e.room, id).map(([c, ce]) => [c, `${entityName(c, ce)} (${c})`])], e.inside || '')}</select>` : ''}
     <h3>Aliases</h3>
     <input data-field="entity-aliases" value="${esc((e.aliases || []).join(', '))}" placeholder="extra words players can use, comma-separated">
     ${params.length ? `<h3>Settings</h3><dl class="kv form-kv">${params.map(([name, spec]) => `
@@ -959,6 +967,7 @@ function setupPanelInput() {
     else if (field === 'room-content') { if (el.value) edit((doc) => core.setRoom(doc, id, { content: el.value })); }
     else if (field === 'room-notes') edit((doc) => core.setRoom(doc, id, { notes: el.value }));
     else if (field === 'entity-room') edit((doc) => core.setEntity(doc, id, { room: el.value }));
+    else if (field === 'entity-inside') edit((doc) => core.setEntity(doc, id, { inside: el.value }));
     else if (field === 'entity-aliases') edit((doc) => core.setEntity(doc, id, { aliases: core.parseAliases(el.value) }));
     else if (field === 'entity-notes') edit((doc) => core.setEntity(doc, id, { notes: el.value }));
     else if (field === 'sector-notes') edit((doc) => { if (el.value) doc.notes = el.value; else delete doc.notes; });

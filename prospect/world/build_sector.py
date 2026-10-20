@@ -60,6 +60,7 @@ class Desired:
     poses: list | None = None
     locks: str | None = None
     location: str | None = None  # room id
+    container: str | None = None  # entity id it's placed inside (`inside`), in that room
     destination: str | None = None  # room id (exits)
 
 
@@ -165,10 +166,13 @@ def _desired_from_manifest(manifest, kinds):
             poses=entity.get("poses"),
             locks=entity.get("locks"),
             location=entity["room"],
+            container=entity.get("inside"),
         )
         for entity_id, entity in manifest["entities"].items()
         if kinds is None or entity["kind"] in kinds
     ]
+    # Containers before what goes inside them (check.py allows one level).
+    entities.sort(key=lambda d: d.container is not None)
     return rooms, exits, entities
 
 
@@ -217,7 +221,14 @@ def _desired_managed(desired):
     return {"attributes": sorted(desired.attributes), "aliases": sorted(a.lower() for a in desired.aliases)}
 
 
-def _changes(obj, desired, room_objects):
+def _target(desired, room_objects, entity_objects):
+    """Where obj belongs: its container if it has one, else its room."""
+    if desired.container is not None:
+        return entity_objects.get(desired.container)
+    return room_objects.get(desired.location)
+
+
+def _changes(obj, desired, room_objects, entity_objects):
     """Field names that differ between obj and desired. `room_objects` maps
     room id -> existing room object (or None if it's created in this run)."""
     changes = []
@@ -249,9 +260,11 @@ def _changes(obj, desired, room_objects):
                 changes.append("locks")
                 break
 
-    if desired.location is not None and not _held(obj):
-        target = room_objects.get(desired.location)
-        if target is None or obj.location != target:
+    if desired.location is not None:
+        target = _target(desired, room_objects, entity_objects)
+        # Already in its container counts as in place, though _held()
+        # says a container "holds" it.
+        if (target is None or obj.location != target) and not _held(obj):
             changes.append("location")
     if desired.destination is not None:
         target = room_objects.get(desired.destination)
@@ -267,8 +280,9 @@ def _changes(obj, desired, room_objects):
     return changes
 
 
-def _apply(obj, desired, rooms):
-    """Make obj match desired. `rooms` maps room id -> room object (all exist by now)."""
+def _apply(obj, desired, rooms, entities):
+    """Make obj match desired. `rooms` maps room id -> room object (all exist
+    by now), `entities` entity id -> object (containers exist by now)."""
     if obj.typeclass_path != desired.typeclass:
         obj.swap_typeclass(desired.typeclass, clean_attributes=False)
     if obj.key != desired.key:
@@ -296,8 +310,10 @@ def _apply(obj, desired, rooms):
     if desired.locks:
         obj.locks.add(desired.locks)
 
-    if desired.location is not None and not _held(obj) and obj.location != rooms[desired.location]:
-        obj.move_to(rooms[desired.location], quiet=True, move_type="teleport")
+    if desired.location is not None:
+        target = _target(desired, rooms, entities)
+        if obj.location != target and not _held(obj):
+            obj.move_to(target, quiet=True, move_type="teleport")
     if desired.destination is not None and obj.destination != rooms[desired.destination]:
         obj.destination = rooms[desired.destination]
 
@@ -306,13 +322,13 @@ def _apply(obj, desired, rooms):
     obj.attributes.add(MANAGED_ATTRIBUTE, _desired_managed(desired))
 
 
-def _create(desired, rooms):
+def _create(desired, rooms, entities):
     """A new object with everything _apply() would set, in one create_object
     call (tags, attributes and aliases batched)."""
     obj = create_object(
         desired.typeclass,
         key=desired.key,
-        location=rooms[desired.location] if desired.location else None,
+        location=_target(desired, rooms, entities) if desired.location else None,
         destination=rooms[desired.destination] if desired.destination else None,
         aliases=list(desired.aliases) or None,
         tags=[(desired.object_id, desired.tag_category), (desired.sector_id, SECTOR_TAG_CATEGORY)],
@@ -338,6 +354,8 @@ class _Step:
 def _plan(rooms, exits, entities, report):
     tagged = _TagIndex().get
     room_objects = {}
+    entity_objects = {}  # entity id -> existing object, for `inside`
+    planned_entities = set()
     steps = []
     claimed = set()  # ids of existing objects this build owns
 
@@ -346,8 +364,9 @@ def _plan(rooms, exits, entities, report):
             steps.append(_Step(desired, None, ["created"]))
             return
         claimed.add(obj.id)
-        changes = _changes(obj, desired, room_objects)
-        if desired.location is not None and _held(obj) and room_objects.get(desired.location) != obj.location:
+        changes = _changes(obj, desired, room_objects, entity_objects)
+        target = _target(desired, room_objects, entity_objects)
+        if desired.location is not None and _held(obj) and target != obj.location:
             report.held.append(f"{desired.label} is held by {obj.location.key} - left there")
         steps.append(_Step(desired, obj, changes))
 
@@ -405,11 +424,18 @@ def _plan(rooms, exits, entities, report):
     for desired in entities:
         if depends_on_skipped_room(desired):
             continue
+        if desired.container is not None and desired.container not in planned_entities:
+            report.conflicts.append(
+                f"{desired.label}: its container {desired.container} isn't built in this run - skipped"
+            )
+            continue
         matches = tagged(desired.object_id, desired.tag_category)
         if len(matches) > 1:
             report.conflicts.append(f"{desired.label}: {len(matches)} objects carry this tag - skipped")
             continue
-        plan(desired, matches[0] if matches else None)
+        entity_objects[desired.object_id] = matches[0] if matches else None
+        planned_entities.add(desired.object_id)
+        plan(desired, entity_objects[desired.object_id])
 
     return steps, room_objects, claimed
 
@@ -597,14 +623,17 @@ def build(sector_id, *, kinds=None, dry_run=False, prune=False, force_live=False
     # Rooms first (exits and entities need them), then exits, then entities -
     # the order _plan() produced.
     built_rooms = {room_id: obj for room_id, obj in room_objects.items() if obj is not None}
+    built_entities = {}
     for step in steps:
         desired, obj = step.desired, step.obj
         if obj is None:
-            obj = _create(desired, built_rooms)
+            obj = _create(desired, built_rooms, built_entities)
         elif step.changes:
-            _apply(obj, desired, built_rooms)
+            _apply(obj, desired, built_rooms, built_entities)
         if desired.label.startswith("room "):
             built_rooms[desired.object_id] = obj
+        else:
+            built_entities[desired.object_id] = obj
         report.objects[desired.object_id] = obj
 
     if prune and report.conflicts:

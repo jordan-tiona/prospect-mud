@@ -19,6 +19,14 @@
       "kind": "ambient_object",
       "room": "civic_office"
     },
+    "communal_equipment_locker": {
+      "aliases": [
+        "locker"
+      ],
+      "content": "objects/communal_equipment_locker.md",
+      "kind": "container",
+      "room": "residential_courtyard"
+    },
     "concourse_arrival_directory": {
       "content": "ambient/objects/concourse_arrival_directory.md",
       "kind": "ambient_object",
@@ -53,6 +61,7 @@
         "gardening kits"
       ],
       "content": "objects/gardening_kit.md",
+      "inside": "communal_equipment_locker",
       "kind": "gardening_kit",
       "room": "residential_courtyard"
     },

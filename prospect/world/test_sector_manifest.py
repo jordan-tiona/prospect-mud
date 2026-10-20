@@ -98,7 +98,12 @@ class _WorldMatchesManifest:
             with self.subTest(entity_id):
                 obj = _one(entity_id, expected["tag_category"])
                 self.assertEqual(obj.typeclass_path, expected["typeclass"])
-                self.assertEqual(self._room_tag(obj.location), expected["room"])
+                room = obj.location
+                if expected.get("inside"):  # built inside a container entity, which sits in the room
+                    container = self.manifest["entities"][expected["inside"]]
+                    self.assertEqual(room, _one(expected["inside"], container["tag_category"]))
+                    room = room.location
+                self.assertEqual(self._room_tag(room), expected["room"])
                 self.assertEqual(sorted(obj.aliases.all()), sorted(a.lower() for a in expected["aliases"]))  # Evennia lowercases aliases
                 if entity_id in self.approved:
                     self.assertEqual(obj.key, expected["key"])

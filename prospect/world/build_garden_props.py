@@ -25,5 +25,6 @@ GARDEN_PROP_TAG_CATEGORY = "garden_prop"
 
 
 def build():
-    """Build/update the kit and the bed. Returns {"gardening_kit": kit, "planting_bed": bed}."""
-    return build_for_wrapper({"gardening_kit", "planting_bed"})
+    """Build/update the kit, the communal locker it sits in and the bed.
+    Returns {"gardening_kit": kit, "planting_bed": bed, ...}."""
+    return build_for_wrapper({"gardening_kit", "planting_bed", "container"})

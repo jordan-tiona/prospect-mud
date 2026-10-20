@@ -74,7 +74,7 @@ TOP_KEYS = {'format_version', 'sector_id', 'notes', 'map_anchor', 'rooms', 'exit
 ROOM_KEYS = {'title', 'content', 'editor', 'map_pin', 'notes'}
 EXIT_KEYS = {'from', 'to', 'key', 'aliases', 'return'}
 RETURN_KEYS = {'key', 'aliases'}
-ENTITY_KEYS = {'kind', 'room', 'content', 'aliases', 'params', 'notes'}
+ENTITY_KEYS = {'kind', 'room', 'inside', 'content', 'aliases', 'params', 'notes'}
 
 
 def _str_list(value):
@@ -166,6 +166,8 @@ def validate_shape(root, sector_id, sector):
             problems.append(f'{where}: room must be a room in this sector')
         if 'content' in entity and not isinstance(entity['content'], str):
             problems.append(f'{where}: content must be a path')
+        if 'inside' in entity and not isinstance(entity['inside'], str):
+            problems.append(f'{where}: inside must be an entity ID')
         if not _str_list(entity.get('aliases', [])):
             problems.append(f'{where}: aliases must be a list of text')
         params = entity.get('params', {})

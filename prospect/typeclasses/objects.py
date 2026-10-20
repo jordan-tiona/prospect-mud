@@ -91,6 +91,22 @@ class RoomObject(ObjectParent, DefaultObject):
         self.locks.add("get:false()")
 
 
+class Container(RoomObject):
+    """
+    A fixture that holds things players take out of it - the `container`
+    entity kind (world/entity_kinds.py), e.g. the Residential
+    Courtyard's communal equipment locker (LR-DEV-0013). What it holds
+    is placed inside it by world/build_sector.py (a sector entity's
+    `inside` field). commands/get.py reaches into it for both
+    `get <item> from <container>` and a plain `get <item>` in its room.
+    Its own text describes what's inside, so `look` doesn't list the
+    contents.
+    """
+
+    def get_display_things(self, looker, **kwargs):
+        return ""
+
+
 class RevisionDisplayObject(RoomObject):
     """
     Phase 2D's civic information display (docs/phase2-quest-
@@ -295,9 +311,11 @@ class GardeningKit(ObjectParent, DefaultObject):
             return False
         kit = give_personal_kit(self, getter)
         if getter.location:
-            getter.location.msg_contents(
-                f"$You() $conj(pick) up {kit.get_display_name(getter)}.", from_obj=getter
-            )
+            if self.location and self.location != getter.location:  # inside the communal locker
+                action = f"$You() $conj(take) {kit.get_display_name(getter)} from {self.location.get_display_name(getter)}."
+            else:
+                action = f"$You() $conj(pick) up {kit.get_display_name(getter)}."
+            getter.location.msg_contents(action, from_obj=getter)
         return False
 
     def at_pre_drop(self, dropper, **kwargs):
@@ -306,9 +324,15 @@ class GardeningKit(ObjectParent, DefaultObject):
         if not is_personal_kit(self):
             return True
         location = dropper.location
-        supply_here = location and any(
-            obj.is_typeclass(GARDENING_KIT_TYPECLASS, exact=False) and not is_personal_kit(obj)
-            for obj in location.contents
+        # The supply can sit loose in the room or inside a container
+        # there (the courtyard's communal locker, LR-DEV-0013).
+        nearby = []
+        for obj in location.contents if location else []:
+            nearby.append(obj)
+            if obj.is_typeclass("typeclasses.objects.Container", exact=False):
+                nearby.extend(obj.contents)
+        supply_here = any(
+            obj.is_typeclass(GARDENING_KIT_TYPECLASS, exact=False) and not is_personal_kit(obj) for obj in nearby
         )
         if not supply_here:
             dropper.msg(f"Hold on to {self.get_display_name(dropper)} until you can put it back where you found it.")
